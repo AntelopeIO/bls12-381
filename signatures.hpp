@@ -117,13 +117,13 @@ bool verify(
 );
 
 // Aggregate private keys
-array<uint64_t, 4> aggregate_sks(const vector<array<uint64_t, 4>>& privateKeys);
+array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks);
 
 // Aggregate public keys
-g1 aggregate_pks(const vector<g1>& publicKeys);
+g1 aggregate_public_keys(const vector<g1>& pks);
 
 // Aggregate signatures
-g2 aggregate_signatures(const vector<g2>& signatures);
+g2 aggregate_signatures(const vector<g2>& sigs);
 
 // Aggregate verify using a set of public keys, a set of messages and an aggregated signature
 // the boolean parameter enables an additional check for dublicate messages (possible attack
@@ -133,7 +133,7 @@ bool aggregate_verify(
     const vector<g1>& pubkeys,
     const vector<vector<uint8_t>> &messages,
     const g2& signature,
-    const bool checkForDublicateMessages = false
+    const bool checkForDuplicateMessages = false
 );
 
 // Create new BLS private key from bytes. Enable modulo division to ensure scalar is element of the field

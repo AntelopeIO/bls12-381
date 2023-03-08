@@ -1474,8 +1474,8 @@ void TestAggregateSKs()
     const array<uint64_t, 4> sk2 = secret_key(seed2);
     const g1 pk2 = public_key(sk2);
 
-    const array<uint64_t, 4> aggSk = aggregate_sks({sk1, sk2});
-    const array<uint64_t, 4> aggSkAlt = aggregate_sks({sk2, sk1});
+    const array<uint64_t, 4> aggSk = aggregate_secret_keys({sk1, sk2});
+    const array<uint64_t, 4> aggSkAlt = aggregate_secret_keys({sk2, sk1});
     if(aggSk != aggSkAlt) throw invalid_argument("aggSk != aggSkAlt");
 
     const g1 aggPubKey = pk1.add(pk2);
@@ -1507,8 +1507,8 @@ void TestAggregateSKs()
     if(!aggSigFinal.equal(aggSigAlt)) throw invalid_argument("aggSigFinal != aggSigAlt");
     if(!aggSigFinal.equal(aggSigAlt2)) throw invalid_argument("aggSigFinal != aggSigAlt2");
 
-    array<uint64_t, 4> skFinal = aggregate_sks({aggSk, sk2});
-    array<uint64_t, 4> skFinalAlt = aggregate_sks({sk2, sk1, sk2});
+    array<uint64_t, 4> skFinal = aggregate_secret_keys({aggSk, sk2});
+    array<uint64_t, 4> skFinalAlt = aggregate_secret_keys({sk2, sk1, sk2});
     if(skFinal != skFinalAlt) throw invalid_argument("skFinal != skFinalAlt");
     if(skFinal == aggSk) throw invalid_argument("skFinal == aggSk");
 
@@ -1597,7 +1597,7 @@ void TestPopScheme()
         if(!verify(popAggPk, message, popSigAgg)) throw invalid_argument("verify popSigAgg failed");
 
         // Aggregate private keys
-        array<uint64_t, 4> aggSk = aggregate_sks({sk1, sk2, sk3});
+        array<uint64_t, 4> aggSk = aggregate_secret_keys({sk1, sk2, sk3});
         if(!sign(aggSk, message).equal(popSigAgg)) throw invalid_argument("sign(aggSk, message) != popSigAgg");
     }
 }

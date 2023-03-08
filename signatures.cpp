@@ -295,7 +295,7 @@ array<uint64_t, 4> derive_child_sk_unhardened(
     sha.update(buf.data(), 48 + 4);
     sha.digest(digest.data());
 
-    array<uint64_t, 4> ret = aggregate_sks({parentSk, sk_from_bytes(digest, true)});
+    array<uint64_t, 4> ret = aggregate_secret_keys({parentSk, sk_from_bytes(digest, true)});
     return ret;
 }
 
@@ -353,17 +353,17 @@ g2 derive_child_g2_unhardened(
     return g2(pk).add(g2::one().mulScalar(nonce));
 }
 
-array<uint64_t, 4> aggregate_sks(const vector<array<uint64_t, 4>>& privateKeys)
+array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
 {
-    if (privateKeys.empty())
+    if (sks.empty())
     {
         throw std::length_error("Number of private keys must be at least 1");
     }
 
     array<uint64_t, 4> ret = {0, 0, 0, 0};
-    for(uint64_t i = 0; i < privateKeys.size(); i++)
+    for(uint64_t i = 0; i < sks.size(); i++)
     {
-        ret = add<4, 4, 4>(ret, privateKeys[i]);
+        ret = add<4, 4, 4>(ret, sks[i]);
         array<uint64_t, 4> quotient = {0, 0, 0, 0};
         array<uint64_t, 4> remainder = {0, 0, 0, 0};
         array<uint64_t, 4> q = fp::Q;
@@ -379,7 +379,10 @@ array<uint8_t, 32> sk_to_bytes(const array<uint64_t, 4>& sk)
     return toBEBytes<4>(sk);
 }
 
-array<uint64_t, 4> sk_from_bytes(const array<uint8_t, 32>& in, const bool modOrder)
+array<uint64_t, 4> sk_from_bytes(
+    const array<uint8_t, 32>& in,
+    const bool modOrder
+)
 {
     array<uint64_t, 4> sk = fromBEBytes<4>(vector<uint8_t>(in.begin(), in.end()));
 
@@ -408,7 +411,14 @@ g1 public_key(const array<uint64_t, 4>& sk)
 }
 
 // Construct an extensible-output function based on SHA256
-void xmd_sh256(uint8_t *buf, int buf_len, const uint8_t *in, int in_len, const uint8_t *dst, int dst_len)
+void xmd_sh256(
+    uint8_t *buf,
+    int buf_len,
+    const uint8_t *in,
+    int in_len,
+    const uint8_t *dst,
+    int dst_len
+)
 {
     const unsigned int SHA256HashSize = 32;
     const unsigned int SHA256_Message_Block_Size = 64;
@@ -452,13 +462,20 @@ void xmd_sh256(uint8_t *buf, int buf_len, const uint8_t *in, int in_len, const u
     }
 }
 
-g2 sign(const array<uint64_t, 4>& sk, const vector<uint8_t>& msg)
+g2 sign(
+    const array<uint64_t, 4>& sk,
+    const vector<uint8_t>& msg
+)
 {
     g2 p = g2::fromMessage(msg, CIPHERSUITE_ID);
     return p.mulScalar(sk);
 }
 
-bool verify(const g1& pubkey, const vector<uint8_t>& message, const g2& signature)
+bool verify(
+    const g1& pubkey,
+    const vector<uint8_t>& message,
+    const g2& signature
+)
 {
     vector<tuple<g1, g2>> v;
     pairing::addPair(v, g1::one().neg(), signature);
@@ -478,27 +495,32 @@ bool verify(const g1& pubkey, const vector<uint8_t>& message, const g2& signatur
     return fp12::one().equal(pairing::calculate(v));
 }
 
-g1 aggregate_pks(const vector<g1>& publicKeys)
+g1 aggregate_public_keys(const vector<g1>& pks)
 {
-    g1 aggregated = g1({fp::zero(), fp::zero(), fp::zero()});
-    for(const g1& pk : publicKeys)
+    g1 agg_pk = g1({fp::zero(), fp::zero(), fp::zero()});
+    for(const g1& pk : pks)
     {
-        aggregated = aggregated.add(pk);
+        agg_pk = agg_pk.add(pk);
     }
-    return aggregated;
+    return agg_pk;
 }
 
-g2 aggregate_signatures(const vector<g2>& signatures)
+g2 aggregate_signatures(const vector<g2>& sigs)
 {
-    g2 aggregated = g2({fp2::zero(), fp2::zero(), fp2::zero()});
-    for(const g2& signature : signatures)
+    g2 agg_sig = g2({fp2::zero(), fp2::zero(), fp2::zero()});
+    for(const g2& sig : sigs)
     {
-        aggregated = aggregated.add(signature);
+        agg_sig = agg_sig.add(sig);
     }
-    return aggregated;
+    return agg_sig;
 }
 
-bool aggregate_verify(const vector<g1>& pubkeys, const vector<vector<uint8_t>> &messages, const g2& signature, const bool checkForDublicateMessages)
+bool aggregate_verify(
+    const vector<g1>& pubkeys,
+    const vector<vector<uint8_t>> &messages,
+    const g2& signature,
+    const bool checkForDuplicateMessages
+)
 {
     vector<tuple<g1, g2>> v;
     pairing::addPair(v, g1::one().neg(), signature);
@@ -513,13 +535,15 @@ bool aggregate_verify(const vector<g1>& pubkeys, const vector<vector<uint8_t>> &
         return false;
     }
 
-    if(checkForDublicateMessages)
+    if(checkForDuplicateMessages)
     {
+        // A std::set will filter out duplicates on calls to 'insert'
         set<vector<uint8_t>> setMessages;
         for(const auto& message : messages)
         {
             setMessages.insert({message.begin(), message.end()});
         }
+        // if it still has the same size as the vector from before all messages are unique
         if(setMessages.size() != pubkeys.size())
         {
             return false;
@@ -583,5 +607,5 @@ bool pop_fast_aggregate_verify(
         return false;
     }
 
-    return verify(aggregate_pks(pubkeys), message, signature);
+    return verify(aggregate_public_keys(pubkeys), message, signature);
 }
