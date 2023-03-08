@@ -48,6 +48,7 @@ public:
     static const fp R1;                                 // base field identity: R1 = 2^384 mod p
     static const fp R2;                                 // fp identity squared: R2 = 2^(384*2) mod p
     static const fp B;                                  // B coefficient from cure equation: y^2 = x^3 + B
+    static const fp twoInv;
     static const array<uint64_t, 4> Q;                  // scalar field modulus: q = 52435875175126190479447740508185965837690552500527637822603658699938581184513 or 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
     static const array<uint64_t, 6> pPlus1Over4;
     static const array<uint64_t, 6> pMinus1Over2;

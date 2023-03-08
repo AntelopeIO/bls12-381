@@ -1336,6 +1336,272 @@ void TestChiaVectors2()
     }
 }
 
+void TestSignatures()
+{
+    {
+        vector<uint8_t> message1 = {1, 65, 254, 88, 90, 45, 22};
+
+        vector<uint8_t> seed(32, 0x30);
+        array<uint64_t, 4> sk1 = secret_key(seed);
+        g1 pk1 = public_key(sk1);
+        array<uint64_t, 4> sk2 = sk1;
+
+        array<uint8_t, 32> skBytes = sk_to_bytes(sk2);
+        array<uint64_t, 4> sk4 = sk_from_bytes(skBytes);
+
+        g1 pk2 = pk1;
+        g2 sig1 = sign(sk4, message1);
+        g2 sig2 = sig1;
+
+        if(!verify(pk2, message1, sig2))
+        {
+            throw invalid_argument("verification failed!");
+        }
+    }
+    {
+        vector<uint8_t> message1 = {1, 65, 254, 88, 90, 45, 22};
+        vector<uint8_t> seed(32, 0x40);
+        vector<uint8_t> seed3(32, 0x50);
+
+        array<uint64_t, 4> sk1 = secret_key(seed);
+        array<uint64_t, 4> sk2 = sk1;
+        array<uint64_t, 4> sk3 = secret_key(seed3);
+        g1 pk1 = public_key(sk1);
+        g1 pk2 = public_key(sk2);
+        g1 pk3 = pk2;
+        g1 pk4 = public_key(sk3);
+        g2 sig1 = sign(sk1, message1);
+        g2 sig2 = sign(sk1, message1);
+        g2 sig3 = sign(sk2, message1);
+        g2 sig4 = sign(sk3, message1);
+
+        if(sk1 != sk2) throw invalid_argument("sk1 must equal sk2!");
+        if(sk1 == sk3) throw invalid_argument("sk1 must NOT equal sk3!");
+        if(!pk1.equal(pk2)) throw invalid_argument("pk1 must equal pk2!");
+        if(!pk2.equal(pk3)) throw invalid_argument("pk2 must equal pk3!");
+        if(pk1.equal(pk4)) throw invalid_argument("pk1 must NOT equal pk4!");
+        if(!sig1.equal(sig2)) throw invalid_argument("sig1 must equal sig2!");
+        if(!sig2.equal(sig3)) throw invalid_argument("sig2 must equal sig3!");
+        if(sig3.equal(sig4)) throw invalid_argument("sig3 must NOT equal sig4!");
+
+        if(pk1.pack() != pk2.pack()) throw invalid_argument("serialized pk1 must equal serialized pk2!");
+        if(sig1.pack() != sig2.pack()) throw invalid_argument("serialized sig1 must equal serialized sig2!");
+    }
+    {
+        vector<uint8_t> message1 = {1, 65, 254, 88, 90, 45, 22};
+
+        vector<uint8_t> seed(32, 0x40);
+        array<uint64_t, 4> sk1 = secret_key(seed);
+        g1 pk1 = public_key(sk1);
+
+        array<uint8_t, 32> skData = sk_to_bytes(sk1);
+        array<uint64_t, 4> sk2 = sk_from_bytes(skData);
+        if(sk1 != sk2) throw invalid_argument("sk1 must equal sk2!");
+
+        array<uint8_t, 96> pkData = pk1.toBytes();
+
+        g1 pk2 = g1::fromBytes(pkData);
+        if(!pk1.equal(pk2)) throw invalid_argument("pk1 must equal pk2!");
+
+        g2 sig1 = sign(sk1, message1);
+
+        array<uint8_t, 192> sigData = sig1.toBytes();
+
+        g2 sig2 = g2::fromBytes(sigData);
+        if(!sig1.equal(sig2)) throw invalid_argument("sig1 must equal sig2!");
+
+        if(!verify(pk2, message1, sig2)) throw invalid_argument("verify failed!");
+    }
+    {
+        vector<uint8_t> message = {100, 2, 254, 88, 90, 45, 23};
+
+        vector<uint8_t> seed(32, 0x50);
+        vector<uint8_t> seed2(32, 0x70);
+
+        array<uint64_t, 4> sk1 = secret_key(seed);
+        array<uint64_t, 4> sk2 = secret_key(seed2);
+
+        g1 pk1 = public_key(sk1);
+        g1 pk2 = public_key(sk2);
+
+        g2 sig1 = sign(sk1, message);
+        g2 sig2 = sign(sk2, message);
+
+        g2 aggSig = aggregate_signatures({sig1, sig2});
+        if(aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig, true))
+        {
+            throw invalid_argument("Should not verify aggregate with same message under BasicScheme");
+        }
+    }
+}
+
+void TestAugScheme()
+{
+    vector<uint8_t> message = {100, 2, 254, 88, 90, 45, 23};
+
+    vector<uint8_t> seed(32, 0x50);
+    vector<uint8_t> seed2(32, 0x70);
+
+    array<uint64_t, 4> sk1 = secret_key(seed);
+    array<uint64_t, 4> sk2 = secret_key(seed2);
+
+    g1 pk1 = public_key(sk1);
+    g1 pk2 = public_key(sk2);
+
+    // Augmented Scheme: Each signer extends the same message with their individual public keys
+    vector<uint8_t> augMsg1 = message;
+    augMsg1.insert(augMsg1.end(), pk1.toBytes().begin(), pk1.toBytes().end());
+    vector<uint8_t> augMsg2 = message;
+    augMsg2.insert(augMsg2.end(), pk2.toBytes().begin(), pk2.toBytes().end());
+    g2 sig1Aug = sign(sk1, augMsg1);
+    g2 sig2Aug = sign(sk2, augMsg2);
+    g2 aggSigAug = aggregate_signatures({sig1Aug, sig2Aug});
+    if(!aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{augMsg1, augMsg2}, aggSigAug, true))
+    {
+        throw invalid_argument("Should verify aggregate with same message under AugScheme");
+    }
+}
+
+void TestAggregateSKs()
+{
+    const vector<uint8_t> message = {100, 2, 254, 88, 90, 45, 23};
+    const vector<uint8_t> seed(32, 0x07);
+    const vector<uint8_t> seed2(32, 0x08);
+
+    const array<uint64_t, 4> sk1 = secret_key(seed);
+    const g1 pk1 = public_key(sk1);
+
+    const array<uint64_t, 4> sk2 = secret_key(seed2);
+    const g1 pk2 = public_key(sk2);
+
+    const array<uint64_t, 4> aggSk = aggregate_sks({sk1, sk2});
+    const array<uint64_t, 4> aggSkAlt = aggregate_sks({sk2, sk1});
+    if(aggSk != aggSkAlt) throw invalid_argument("aggSk != aggSkAlt");
+
+    const g1 aggPubKey = pk1.add(pk2);
+    if(!aggPubKey.equal(public_key(aggSk))) throw invalid_argument("aggPubKey != public_key(aggSk)");
+
+    const g2 sig1 = sign(sk1, message);
+    const g2 sig2 = sign(sk2, message);
+
+    const g2 aggSig2 = sign(aggSk, message);
+
+
+    const g2 aggSig = aggregate_signatures({sig1, sig2});
+    if(!aggSig.equal(aggSig2)) throw invalid_argument("aggSig != aggSig2");
+
+    // Verify as a single G2Element
+    if(!verify(aggPubKey, message, aggSig)) throw invalid_argument("aggSig verify failed");
+    if(!verify(aggPubKey, message, aggSig2)) throw invalid_argument("aggSig2 verify failed");
+
+    // Verify aggregate with both keys (Fails since not distinct)
+    if(aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig, true)) throw invalid_argument("aggregate verify of aggSig must fail");
+    if(aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig2, true)) throw invalid_argument("aggregate verify of aggSig2 must fail");
+
+    // Try the same with distinct message, and same sk
+    vector<uint8_t> message2 = {200, 29, 54, 8, 9, 29, 155, 55};
+    g2 sig3 = sign(sk2, message2);
+    g2 aggSigFinal = aggregate_signatures({aggSig, sig3});
+    g2 aggSigAlt = aggregate_signatures({sig1, sig2, sig3});
+    g2 aggSigAlt2 = aggregate_signatures({sig1, sig3, sig2});
+    if(!aggSigFinal.equal(aggSigAlt)) throw invalid_argument("aggSigFinal != aggSigAlt");
+    if(!aggSigFinal.equal(aggSigAlt2)) throw invalid_argument("aggSigFinal != aggSigAlt2");
+
+    array<uint64_t, 4> skFinal = aggregate_sks({aggSk, sk2});
+    array<uint64_t, 4> skFinalAlt = aggregate_sks({sk2, sk1, sk2});
+    if(skFinal != skFinalAlt) throw invalid_argument("skFinal != skFinalAlt");
+    if(skFinal == aggSk) throw invalid_argument("skFinal == aggSk");
+
+    g1 pkFinal = aggPubKey.add(pk2);
+    g1 pkFinalAlt = pk2.add(pk1).add(pk2);
+    if(!pkFinal.equal(pkFinalAlt)) throw invalid_argument("pkFinal != pkFinalAlt");
+    if(pkFinal.equal(aggPubKey)) throw invalid_argument("pkFinal == aggPubKey");
+
+    // Verify with aggPubKey (since we have multiple messages)
+    if(!aggregate_verify({aggPubKey, pk2}, vector<vector<uint8_t>>{message, message2}, aggSigFinal, true)) throw invalid_argument("verify with aggPubKey failed");
+}
+
+void TestPopScheme()
+{
+    {
+        vector<uint8_t> seed1(32, 0x06);
+        vector<uint8_t> seed2(32, 0x07);
+        vector<uint8_t> msg1 = {7, 8, 9};
+        vector<uint8_t> msg2 = {10, 11, 12};
+        vector<vector<uint8_t>> msgs = {msg1, msg2};
+
+        array<uint64_t, 4> sk1 = secret_key(seed1);
+        g1 pk1 = public_key(sk1);
+        g2 sig1 = sign(sk1, msg1);
+
+        if(!verify(pk1, msg1, sig1)) throw invalid_argument("verify failed");
+
+        array<uint64_t, 4> sk2 = secret_key(seed2);
+        g1 pk2 = public_key(sk2);
+        g2 sig2 = sign(sk2, msg2);
+
+        // Wrong sig
+        if(verify(pk1, msg1, sig2)) throw invalid_argument("must fail: wrong sig");
+        // Wrong msg
+        if(verify(pk1, msg2, sig1)) throw invalid_argument("must fail: wrong msg");
+        // Wrong pk
+        if(verify(pk2, msg1, sig1)) throw invalid_argument("must fail: wrong pk");
+
+        g2 aggsig = aggregate_signatures({sig1, sig2});
+        if(!aggregate_verify({pk1, pk2}, msgs, aggsig)) throw invalid_argument("aggregate_verify failed");
+
+        // PopVerify
+        g2 proof1 = pop_prove(sk1);
+        if(!pop_verify(pk1, proof1)) throw invalid_argument("pop_verify failed");
+
+        // FastAggregateVerify
+        // We want sk2 to sign the same message
+        g2 sig2_same = sign(sk2, msg1);
+        g2 aggsig_same = aggregate_signatures({sig1, sig2_same});
+        if(!pop_fast_aggregate_verify({pk1, pk2}, msg1, aggsig_same)) throw invalid_argument("pop_fast_aggregate_verify failed");
+    }
+    {
+        // from README:
+        vector<uint8_t> seed = {0,  50, 6,  244, 24,  199, 1,  25,  52,  88,  192,
+                                19, 18, 12, 89,  6,   220, 18, 102, 58,  209, 82,
+                                12, 62, 89, 110, 182, 9,   44, 20,  254, 22};
+        vector<uint8_t> message = {1, 2, 3, 4, 5};
+        seed[0] = 1;
+        array<uint64_t, 4> sk1 = secret_key(seed);
+        g1 pk1 = public_key(sk1);
+        seed[0] = 2;
+        array<uint64_t, 4> sk2 = secret_key(seed);
+        g1 pk2 = public_key(sk2);
+        seed[0] = 3;
+        array<uint64_t, 4> sk3 = secret_key(seed);
+        g1 pk3 = public_key(sk3);
+
+        // If the same message is signed, you can use Proof of Posession (PopScheme) for efficiency
+        // A proof of possession MUST be passed around with the PK to ensure security.
+        g2 popSig1 = sign(sk1, message);
+        g2 popSig2 = sign(sk2, message);
+        g2 popSig3 = sign(sk3, message);
+        g2 pop1 = pop_prove(sk1);
+        g2 pop2 = pop_prove(sk2);
+        g2 pop3 = pop_prove(sk3);
+
+        if(!pop_verify(pk1, pop1)) throw invalid_argument("pop_verify 1 failed");
+        if(!pop_verify(pk2, pop2)) throw invalid_argument("pop_verify 2 failed");
+        if(!pop_verify(pk3, pop3)) throw invalid_argument("pop_verify 3 failed");
+        g2 popSigAgg = aggregate_signatures({popSig1, popSig2, popSig3});
+
+        if(!pop_fast_aggregate_verify({pk1, pk2, pk3}, message, popSigAgg)) throw invalid_argument("pop_fast_aggregate_verify failed");
+
+        // Aggregate public key, indistinguishable from a single public key
+        g1 popAggPk = pk1.add(pk2).add(pk3);
+        if(!verify(popAggPk, message, popSigAgg)) throw invalid_argument("verify popSigAgg failed");
+
+        // Aggregate private keys
+        array<uint64_t, 4> aggSk = aggregate_sks({sk1, sk2, sk3});
+        if(!sign(aggSk, message).equal(popSigAgg)) throw invalid_argument("sign(aggSk, message) != popSigAgg");
+    }
+}
+
 int main()
 {
     
@@ -1373,6 +1639,11 @@ int main()
     TestIETFVectors();
     TestChiaVectors();
     TestChiaVectors2();
+
+    TestSignatures();
+    TestAugScheme();
+    TestAggregateSKs();
+    TestPopScheme();
     
     return 0;
 }

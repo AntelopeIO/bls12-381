@@ -972,12 +972,10 @@ g2 g2::mapToCurve(const fp2& e)
     return p;
 }
 
-g2 g2::fromMessage(const vector<uint8_t>& msg)
+g2 g2::fromMessage(const vector<uint8_t>& msg, const string& dst)
 {
-    const string CIPHERSUITE_ID = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
-
     uint8_t buf[4 * 64];
-    xmd_sh256(buf, 4 * 64, msg.data(), msg.size(), reinterpret_cast<const uint8_t*>(CIPHERSUITE_ID.c_str()), 43);
+    xmd_sh256(buf, 4 * 64, msg.data(), msg.size(), reinterpret_cast<const uint8_t*>(dst.c_str()), dst.length());
     
     array<uint64_t, 8> k = {0};
     fp2 t = fp2::zero();

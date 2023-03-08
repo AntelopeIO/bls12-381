@@ -83,7 +83,7 @@ public:
     g2 frobeniusMap(int64_t power) const;
     static g2 multiExp(const vector<g2>& points, vector<array<uint64_t, 4>>& powers);
     static g2 mapToCurve(const fp2& e);
-    static g2 fromMessage(const vector<uint8_t>& msg);
+    static g2 fromMessage(const vector<uint8_t>& msg, const string& dst);
     static tuple<fp2, fp2> swuMapG2(const fp2& e);
     //static void isogenyMapG2(fp2& x, fp2& y);
     g2 isogenyMap() const;

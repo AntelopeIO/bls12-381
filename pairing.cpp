@@ -5,7 +5,7 @@ void pairing::doublingStep(array<fp2, 3>& coeff, g2& r)
     // Adaptation of Formula 3 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
     t[0] = r.x.mul(r.y);
-    t[0] = t[0].mulByFq(twoInv);
+    t[0] = t[0].mulByFq(fp::twoInv);
     t[1] = r.y.square();
     t[2] = r.z.square();
     t[7] = t[2].dbl();
@@ -14,7 +14,7 @@ void pairing::doublingStep(array<fp2, 3>& coeff, g2& r)
     t[4] = t[3].dbl();
     t[4] = t[4].add(t[3]);
     t[5] = t[1].add(t[4]);
-    t[5] = t[5].mulByFq(twoInv);
+    t[5] = t[5].mulByFq(fp::twoInv);
     t[6] = r.y.add(r.z);
     t[6] = t[6].square();
     t[7] = t[2].add(t[1]);
@@ -77,7 +77,7 @@ void pairing::preCompute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
     for(int64_t i = 64 - 2; i >= 0; i--)
     {
         doublingStep(ellCoeffs[k], r);
-        if(((x[0] >> i) & 1) == 1)
+        if(((g2::cofactorEFF[0] >> i) & 1) == 1)
         {
             k++;
             additionStep(ellCoeffs[k], r, twistPoint);
@@ -110,7 +110,7 @@ fp12 pairing::millerLoop(vector<tuple<g1, g2>>& pairs)
             t[1] = ellCoeffs[j][k][1].mulByFq(get<g1>(pairs[j]).x);
             f.mulBy014Assign(ellCoeffs[j][k][0], t[1], t[0]);
         }
-        if(((x[0] >> i) & 1) == 1)
+        if(((g2::cofactorEFF[0] >> i) & 1) == 1)
         {
             k++;
             for(uint64_t j = 0; j <= pairs.size()-1; j++)
@@ -140,22 +140,22 @@ void pairing::finalExp(fp12& f)
     t[1] = t[1].conjugate();
     // hard part
     //e.exp(&t[3], &t[2]);
-    t[3] = t[2].cyclotomicExp(x);
+    t[3] = t[2].cyclotomicExp(g2::cofactorEFF);
     t[3] = t[3].conjugate();
     t[4] = t[3].cyclotomicSquare();
     t[5] = t[1].mul(t[3]);
     //e.exp(&t[1], &t[5]);
-    t[1] = t[5].cyclotomicExp(x);
+    t[1] = t[5].cyclotomicExp(g2::cofactorEFF);
     t[1] = t[1].conjugate();
     //e.exp(&t[0], &t[1]);
-    t[0] = t[1].cyclotomicExp(x);
+    t[0] = t[1].cyclotomicExp(g2::cofactorEFF);
     t[0] = t[0].conjugate();
     //e.exp(&t[6], &t[0]);
-    t[6] = t[0].cyclotomicExp(x);
+    t[6] = t[0].cyclotomicExp(g2::cofactorEFF);
     t[6] = t[6].conjugate();
     t[6].mulAssign(t[4]);
     //e.exp(&t[4], &t[6]);
-    t[4] = t[6].cyclotomicExp(x);
+    t[4] = t[6].cyclotomicExp(g2::cofactorEFF);
     t[4] = t[4].conjugate();
     t[5] = t[5].conjugate();
     t[4].mulAssign(t[5]);
@@ -188,15 +188,9 @@ void pairing::addPair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
 {
     if(!(g1(e1).isZero() || g2(e2).isZero()))
     {
-        //e1 = e1.affine();
-        //e2 = e2.affine();
         pairs.push_back({
             g1(e1).affine(),
             g2(e2).affine()
         });
     }
 }
-
-const fp pairing::twoInv = fp({0x1804000000015554, 0x855000053ab00001, 0x633cb57c253c276f, 0x6e22d1ec31ebb502, 0xd3916126f2d14ca2, 0x17fbb8571a006596});
-
-const array<uint64_t, 1> pairing::x = {0xd201000000010000};

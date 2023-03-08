@@ -8,6 +8,8 @@ using namespace std;
 class g1;
 class g2;
 
+extern const string CIPHERSUITE_ID;
+extern const string POP_CIPHERSUITE_ID;
 
 // Used to generate a domain separated extended sha256 hash used in 'map to curve'
 void xmd_sh256(
@@ -123,18 +125,36 @@ g1 aggregate_pks(const vector<g1>& publicKeys);
 // Aggregate signatures
 g2 aggregate_signatures(const vector<g2>& signatures);
 
-// Aggregate verify using a set of public keys, a message and an aggregated signature
+// Aggregate verify using a set of public keys, a set of messages and an aggregated signature
+// the boolean parameter enables an additional check for dublicate messages (possible attack
+// vector: see page 6 of https://crypto.stanford.edu/~dabo/pubs/papers/aggreg.pdf, "A potential
+// attack on aggregate signatures.")
 bool aggregate_verify(
     const vector<g1>& pubkeys,
     const vector<vector<uint8_t>> &messages,
-    const g2& signature
+    const g2& signature,
+    const bool checkForDublicateMessages = false
 );
 
 // Create new BLS private key from bytes. Enable modulo division to ensure scalar is element of the field
 array<uint64_t, 4> sk_from_bytes(
     const array<uint8_t, 32>& in,
-    const bool modOrder
+    const bool modOrder = false
 );
 
 // Write private key as bytes
 array<uint8_t, 32> sk_to_bytes(const array<uint64_t, 4>& sk);
+
+// Proof Of Possession Scheme: Prove
+g2 pop_prove(const array<uint64_t, 4>& sk);
+
+bool pop_verify(
+    const g1& pubkey,
+    const g2& signature_proof
+);
+
+bool pop_fast_aggregate_verify(
+    const vector<g1>& pubkeys,
+    const vector<uint8_t>& message,
+    const g2& signature
+);

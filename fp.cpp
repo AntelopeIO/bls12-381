@@ -353,6 +353,15 @@ const fp fp::B = fp({
     0x09d6'4551'3d83'de7e,
 });
 
+const fp fp::twoInv = fp({
+    0x1804000000015554,
+    0x855000053ab00001,
+    0x633cb57c253c276f,
+    0x6e22d1ec31ebb502,
+    0xd3916126f2d14ca2,
+    0x17fbb8571a006596
+});
+
 const array<uint64_t, 4> fp::Q = {
     0xffffffff00000001,
     0x53bda402fffe5bfe,

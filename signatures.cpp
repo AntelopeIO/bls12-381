@@ -1,4 +1,9 @@
-# include "bls12_381.hpp"
+#include "bls12_381.hpp"
+#include <set>
+
+// Domain Separation Tags
+const string CIPHERSUITE_ID = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+const string POP_CIPHERSUITE_ID = "BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
 void hkdf256_hmac(
     uint8_t *mac,
@@ -449,7 +454,7 @@ void xmd_sh256(uint8_t *buf, int buf_len, const uint8_t *in, int in_len, const u
 
 g2 sign(const array<uint64_t, 4>& sk, const vector<uint8_t>& msg)
 {
-    g2 p = g2::fromMessage(msg);
+    g2 p = g2::fromMessage(msg, CIPHERSUITE_ID);
     return p.mulScalar(sk);
 }
 
@@ -457,7 +462,7 @@ bool verify(const g1& pubkey, const vector<uint8_t>& message, const g2& signatur
 {
     vector<tuple<g1, g2>> v;
     pairing::addPair(v, g1::one().neg(), signature);
-    const g2 hashedPoint = g2::fromMessage(message);
+    const g2 hashedPoint = g2::fromMessage(message, CIPHERSUITE_ID);
     pairing::addPair(v, pubkey, hashedPoint);
 
     if(!pubkey.isOnCurve() || !pubkey.inCorrectSubgroup())
@@ -473,6 +478,16 @@ bool verify(const g1& pubkey, const vector<uint8_t>& message, const g2& signatur
     return fp12::one().equal(pairing::calculate(v));
 }
 
+g1 aggregate_pks(const vector<g1>& publicKeys)
+{
+    g1 aggregated = g1({fp::zero(), fp::zero(), fp::zero()});
+    for(const g1& pk : publicKeys)
+    {
+        aggregated = aggregated.add(pk);
+    }
+    return aggregated;
+}
+
 g2 aggregate_signatures(const vector<g2>& signatures)
 {
     g2 aggregated = g2({fp2::zero(), fp2::zero(), fp2::zero()});
@@ -483,7 +498,7 @@ g2 aggregate_signatures(const vector<g2>& signatures)
     return aggregated;
 }
 
-bool aggregate_verify(const vector<g1>& pubkeys, const vector<vector<uint8_t>> &messages, const g2& signature)
+bool aggregate_verify(const vector<g1>& pubkeys, const vector<vector<uint8_t>> &messages, const g2& signature, const bool checkForDublicateMessages)
 {
     vector<tuple<g1, g2>> v;
     pairing::addPair(v, g1::one().neg(), signature);
@@ -493,25 +508,80 @@ bool aggregate_verify(const vector<g1>& pubkeys, const vector<vector<uint8_t>> &
         return false;
     }
 
+    if(pubkeys.size() != messages.size())
+    {
+        return false;
+    }
+
+    if(checkForDublicateMessages)
+    {
+        set<vector<uint8_t>> setMessages;
+        for(const auto& message : messages)
+        {
+            setMessages.insert({message.begin(), message.end()});
+        }
+        if(setMessages.size() != pubkeys.size())
+        {
+            return false;
+        }
+    }
+
     for(size_t i = 0; i < pubkeys.size(); i++)
     {
         if(!pubkeys[i].isOnCurve() || !pubkeys[i].inCorrectSubgroup())
         {
             return false;
         }
-        pairing::addPair(v, pubkeys[i], g2::fromMessage(messages[i]));
+        pairing::addPair(v, pubkeys[i], g2::fromMessage(messages[i], CIPHERSUITE_ID));
     }
 
     // 1 =? prod e(pubkey[i], hash[i]) * e(-g1, aggSig)
     return fp12::one().equal(pairing::calculate(v));
 }
 
-g1 aggregate_pks(const vector<g1>& publicKeys)
+g2 pop_prove(const array<uint64_t, 4>& sk)
 {
-    g1 aggregated = g1({fp::zero(), fp::zero(), fp::zero()});
-    for(const g1& pk : publicKeys)
+    g1 pk = public_key(sk);
+    array<uint8_t, 48> msg = pk.pack();
+    g2 hashed_key = g2::fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
+    return hashed_key.mulScalar(sk);
+}
+
+bool pop_verify(
+    const g1& pubkey,
+    const g2& signature_proof
+)
+{
+    array<uint8_t, 48> msg = pubkey.pack();
+    const g2 hashedPoint = g2::fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
+
+    if(!pubkey.isOnCurve() || !pubkey.inCorrectSubgroup())
     {
-        aggregated = aggregated.add(pk);
+        return false;
     }
-    return aggregated;
+    if(!signature_proof.isOnCurve() || !signature_proof.inCorrectSubgroup())
+    {
+        return false;
+    }
+
+    vector<tuple<g1, g2>> v;
+    pairing::addPair(v, g1::one().neg(), signature_proof);
+    pairing::addPair(v, pubkey, hashedPoint);
+
+    // 1 =? prod e(pubkey[i], hash[i]) * e(-g1, aggSig)
+    return fp12::one().equal(pairing::calculate(v));
+}
+
+bool pop_fast_aggregate_verify(
+    const vector<g1>& pubkeys,
+    const vector<uint8_t>& message,
+    const g2& signature
+)
+{
+    if(pubkeys.size() == 0)
+    {
+        return false;
+    }
+
+    return verify(aggregate_pks(pubkeys), message, signature);
 }

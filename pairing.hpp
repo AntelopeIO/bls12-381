@@ -20,7 +20,4 @@ public:
     static void finalExp(fp12& f);
     static fp12 calculate(vector<tuple<g1, g2>>& pairs);
     static void addPair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2);
-
-    static const fp twoInv;
-    static const array<uint64_t, 1> x;
 };
