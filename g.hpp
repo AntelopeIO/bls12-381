@@ -21,11 +21,17 @@ public:
     g1();
     g1(const array<fp, 3>& e3);
     g1(const g1& e);
-    static g1 fromBytesUnchecked(const array<uint8_t, 96>& in);
-    static g1 fromBytes(const array<uint8_t, 96>& in);
+    static g1 fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check = false);
+    static g1 fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check = false);
+    static g1 fromCompressedBytesBE(const span<const uint8_t, 48> in);
+    void toJacobianBytesBE(const span<uint8_t, 144> out) const;
+    void toAffineBytesBE(const span<uint8_t, 96> out) const;
+    void toCompressedBytesBE(const span<uint8_t, 48> out) const;
+    array<uint8_t, 144> toJacobianBytesBE() const;
+    array<uint8_t, 96> toAffineBytesBE() const;
+    array<uint8_t, 48> toCompressedBytesBE() const;
     static g1 zero();
     static g1 one();
-    array<uint8_t, 96> toBytes() const;
     bool isZero() const;
     bool equal(const g1& e) const;
     bool inCorrectSubgroup() const;
@@ -42,8 +48,6 @@ public:
     static g1 mapToCurve(const array<uint8_t, 48>& in);
     static tuple<fp, fp> swuMapG1(const fp& e);
     static void isogenyMapG1(fp& x, fp& y);
-    array<uint8_t, 48> pack() const;
-    static g1 unpack(const array<uint8_t, 48>& in);
 
     static const g1 BASE;
     static const array<uint64_t, 1> cofactorEFF;
@@ -63,11 +67,17 @@ public:
     g2();
     g2(const array<fp2, 3>& e3);
     g2(const g2& e);
-    static g2 fromBytesUnchecked(const array<uint8_t, 192>& in);
-    static g2 fromBytes(const array<uint8_t, 192>& in);
+    static g2 fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check = false);
+    static g2 fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check = false);
+    static g2 fromCompressedBytesBE(const span<const uint8_t, 96> in);
+    void toJacobianBytesBE(const span<uint8_t, 288> out) const;
+    void toAffineBytesBE(const span<uint8_t, 192> out) const;
+    void toCompressedBytesBE(const span<uint8_t, 96> out) const;
+    array<uint8_t, 288> toJacobianBytesBE() const;
+    array<uint8_t, 192> toAffineBytesBE() const;
+    array<uint8_t, 96> toCompressedBytesBE() const;
     static g2 zero();
     static g2 one();
-    array<uint8_t, 192> toBytes() const;
     bool isZero() const;
     bool equal(const g2& e) const;
     bool inCorrectSubgroup() const;
@@ -87,8 +97,6 @@ public:
     static tuple<fp2, fp2> swuMapG2(const fp2& e);
     //static void isogenyMapG2(fp2& x, fp2& y);
     g2 isogenyMap() const;
-    array<uint8_t, 96> pack() const;
-    static g2 unpack(const array<uint8_t, 96>& in);
 
     static const g2 BASE;
     static const array<uint64_t, 1> cofactorEFF;

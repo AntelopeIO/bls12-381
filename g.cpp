@@ -12,23 +12,23 @@ g1::g1(const g1& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-g1 g1::fromBytesUnchecked(const array<uint8_t, 96>& in)
+g1 g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check)
 {
-    fp x = fp::fromBytes(*reinterpret_cast<const array<uint8_t, 48>*>(&in[0]));
-    fp y = fp::fromBytes(*reinterpret_cast<const array<uint8_t, 48>*>(&in[48]));
-    fp z = fp::one();
-    return g1({x, y, z});
+    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
+    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]));
+    fp z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]));
+    g1 p = g1({x, y, z});
+    if(check && !p.isOnCurve())
+    {
+        throw invalid_argument("point is not on curve!");
+    }
+    return p;
 }
 
-// fromBytes constructs a new point given uncompressed byte input.
-// fromBytes does not take zcash flags into account.
-// Byte input expected to be larger than 96 bytes.
-// First 96 bytes should be concatenation of x and y values.
-// Point (0, 0) is considered as infinity.
-g1 g1::fromBytes(const array<uint8_t, 96>& in)
+g1 g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check)
 {
-    fp x = fp::fromBytes(*reinterpret_cast<const array<uint8_t, 48>*>(&in[0]));
-    fp y = fp::fromBytes(*reinterpret_cast<const array<uint8_t, 48>*>(&in[48]));
+    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
+    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]));
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -36,11 +36,134 @@ g1 g1::fromBytes(const array<uint8_t, 96>& in)
     }
     fp z = fp::one();
     g1 p = g1({x, y, z});
-    if(!p.isOnCurve())
+    if(check && !p.isOnCurve())
     {
         throw invalid_argument("point is not on curve!");
     }
     return p;
+}
+
+g1 g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
+{
+    // check compression bit
+    if(((in[0] >> 7) & 1) != 1)
+    {
+        throw invalid_argument("compression bit not set!");
+    }
+    // check if point is infinity
+    if(((in[0] >> 6) & 1) == 1)
+    {
+        return zero();
+    }
+    // reconstruct point
+    bool ysign = ((in[0] >> 5) & 1) == 1;
+    g1 p;
+    array<uint8_t, 48> buf;
+    memcpy(buf.data(), in.data(), 48);
+    buf[0] &= 0x1f;  // erase 3 msbs from given input
+    p.x = fp::fromBytesBE(buf);
+    // BLS 12-381 curve equation:
+    //      y^2 = x^3 + B
+    //  =>  y   = +/- sqrt(x^3 + B)
+    fp b = fp::B;
+    _square(&p.y, &p.x);        // y = x^2
+    _mul(&p.y, &p.y, &p.x);     // y = x^2 * x = x^3
+    _add(&p.y, &p.y, &b);       // y = x^3 + B
+    if(!p.y.sqrt(p.y))
+    {
+        throw invalid_argument("invalid compressed coordinate: square root doesn't exist");
+    }
+    if(p.y.isLexicographicallyLargest() ^ ysign)
+    {
+        _neg(&p.y, &p.y);
+    }
+    p.z = fp::one();
+    return p;
+}
+
+void g1::toJacobianBytesBE(const span<uint8_t, 144> out) const
+{
+    memcpy(&out[ 0], &x.toBytesBE()[0], 48);
+    memcpy(&out[48], &y.toBytesBE()[0], 48);
+    memcpy(&out[96], &z.toBytesBE()[0], 48);
+}
+
+void g1::toAffineBytesBE(const span<uint8_t, 96> out) const
+{
+    if(isZero())
+    {
+        memset(&out[0], 0, 96);
+        return;
+    }
+    g1 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesBE()[0], 48);
+    memcpy(&out[48], &r.y.toBytesBE()[0], 48);
+}
+
+void g1::toCompressedBytesBE(const span<uint8_t, 48> out) const
+{
+    // check: https://github.com/zcash/librustzcash/blob/6e0364cd42a2b3d2b958a54771ef51a8db79dd29/pairing/src/bls12_381/README.md#serialization
+    g1 p = affine();
+    // check if point is at infinity
+    if(p.x.isZero() && p.y.isZero())
+    {
+        memset(out.data(), 0, 48);
+        out[0] |= 0xC0;
+        return;
+    }
+    memcpy(out.data(), p.x.toBytesBE().data(), 48);
+    // checks if y component is larger than its negation
+    if(p.y.isLexicographicallyLargest())
+    {
+        out[0] |= 0x20;
+    }
+    // set compression bit
+    out[0] |= 0x80;
+}
+
+array<uint8_t, 144> g1::toJacobianBytesBE() const
+{
+    array<uint8_t, 144> out;
+    memcpy(&out[ 0], &x.toBytesBE()[0], 48);
+    memcpy(&out[48], &y.toBytesBE()[0], 48);
+    memcpy(&out[96], &z.toBytesBE()[0], 48);
+    return out;
+}
+
+array<uint8_t, 96> g1::toAffineBytesBE() const
+{
+    array<uint8_t, 96> out;
+    if(isZero())
+    {
+        memset(&out[0], 0, 96);
+        return out;
+    }
+    g1 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesBE()[0], 48);
+    memcpy(&out[48], &r.y.toBytesBE()[0], 48);
+    return out;
+}
+
+array<uint8_t, 48> g1::toCompressedBytesBE() const
+{
+    g1 p = affine();
+    array<uint8_t, 48> out;
+    // check if point is at infinity
+    if(p.x.isZero() && p.y.isZero())
+    {
+        memset(out.data(), 0, 48);
+        out[0] |= 0xC0;
+        return out;
+    }
+    memcpy(out.data(), p.x.toBytesBE().data(), 48);
+    // checks if y component is larger than its negation
+    if(p.y.isLexicographicallyLargest())
+    {
+        out[0] |= 0x20;
+    }
+    // set compression bit
+    out[0] |= 0x80;
+    return out;
 }
 
 g1 g1::zero()
@@ -55,26 +178,6 @@ g1 g1::zero()
 g1 g1::one()
 {
     return BASE;
-}
-
-array<uint8_t, 96> g1::toBytes() const
-{
-    array<uint8_t, 96> out;
-    if(isZero())
-    {
-        memset(&out[0], 0, 96);
-        return out;
-    }
-    if(isAffine())
-    {
-        memcpy(&out[ 0], &x.toBytes()[0], 48);
-        memcpy(&out[48], &y.toBytes()[0], 48);
-        return out;
-    }
-    g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytes()[0], 48);
-    memcpy(&out[48], &r.y.toBytes()[0], 48);
-    return out;
 }
 
 bool g1::isZero() const
@@ -304,7 +407,7 @@ g1 g1::multiExp(const vector<g1>& points, vector<array<uint64_t, 4>>& powers)
             {
                 bucket[index-1] = bucket[index-1].add(points[i]);
             }
-            rsh(powers[i], c);
+            scalar::rsh(powers[i], c);
         }
         sum = zero();
         for(int64_t i = bucket.size() - 1; i >= 0; i--)
@@ -333,7 +436,7 @@ g1 g1::multiExp(const vector<g1>& points, vector<array<uint64_t, 4>>& powers)
 // Input byte slice should be a valid field element, otherwise an error is returned.
 g1 g1::mapToCurve(const array<uint8_t, 48>& in)
 {
-    fp u = fp::fromBytes(in);
+    fp u = fp::fromBytesBE(in);
     fp x, y;
     tie(x, y) = swuMapG1(u);
     isogenyMapG1(x, y);
@@ -510,81 +613,6 @@ void g1::isogenyMapG1(fp& x, fp& y)
     y = yNum;
 }
 
-// check: https://github.com/zcash/librustzcash/blob/6e0364cd42a2b3d2b958a54771ef51a8db79dd29/pairing/src/bls12_381/README.md#serialization
-array<uint8_t, 48> g1::pack() const
-{
-    g1 p = *this;
-    array<uint8_t, 48> out;
-
-    if(!isAffine())
-    {
-        p = p.affine();
-    }
-
-    // check if point is at infinity
-    if(p.x.isZero() && p.y.isZero())
-    {
-        memset(out.data(), 0, 48);
-        out[0] |= 0xC0;
-        return out;
-    }
-
-    memcpy(out.data(), p.x.toBytes().data(), 48);
-
-    // checks if y component is larger than its negation
-    if(p.y.isLexicographicallyLargest())
-    {
-        out[0] |= 0x20;
-    }
-
-    // set compression bit
-    out[0] |= 0x80;
-    
-    return out;
-}
-
-g1 g1::unpack(const array<uint8_t, 48>& in)
-{
-    if(((in[0] >> 7) & 1) != 1)
-    {
-        throw invalid_argument("compression bit not set!");
-    }
-
-    // check if point is infinity
-    if(((in[0] >> 6) & 1) == 1)
-    {
-        return zero();
-    }
-
-    // reconstruct point
-    bool ysign = ((in[0] >> 5) & 1) == 1;
-    g1 p;
-    array<uint8_t, 48> buf;
-    memcpy(buf.data(), in.data(), 48);
-    buf[0] &= 0x1f;  // erase 3 msbs from given input
-    p.x = fp::fromBytes(buf);
-
-    // BLS 12-381 curve equation:
-    //      y^2 = x^3 + B
-    //  =>  y   = +/- sqrt(x^3 + B)
-    fp b = fp::B;
-    _square(&p.y, &p.x);        // y = x^2
-    _mul(&p.y, &p.y, &p.x);     // y = x^2 * x = x^3
-    _add(&p.y, &p.y, &b);       // y = x^3 + B
-    if(!p.y.sqrt(p.y))
-    {
-        throw invalid_argument("invalid compressed coordinate: square root doesn't exist");
-    }
-    if(p.y.isLexicographicallyLargest() ^ ysign)
-    {
-        _neg(&p.y, &p.y);
-    }
-
-    p.z = fp::one();
-    
-    return p;
-}
-
 const g1 g1::BASE = g1({
     fp({0x5cb38790fd530c16, 0x7817fc679976fff5, 0x154f95c7143ba1c1, 0xf0ae6acdf3d0e747, 0xedce6ecc21dbf440, 0x120177419e0bfb75}),
     fp({0xbaac93d50ce72271, 0x8c22631a7918fd8e, 0xdd595f13570725ce, 0x51ac582950405194, 0x0e1c8c3fad0059c0, 0x0bbc3efc5008a26a}),
@@ -605,18 +633,23 @@ g2::g2(const g2& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-g2 g2::fromBytesUnchecked(const array<uint8_t, 192>& in)
+g2 g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check)
 {
-    fp2 x = fp2::fromBytes(*reinterpret_cast<const array<uint8_t, 96>*>(&in[0]));
-    fp2 y = fp2::fromBytes(*reinterpret_cast<const array<uint8_t, 96>*>(&in[96]));
-    fp2 z = fp2::one();
-    return g2({x, y, z});
+    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
+    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    fp2 z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]));
+    g2 p = g2({x, y, z});
+    if(check && !p.isOnCurve())
+    {
+        throw invalid_argument("point is not on curve!");
+    }
+    return p;
 }
 
-g2 g2::fromBytes(const array<uint8_t, 192>& in)
+g2 g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check)
 {
-    fp2 x = fp2::fromBytes(*reinterpret_cast<const array<uint8_t, 96>*>(&in[0]));
-    fp2 y = fp2::fromBytes(*reinterpret_cast<const array<uint8_t, 96>*>(&in[96]));
+    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
+    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -624,11 +657,139 @@ g2 g2::fromBytes(const array<uint8_t, 192>& in)
     }
     fp2 z = fp2::one();
     g2 p = g2({x, y, z});
-    if(!p.isOnCurve())
+    if(check && !p.isOnCurve())
     {
         throw invalid_argument("point is not on curve!");
     }
     return p;
+}
+
+g2 g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
+{
+    // check compression bit
+    if(((in[0] >> 7) & 1) != 1)
+    {
+        throw invalid_argument("compression bit not set!");
+    }
+    // check if point is infinity
+    if(((in[0] >> 6) & 1) == 1)
+    {
+        return zero();
+    }
+    // reconstruct point
+    bool ysign = ((in[0] >> 5) & 1) == 1;
+    g2 p;
+    array<uint8_t, 48> buf1;
+    array<uint8_t, 48> buf0;
+    memcpy(buf1.data(), in.data(), 48);
+    memcpy(buf0.data(), in.data() + 48, 48);
+    buf1[0] &= 0x1f;  // erase 3 msbs from given input
+    p.x.c1 = fp::fromBytesBE(buf1);
+    p.x.c0 = fp::fromBytesBE(buf0);
+    // BLS 12-381 curve equation:
+    //      y^2 = x^3 + B
+    //  =>  y   = +/- sqrt(x^3 + B)
+    fp2 b = fp2::B;
+    p.y = p.x.square();         // y = x^2
+    p.y = p.y.mul(p.x);         // y = x^2 * x = x^3
+    p.y = p.y.add(b);           // y = x^3 + B
+    if(!p.y.sqrt(p.y))
+    {
+        throw invalid_argument("invalid compressed coordinate: square root doesn't exist");
+    }
+    if(p.y.isLexicographicallyLargest() ^ ysign)
+    {
+        p.y = p.y.neg();
+    }
+    p.z = fp2::one();
+    return p;
+}
+
+void g2::toJacobianBytesBE(const span<uint8_t, 288> out) const
+{
+    memcpy(&out[  0], &x.toBytesBE()[0], 96);
+    memcpy(&out[ 96], &y.toBytesBE()[0], 96);
+    memcpy(&out[192], &z.toBytesBE()[0], 96);
+}
+
+void g2::toAffineBytesBE(const span<uint8_t, 192> out) const
+{
+    if(isZero())
+    {
+        memset(&out[0], 0, 192);
+        return;
+    }
+    g2 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesBE()[0], 96);
+    memcpy(&out[96], &r.y.toBytesBE()[0], 96);
+}
+
+void g2::toCompressedBytesBE(const span<uint8_t, 96> out) const
+{
+    // check: https://github.com/zcash/librustzcash/blob/6e0364cd42a2b3d2b958a54771ef51a8db79dd29/pairing/src/bls12_381/README.md#serialization
+    g2 p = affine();
+    // check if point is at infinity
+    if(p.x.isZero() && p.y.isZero())
+    {
+        memset(out.data(), 0, 96);
+        out[0] |= 0xC0;
+        return;
+    }
+    memcpy(out.data(), p.x.c1.toBytesBE().data(), 48);
+    memcpy(out.data() + 48, p.x.c0.toBytesBE().data(), 48);
+    // check y component
+    if(p.y.isLexicographicallyLargest())
+    {
+        out[0] |= 0x20;
+    }
+    // set compression bit
+    out[0] |= 0x80;
+}
+
+array<uint8_t, 288> g2::toJacobianBytesBE() const
+{
+    array<uint8_t, 288> out;
+    memcpy(&out[  0], &x.toBytesBE()[0], 96);
+    memcpy(&out[ 96], &y.toBytesBE()[0], 96);
+    memcpy(&out[192], &z.toBytesBE()[0], 96);
+    return out;
+}
+
+array<uint8_t, 192> g2::toAffineBytesBE() const
+{
+    array<uint8_t, 192> out;
+    if(isZero())
+    {
+        memset(&out[0], 0, 192);
+        return out;
+    }
+    g2 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesBE()[0], 96);
+    memcpy(&out[96], &r.y.toBytesBE()[0], 96);
+    return out;
+}
+
+array<uint8_t, 96> g2::toCompressedBytesBE() const
+{
+    g2 p = affine();
+    array<uint8_t, 96> out;
+    // check if point is at infinity
+    if(p.x.isZero() && p.y.isZero())
+    {
+        memset(out.data(), 0, 96);
+        out[0] |= 0xC0;
+        return out;
+    }
+    memcpy(out.data(), p.x.c1.toBytesBE().data(), 48);
+    memcpy(out.data() + 48, p.x.c0.toBytesBE().data(), 48);
+    // check y component
+    if(p.y.isLexicographicallyLargest())
+    {
+        out[0] |= 0x20;
+    }
+    // set compression bit
+    out[0] |= 0x80;
+    return out;
 }
 
 g2 g2::zero()
@@ -643,26 +804,6 @@ g2 g2::zero()
 g2 g2::one()
 {
     return BASE;
-}
-
-array<uint8_t, 192> g2::toBytes() const
-{
-    array<uint8_t, 192> out;
-    if(isZero())
-    {
-        memset(&out[0], 0, 192);
-        return out;
-    }
-    if(isAffine())
-    {
-        memcpy(&out[ 0], &x.toBytes()[0], 96);
-        memcpy(&out[96], &y.toBytes()[0], 96);
-        return out;
-    }
-    g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytes()[0], 96);
-    memcpy(&out[96], &r.y.toBytes()[0], 96);
-    return out;
 }
 
 bool g2::isZero() const
@@ -934,7 +1075,7 @@ g2 g2::multiExp(const vector<g2>& points, vector<array<uint64_t, 4>>& powers)
             {
                 bucket[index-1] = bucket[index-1].add(points[i]);
             }
-            rsh(powers[i], c);
+            scalar::rsh(powers[i], c);
         }
         sum = zero();
         for(int64_t i = bucket.size() - 1; i >= 0; i--)
@@ -981,16 +1122,16 @@ g2 g2::fromMessage(const vector<uint8_t>& msg, const string& dst)
     fp2 t = fp2::zero();
     g2 p;
 
-    k = fromBEBytes<8>(vector<uint8_t>(buf, buf + 64));
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf, buf + 64));
     t.c0 = fp::modPrime(k);
-    k = fromBEBytes<8>(vector<uint8_t>(buf + 64, buf + 2*64));
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 64, buf + 2*64));
     t.c1 = fp::modPrime(k);
 
     p = g2::mapToCurve(t);
 
-    k = fromBEBytes<8>(vector<uint8_t>(buf + 2*64, buf + 3*64));
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 2*64, buf + 3*64));
     t.c0 = fp::modPrime(k);
-    k = fromBEBytes<8>(vector<uint8_t>(buf + 3*64, buf + 4*64));
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 3*64, buf + 4*64));
     t.c1 = fp::modPrime(k);
 
     p = p.add(g2::mapToCurve(t));
@@ -1295,84 +1436,6 @@ g2 g2::isogenyMap() const
     q.x = q.x.mul(q.z);
 
     return q;
-}
-
-array<uint8_t, 96> g2::pack() const
-{
-    g2 p = *this;
-    array<uint8_t, 96> out;
-
-    if(!isAffine())
-    {
-        p = p.affine();
-    }
-
-    // check if point is at infinity
-    if(p.x.isZero() && p.y.isZero())
-    {
-        memset(out.data(), 0, 96);
-        out[0] |= 0xC0;
-        return out;
-    }
-
-    memcpy(out.data(), p.x.c1.toBytes().data(), 48);
-    memcpy(out.data() + 48, p.x.c0.toBytes().data(), 48);
-
-    // check y component
-    if(p.y.isLexicographicallyLargest())
-    {
-        out[0] |= 0x20;
-    }
-
-    // set compression bit
-    out[0] |= 0x80;
-    
-    return out;
-}
-
-g2 g2::unpack(const array<uint8_t, 96>& in)
-{
-    if(((in[0] >> 7) & 1) != 1)
-    {
-        throw invalid_argument("compression bit not set!");
-    }
-
-    // check if point is infinity
-    if(((in[0] >> 6) & 1) == 1)
-    {
-        return zero();
-    }
-
-    // reconstruct point
-    bool ysign = ((in[0] >> 5) & 1) == 1;
-    g2 p;
-    array<uint8_t, 48> buf1;
-    array<uint8_t, 48> buf0;
-    memcpy(buf1.data(), in.data(), 48);
-    memcpy(buf0.data(), in.data() + 48, 48);
-    buf1[0] &= 0x1f;  // erase 3 msbs from given input
-    p.x.c1 = fp::fromBytes(buf1);
-    p.x.c0 = fp::fromBytes(buf0);
-
-    // BLS 12-381 curve equation:
-    //      y^2 = x^3 + B
-    //  =>  y   = +/- sqrt(x^3 + B)
-    fp2 b = fp2::B;
-    p.y = p.x.square();         // y = x^2
-    p.y = p.y.mul(p.x);         // y = x^2 * x = x^3
-    p.y = p.y.add(b);           // y = x^3 + B
-    if(!p.y.sqrt(p.y))
-    {
-        throw invalid_argument("invalid compressed coordinate: square root doesn't exist");
-    }
-    if(p.y.isLexicographicallyLargest() ^ ysign)
-    {
-        p.y = p.y.neg();
-    }
-
-    p.z = fp2::one();
-    
-    return p;
 }
 
 const g2 g2::BASE = g2({

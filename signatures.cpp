@@ -194,7 +194,7 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
     );
 
     // Make sure private key is less than the curve order
-    array<uint64_t, 6> skBn = fromBEBytes<6>(vector<uint8_t>(okmHkdf.begin(), okmHkdf.end()));
+    array<uint64_t, 6> skBn = scalar::fromBytesBE<6>(span<uint8_t, 48>(okmHkdf.begin(), okmHkdf.end()));
     array<uint64_t, 6> quotient = {0, 0, 0, 0, 0, 0};
     array<uint64_t, 6> remainder = {0, 0, 0, 0, 0, 0};
     array<uint64_t, 4> q = fp::Q;
@@ -235,7 +235,7 @@ void parent_sk_to_lamport_pk(
     {
         salt[3 - i] = (index >> (i * 8));
     }
-    ikm = toBEBytes<4>(parentSk);
+    ikm = scalar::toBytesBE<4>(parentSk);
 
     // Flips the bits
     for(size_t i = 0; i < 32; i++)
@@ -285,7 +285,7 @@ array<uint64_t, 4> derive_child_sk_unhardened(
 {
     array<uint8_t, 48 + 4> buf;
     array<uint8_t, 32> digest;
-    memcpy(buf.data(), public_key(parentSk).pack().data(), 48);
+    memcpy(buf.data(), public_key(parentSk).toCompressedBytesBE().data(), 48);
     
     for(size_t i = 0; i < 4; i++)
     {
@@ -306,7 +306,7 @@ g1 derive_shild_g1_unhardened(
 {
     array<uint8_t, 48 + 4> buf;
     array<uint8_t, 32> digest;
-    memcpy(buf.data(), g1(pk).pack().data(), 48);
+    memcpy(buf.data(), g1(pk).toCompressedBytesBE().data(), 48);
 
     for(size_t i = 0; i < 4; i++)
     {
@@ -316,7 +316,7 @@ g1 derive_shild_g1_unhardened(
     sha.update(buf.data(), 48 + 4);
     sha.digest(digest.data());
 
-    array<uint64_t, 4> nonce = fromBEBytes<4>(vector<uint8_t>(digest.begin(), digest.end()));
+    array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
     array<uint64_t, 4> quotient = {0, 0, 0, 0};
     array<uint64_t, 4> remainder = {0, 0, 0, 0};
     array<uint64_t, 4> q = fp::Q;
@@ -333,7 +333,7 @@ g2 derive_child_g2_unhardened(
 {
     array<uint8_t, 96 + 4> buf;
     array<uint8_t, 32> digest;
-    memcpy(buf.data(), g2(pk).pack().data(), 96);
+    memcpy(buf.data(), g2(pk).toCompressedBytesBE().data(), 96);
     
     for(size_t i = 0; i < 4; i++)
     {
@@ -343,7 +343,7 @@ g2 derive_child_g2_unhardened(
     sha.update(buf.data(), 96 + 4);
     sha.digest(digest.data());
 
-    array<uint64_t, 4> nonce = fromBEBytes<4>(vector<uint8_t>(digest.begin(), digest.end()));
+    array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
     array<uint64_t, 4> quotient = {0, 0, 0, 0};
     array<uint64_t, 4> remainder = {0, 0, 0, 0};
     array<uint64_t, 4> q = fp::Q;
@@ -363,7 +363,7 @@ array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
     array<uint64_t, 4> ret = {0, 0, 0, 0};
     for(uint64_t i = 0; i < sks.size(); i++)
     {
-        ret = add<4, 4, 4>(ret, sks[i]);
+        ret = scalar::add<4, 4, 4>(ret, sks[i]);
         array<uint64_t, 4> quotient = {0, 0, 0, 0};
         array<uint64_t, 4> remainder = {0, 0, 0, 0};
         array<uint64_t, 4> q = fp::Q;
@@ -376,7 +376,7 @@ array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
 
 array<uint8_t, 32> sk_to_bytes(const array<uint64_t, 4>& sk)
 {
-    return toBEBytes<4>(sk);
+    return scalar::toBytesBE<4>(sk);
 }
 
 array<uint64_t, 4> sk_from_bytes(
@@ -384,7 +384,7 @@ array<uint64_t, 4> sk_from_bytes(
     const bool modOrder
 )
 {
-    array<uint64_t, 4> sk = fromBEBytes<4>(vector<uint8_t>(in.begin(), in.end()));
+    array<uint64_t, 4> sk = scalar::fromBytesBE<4>(span<const uint8_t, 32>(in.begin(), in.end()));
 
     if(modOrder)
     {
@@ -396,7 +396,7 @@ array<uint64_t, 4> sk_from_bytes(
     }
     else
     {
-        if(cmp<4>(sk, fp::Q) >= 0)
+        if(scalar::cmp<4>(sk, fp::Q) >= 0)
         {
             throw std::invalid_argument("PrivateKey byte data must be less than the group order");
         }
@@ -537,7 +537,7 @@ bool aggregate_verify(
 
     if(checkForDuplicateMessages)
     {
-        // A std::set will filter out duplicates on calls to 'insert'
+        // A std::set will filter out duplicates on calls of 'insert'
         set<vector<uint8_t>> setMessages;
         for(const auto& message : messages)
         {
@@ -566,7 +566,7 @@ bool aggregate_verify(
 g2 pop_prove(const array<uint64_t, 4>& sk)
 {
     g1 pk = public_key(sk);
-    array<uint8_t, 48> msg = pk.pack();
+    array<uint8_t, 48> msg = pk.toCompressedBytesBE();
     g2 hashed_key = g2::fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
     return hashed_key.mulScalar(sk);
 }
@@ -576,7 +576,7 @@ bool pop_verify(
     const g2& signature_proof
 )
 {
-    array<uint8_t, 48> msg = pubkey.pack();
+    array<uint8_t, 48> msg = pubkey.toCompressedBytesBE();
     const g2 hashedPoint = g2::fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
 
     if(!pubkey.isOnCurve() || !pubkey.inCorrectSubgroup())

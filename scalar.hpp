@@ -4,54 +4,95 @@
 #include <array>
 #include <stdexcept>
 #include <cstring>
+#include <span>
 
 #include "fp.hpp"
 #include "g.hpp"
 
 using namespace std;
 
-template<size_t N>
-array<uint64_t, N> fromBEBytes(const vector<uint8_t>& in)
+namespace scalar
 {
-    array<uint64_t, N> d;
-    uint64_t L = in.size();
-    uint64_t num_words = (L+7)/8;
 
-    int64_t a;
-    for(uint64_t i = 0; i < num_words; i++)
+template<size_t N>
+void toBytesLE(const array<uint64_t, N>& in, span<uint8_t, N*8> out)
+{
+    for(uint64_t i = 0; i < N; i++)
     {
-        a = L - i*8;
-        d[i] =
-            static_cast<uint64_t>(a-1 < 0 ? 0 : in[a-1])     | static_cast<uint64_t>(a-2 < 0 ? 0 : in[a-2])<< 8 |
-            static_cast<uint64_t>(a-3 < 0 ? 0 : in[a-3])<<16 | static_cast<uint64_t>(a-4 < 0 ? 0 : in[a-4])<<24 |
-            static_cast<uint64_t>(a-5 < 0 ? 0 : in[a-5])<<32 | static_cast<uint64_t>(a-6 < 0 ? 0 : in[a-6])<<40 |
-            static_cast<uint64_t>(a-7 < 0 ? 0 : in[a-7])<<48 | static_cast<uint64_t>(a-8 < 0 ? 0 : in[a-8])<<56;
+        for(uint64_t j = 0, k = 0; j < 8; j++, k += 8)
+        {
+            out[i*8+j] = static_cast<uint8_t>(in[i] >> k);
+        }
     }
-    for(uint64_t i = num_words; i < N; i++)
-    {
-        d[i] = 0;
-    }
-    return d;
+}
+template<size_t N>
+array<uint8_t, N*8> toBytesLE(const array<uint64_t, N>& in)
+{
+    array<uint8_t, N*8> out;
+    toBytesLE(in, out);
+    return out;
 }
 
 template<size_t N>
-array<uint8_t, N*8> toBEBytes(const array<uint64_t, N>& in)
+void toBytesBE(const array<uint64_t, N>& in, span<uint8_t, N*8> out)
 {
-    array<uint8_t, N*8> d;
-
     for(uint64_t i = 0; i < N; i++)
     {
         for(uint64_t j = 0, k = 56; j < 8; j++, k -= 8)
         {
-            d[i*8+j] = static_cast<uint8_t>(in[N-1-i] >> k);
+            out[i*8+j] = static_cast<uint8_t>(in[N-1-i] >> k);
         }
     }
-
-    return d;
+}
+template<size_t N>
+array<uint8_t, N*8> toBytesBE(const array<uint64_t, N>& in)
+{
+    array<uint8_t, N*8> out;
+    toBytesBE<N>(in, out);
+    return out;
 }
 
-vector<uint8_t> HexToBytes(const string s);
-string BytesToHex(const vector<uint8_t>& in);
+template<size_t N>
+void fromBytesLE(const span<const uint8_t, N*8>& in, array<uint64_t, N>& out)
+{
+    for(uint64_t i = 0; i < N; i++)
+    {
+        uint64_t a = i*8;
+        out[i] =
+            static_cast<uint64_t>(in[a+0])       | static_cast<uint64_t>(in[a+1]) <<  8 |
+            static_cast<uint64_t>(in[a+2]) << 16 | static_cast<uint64_t>(in[a+3]) << 24 |
+            static_cast<uint64_t>(in[a+4]) << 32 | static_cast<uint64_t>(in[a+5]) << 40 |
+            static_cast<uint64_t>(in[a+6]) << 48 | static_cast<uint64_t>(in[a+7]) << 56;
+    }
+}
+template<size_t N>
+array<uint64_t, N> fromBytesLE(const span<const uint8_t, N*8>& in)
+{
+    array<uint64_t, N> out;
+    fromBytesLE(in, out);
+    return out;
+}
+
+template<size_t N>
+void fromBytesBE(const span<const uint8_t, N*8>& in, array<uint64_t, N>& out)
+{
+    for(uint64_t i = 0; i < N; i++)
+    {
+        int64_t a = N*8 - i*8;
+        out[i] =
+            static_cast<uint64_t>(in[a-1])       | static_cast<uint64_t>(in[a-2]) <<  8 |
+            static_cast<uint64_t>(in[a-3]) << 16 | static_cast<uint64_t>(in[a-4]) << 24 |
+            static_cast<uint64_t>(in[a-5]) << 32 | static_cast<uint64_t>(in[a-6]) << 40 |
+            static_cast<uint64_t>(in[a-7]) << 48 | static_cast<uint64_t>(in[a-8]) << 56;
+    }
+}
+template<size_t N>
+array<uint64_t, N> fromBytesBE(const span<const uint8_t, N*8>& in)
+{
+    array<uint64_t, N> out;
+    fromBytesBE(in, out);
+    return out;
+}
 
 // adds two arrays: calculates c = a + b
 template<size_t NC, size_t NA, size_t NB>
@@ -153,6 +194,8 @@ void rsh(array<uint64_t, N>& arr, uint64_t bits)
     }
 }
 
+} // namespace scalar
+
 void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb);
 
 template<size_t N>
@@ -170,7 +213,7 @@ template<size_t N>
 fp fp::exp(const array<uint64_t, N>& s) const
 {
     fp z = R1;
-    uint64_t l = bitLength(s);
+    uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
         _mul(&z, &z, &z);
@@ -186,7 +229,7 @@ template<size_t N>
 fp2 fp2::exp(const array<uint64_t, N>& s) const
 {
     fp2 z = fp2::one();
-    uint64_t l = bitLength(s);
+    uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
         z = z.square();
@@ -202,7 +245,7 @@ template<size_t N>
 fp6 fp6::exp(const array<uint64_t, N>& s) const
 {
     fp6 z = fp6::one();
-    uint64_t l = bitLength(s);
+    uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
         z = z.square();
@@ -217,7 +260,7 @@ fp6 fp6::exp(const array<uint64_t, N>& s) const
 template<size_t N> fp12 fp12::exp(const array<uint64_t, N>& s) const
 {
     fp12 z = fp12::one();
-    uint64_t l = bitLength(s);
+    uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
         z = z.square();
@@ -233,7 +276,7 @@ template<size_t N>
 fp12 fp12::cyclotomicExp(const array<uint64_t, N>& s) const
 {
     fp12 z = fp12::one();
-    uint64_t l = bitLength(s);
+    uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
         z = z.cyclotomicSquare();
@@ -250,7 +293,7 @@ g1 g1::mulScalar(const array<uint64_t, N>& s) const
 {
     g1 q = g1({fp::zero(), fp::zero(), fp::zero()});
     g1 n = *this;
-    uint64_t l = bitLength(s);
+    uint64_t l = scalar::bitLength(s);
     for(uint64_t i = 0; i < l; i++)
     {
         if((s[i/64] >> (i%64) & 1) == 1)
@@ -267,7 +310,7 @@ g2 g2::mulScalar(const array<uint64_t, N>& s) const
 {
     g2 q = g2({fp2::zero(), fp2::zero(), fp2::zero()});
     g2 n = *this;
-    uint64_t l = bitLength(s);
+    uint64_t l = scalar::bitLength(s);
     for(uint64_t i = 0; i < l; i++)
     {
         if((s[i/64] >> (i%64) & 1) == 1)
@@ -278,3 +321,43 @@ g2 g2::mulScalar(const array<uint64_t, N>& s) const
     }
     return q;
 }
+
+template<size_t N>
+string bytesToHex(const span<const uint8_t, N>& in)
+{
+    constexpr char hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    string s(2 + N * 2, ' ');
+    s[0] = '0';
+    s[1] = 'x';
+    for(uint64_t i = 0; i < N; i++)
+    {
+        s[2 + 2*i]     = hexmap[(in[i] & 0xF0) >> 4];
+        s[2 + 2*i+1]   = hexmap[ in[i] & 0x0F      ];
+    }
+    return s;
+}
+string bytesToHex(const vector<uint8_t>& in);
+
+template<size_t N>
+void hexToBytes(const string& s, span<uint8_t, N> out)
+{
+    // No checks on the string length in the compile time version!
+    uint64_t start_idx = 0;
+    if(s[0] == '0' && s[1] == 'x')
+    {
+        start_idx = 2;
+    }
+
+    for(size_t i = 0, j = start_idx; i < N; i++, j += 2)
+    {
+        out[i] = (s[j] % 32 + 9) % 25 * 16 + (s[j+1] % 32 + 9) % 25;
+    }
+}
+template<size_t N>
+array<uint8_t, N> hexToBytes(const string& s)
+{
+    array<uint8_t, N> out;
+    hexToBytes<N>(s, out);
+    return out;
+}
+vector<uint8_t> hexToBytes(const string& s);

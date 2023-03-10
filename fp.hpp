@@ -5,6 +5,7 @@
 #include <string>
 #include <stdexcept>
 #include <tuple>
+#include <span>
 
 using namespace std;
 
@@ -18,12 +19,14 @@ public:
     fp();
     fp(const array<uint64_t, 6>& d);
     fp(const fp& e);
-    static fp fromBytes(const array<uint8_t, 48>& in);
-    static fp fromString(const string& s);
+    static fp fromBytesBE(const span<const uint8_t, 48> in);
+    static fp fromBytesLE(const span<const uint8_t, 48> in);
+    void toBytesBE(const span<uint8_t, 48> out) const;
+    void toBytesLE(const span<uint8_t, 48> out) const;
+    array<uint8_t, 48> toBytesBE() const;
+    array<uint8_t, 48> toBytesLE() const;
     static fp zero();
     static fp one();
-    array<uint8_t, 48> toBytes() const;
-    string toString() const;
     bool isValid() const;
     bool isOdd() const;
     bool isEven() const;
@@ -67,9 +70,12 @@ public:
     fp2();
     fp2(const array<fp, 2>& e2);
     fp2(const fp2& e);
-    static fp2 fromBytes(const array<uint8_t, 96>& in);
-    static fp2 fromString(const string& s);
-    array<uint8_t, 96> toBytes() const;
+    static fp2 fromBytesBE(const span<const uint8_t, 96> in);
+    static fp2 fromBytesLE(const span<const uint8_t, 96> in);
+    void toBytesBE(const span<uint8_t, 96> out) const;
+    void toBytesLE(const span<uint8_t, 96> out) const;
+    array<uint8_t, 96> toBytesBE() const;
+    array<uint8_t, 96> toBytesLE() const;
     static fp2 zero();
     static fp2 one();
     bool isZero() const;
@@ -117,9 +123,12 @@ public:
     fp6();
     fp6(const array<fp2, 3>& e3);
     fp6(const fp6& e);
-    static fp6 fromBytes(const array<uint8_t, 288>& in);
-    static fp6 fromString(const string& s);
-    array<uint8_t, 288> toBytes() const;
+    static fp6 fromBytesBE(const span<const uint8_t, 288> in);
+    static fp6 fromBytesLE(const span<const uint8_t, 288> in);
+    void toBytesBE(const span<uint8_t, 288> out) const;
+    void toBytesLE(const span<uint8_t, 288> out) const;
+    array<uint8_t, 288> toBytesBE() const;
+    array<uint8_t, 288> toBytesLE() const;
     static fp6 zero();
     static fp6 one();
     bool isZero() const;
@@ -161,9 +170,12 @@ public:
     fp12();
     fp12(const array<fp6, 2>& e2);
     fp12(const fp12& e);
-    static fp12 fromBytes(const array<uint8_t, 576>& in);
-    static fp12 fromString(const string& s);
-    array<uint8_t, 576> toBytes() const;
+    static fp12 fromBytesBE(const span<const uint8_t, 576> in);
+    static fp12 fromBytesLE(const span<const uint8_t, 576> in);
+    void toBytesBE(const span<uint8_t, 576> out) const;
+    void toBytesLE(const span<uint8_t, 576> out) const;
+    array<uint8_t, 576> toBytesBE() const;
+    array<uint8_t, 576> toBytesLE() const;
     static fp12 zero();
     static fp12 one();
     bool isZero() const;

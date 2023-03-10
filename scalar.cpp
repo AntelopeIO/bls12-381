@@ -1,6 +1,6 @@
 #include "bls12_381.hpp"
 
-vector<uint8_t> HexToBytes(const string s)
+vector<uint8_t> hexToBytes(const string& s)
 {
     uint64_t start_idx = 0;
     if(s[0] == '0' && s[1] == 'x')
@@ -24,7 +24,7 @@ vector<uint8_t> HexToBytes(const string s)
     return bytes;
 }
 
-string BytesToHex(const vector<uint8_t>& in)
+string bytesToHex(const vector<uint8_t>& in)
 {
     constexpr char hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     string s(2 + in.size() * 2, ' ');

@@ -12,94 +12,38 @@ fp::fp(const fp& e) : d{e.d[0], e.d[1], e.d[2], e.d[3], e.d[4], e.d[5]}
 {
 }
 
-fp fp::fromBytes(const array<uint8_t, 48>& in)
+fp fp::fromBytesBE(const span<const uint8_t, 48> in)
 {
-    array<uint64_t, 6> d;
-    uint64_t a;
-    for(uint64_t i = 0; i < 6; i++)
-    {
-        a = 48 - i*8;
-        d[i] = 
-            static_cast<uint64_t>(in[a-1])     | static_cast<uint64_t>(in[a-2])<< 8 |
-            static_cast<uint64_t>(in[a-3])<<16 | static_cast<uint64_t>(in[a-4])<<24 |
-            static_cast<uint64_t>(in[a-5])<<32 | static_cast<uint64_t>(in[a-6])<<40 |
-            static_cast<uint64_t>(in[a-7])<<48 | static_cast<uint64_t>(in[a-8])<<56;
-    }
-    fp e(d);
-    if(!e.isValid())
-    {
-        throw invalid_argument("field element invalid!");
-    }
+    fp e = fp(scalar::fromBytesBE<6>(in));
+    if(!e.isValid()) throw invalid_argument("field element invalid!");
     return e.toMont();
 }
 
-fp fp::fromString(const string& s)
+fp fp::fromBytesLE(const span<const uint8_t, 48> in)
 {
-    uint64_t start_idx = 0;
-    if(s[0] == '0' && s[1] == 'x')
-    {
-        start_idx = 2;
-    }
-
-    if((start_idx == 0 && s.length() != 48 * 2) || (start_idx == 2 && s.length() != 48 * 2 + 2))
-    {
-        throw invalid_argument("string length invalid!");
-    }
-
-    array<uint8_t, 48> bytes;
-    for (size_t i = 0, j = start_idx; i < 48; i++, j += 2)
-    {
-        bytes[i] = (s[j] % 32 + 9) % 25 * 16 + (s[j+1] % 32 + 9) % 25;
-    }
-
-    return fromBytes(bytes);
+    fp e = fp(scalar::fromBytesLE<6>(in));
+    if(!e.isValid()) throw invalid_argument("field element invalid!");
+    return e.toMont();
 }
 
-array<uint8_t, 48> fp::toBytes() const
+void fp::toBytesBE(const span<uint8_t, 48> out) const
 {
-    fp e = fromMont();
-    array<uint8_t, 48> out;
-    uint64_t a;
-    for(uint64_t i = 0; i < 6; i++)
-    {
-        a = 48 - i*8;
-        out[a-1] = static_cast<uint8_t>(e.d[i]);
-        out[a-2] = static_cast<uint8_t>(e.d[i] >> 8);
-        out[a-3] = static_cast<uint8_t>(e.d[i] >> 16);
-        out[a-4] = static_cast<uint8_t>(e.d[i] >> 24);
-        out[a-5] = static_cast<uint8_t>(e.d[i] >> 32);
-        out[a-6] = static_cast<uint8_t>(e.d[i] >> 40);
-        out[a-7] = static_cast<uint8_t>(e.d[i] >> 48);
-        out[a-8] = static_cast<uint8_t>(e.d[i] >> 56);
-        
-        // little endian bytes:
-        //a = i * 8;
-        //out[a  ] = static_cast<uint8_t>(e.d[i]);
-        //out[a+1] = static_cast<uint8_t>(e.d[i] >> 8);
-        //out[a+2] = static_cast<uint8_t>(e.d[i] >> 16);
-        //out[a+3] = static_cast<uint8_t>(e.d[i] >> 24);
-        //out[a+4] = static_cast<uint8_t>(e.d[i] >> 32);
-        //out[a+5] = static_cast<uint8_t>(e.d[i] >> 40);
-        //out[a+6] = static_cast<uint8_t>(e.d[i] >> 48);
-        //out[a+7] = static_cast<uint8_t>(e.d[i] >> 56);
-    }
-    return out;
+    scalar::toBytesBE<6>(fromMont().d, out);
 }
 
-string fp::toString() const
+void fp::toBytesLE(const span<uint8_t, 48> out) const
 {
-    fp e = fromMont();
-    constexpr char hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-    string s(2 + 48 * 2, ' ');
-    s[0] = '0';
-    s[1] = 'x';
-    for(uint64_t i = 0; i < 48; ++i)
-    {
-        uint8_t byte = static_cast<uint8_t>(e.d[(47-i)/8] >> ((47-i)%8)*8);
-        s[2 + 2*i]     = hexmap[(byte & 0xF0) >> 4];
-        s[2 + 2*i+1]   = hexmap[ byte & 0x0F      ];
-    }
-    return s;
+    scalar::toBytesLE<6>(fromMont().d, out);
+}
+
+array<uint8_t, 48> fp::toBytesBE() const
+{
+    return scalar::toBytesBE<6>(fromMont().d);
+}
+
+array<uint8_t, 48> fp::toBytesLE() const
+{
+    return scalar::toBytesLE<6>(fromMont().d);
 }
 
 fp fp::zero()
@@ -139,18 +83,7 @@ bool fp::isOne() const
 
 int64_t fp::cmp(const fp& e) const
 {
-    for(int64_t i = 5; i >= 0; i--)
-    {
-        if(d[i] > e.d[i])
-        {
-            return 1;
-        }
-        else if(d[i] < e.d[i])
-        {
-            return -1;
-        }
-    }
-    return 0;
+    return scalar::cmp<6>(d, e.d);
 }
 
 bool fp::equal(const fp& e) const
@@ -408,36 +341,45 @@ fp2::fp2(const fp2& e) : c0(e.c0), c1(e.c1)
 {
 }
 
-fp2 fp2::fromBytes(const array<uint8_t, 96>& in)
+fp2 fp2::fromBytesBE(const span<const uint8_t, 96> in)
 {
-    fp c1 = fp::fromBytes(*reinterpret_cast<const array<uint8_t, 48>*>(&in[0]));
-    fp c0 = fp::fromBytes(*reinterpret_cast<const array<uint8_t, 48>*>(&in[48]));
+    fp c1 = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[48]));
+    fp c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]));
     return fp2({c0, c1});
 }
 
-fp2 fp2::fromString(const string& s)
+fp2 fp2::fromBytesLE(const span<const uint8_t, 96> in)
 {
-    uint64_t start_idx = 0;
-    if(s[0] == '0' && s[1] == 'x')
-    {
-        start_idx = 2;
-    }
-
-    if((start_idx == 0 && s.length() != 96 * 2) || (start_idx == 2 && s.length() != 96 * 2 + 2))
-    {
-        throw invalid_argument("string length invalid!");
-    }
-
-    fp c1 = fp::fromString(s.substr(start_idx, 48 * 2));
-    fp c0 = fp::fromString(s.substr(start_idx + 48 * 2, 48 * 2));
+    fp c0 = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[48]));
+    fp c1 = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[96]));
     return fp2({c0, c1});
 }
 
-array<uint8_t, 96> fp2::toBytes() const
+void fp2::toBytesBE(const span<uint8_t, 96> out) const
+{
+    memcpy(&out[ 0], &c1.toBytesBE()[0], 48);
+    memcpy(&out[48], &c0.toBytesBE()[0], 48);
+}
+
+void fp2::toBytesLE(const span<uint8_t, 96> out) const
+{
+    memcpy(&out[ 0], &c0.toBytesLE()[0], 48);
+    memcpy(&out[48], &c1.toBytesLE()[0], 48);
+}
+
+array<uint8_t, 96> fp2::toBytesBE() const
 {
     array<uint8_t, 96> out;
-    memcpy(&out[ 0], &c1.toBytes()[0], 48);
-    memcpy(&out[48], &c0.toBytes()[0], 48);
+    memcpy(&out[ 0], &c1.toBytesBE()[0], 48);
+    memcpy(&out[48], &c0.toBytesBE()[0], 48);
+    return out;
+}
+
+array<uint8_t, 96> fp2::toBytesLE() const
+{
+    array<uint8_t, 96> out;
+    memcpy(&out[ 0], &c0.toBytesLE()[0], 48);
+    memcpy(&out[48], &c1.toBytesLE()[0], 48);
     return out;
 }
 
@@ -749,39 +691,51 @@ fp6::fp6(const fp6& e) : c0(e.c0), c1(e.c1), c2(e.c2)
 {
 }
 
-fp6 fp6::fromBytes(const array<uint8_t, 288>& in)
+fp6 fp6::fromBytesBE(const span<const uint8_t, 288> in)
 {
-    fp2 c2 = fp2::fromBytes(*reinterpret_cast<const array<uint8_t, 96>*>(&in[0]));
-    fp2 c1 = fp2::fromBytes(*reinterpret_cast<const array<uint8_t, 96>*>(&in[96]));
-    fp2 c0 = fp2::fromBytes(*reinterpret_cast<const array<uint8_t, 96>*>(&in[192]));
+    fp2 c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
+    fp2 c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    fp2 c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]));
     return fp6({c0, c1, c2});
 }
 
-fp6 fp6::fromString(const string& s)
+fp6 fp6::fromBytesLE(const span<const uint8_t, 288> in)
 {
-    uint64_t start_idx = 0;
-    if(s[0] == '0' && s[1] == 'x')
-    {
-        start_idx = 2;
-    }
-
-    if((start_idx == 0 && s.length() != 288 * 2) || (start_idx == 2 && s.length() != 288 * 2 + 2))
-    {
-        throw invalid_argument("string length invalid!");
-    }
-
-    fp2 c2 = fp2::fromString(s.substr(start_idx, 96 * 2));
-    fp2 c1 = fp2::fromString(s.substr(start_idx + 96 * 2, 96 * 2));
-    fp2 c0 = fp2::fromString(s.substr(start_idx + 96 * 4, 96 * 2));
+    fp2 c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
+    fp2 c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    fp2 c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]));
     return fp6({c0, c1, c2});
 }
 
-array<uint8_t, 288> fp6::toBytes() const
+void fp6::toBytesBE(const span<uint8_t, 288> out) const
+{
+    memcpy(&out[  0], &c2.toBytesBE()[0], 96);
+    memcpy(&out[ 96], &c1.toBytesBE()[0], 96);
+    memcpy(&out[192], &c0.toBytesBE()[0], 96);
+}
+
+void fp6::toBytesLE(const span<uint8_t, 288> out) const
+{
+    memcpy(&out[  0], &c0.toBytesBE()[0], 96);
+    memcpy(&out[ 96], &c1.toBytesBE()[0], 96);
+    memcpy(&out[192], &c2.toBytesBE()[0], 96);
+}
+
+array<uint8_t, 288> fp6::toBytesBE() const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &c2.toBytes()[0], 96);
-    memcpy(&out[ 96], &c1.toBytes()[0], 96);
-    memcpy(&out[192], &c0.toBytes()[0], 96);
+    memcpy(&out[  0], &c2.toBytesBE()[0], 96);
+    memcpy(&out[ 96], &c1.toBytesBE()[0], 96);
+    memcpy(&out[192], &c0.toBytesBE()[0], 96);
+    return out;
+}
+
+array<uint8_t, 288> fp6::toBytesLE() const
+{
+    array<uint8_t, 288> out;
+    memcpy(&out[  0], &c0.toBytesBE()[0], 96);
+    memcpy(&out[ 96], &c1.toBytesBE()[0], 96);
+    memcpy(&out[192], &c2.toBytesBE()[0], 96);
     return out;
 }
 
@@ -1180,36 +1134,45 @@ fp12::fp12(const fp12& e) : c0(e.c0), c1(e.c1)
 {
 }
 
-fp12 fp12::fromBytes(const array<uint8_t, 576>& in)
+fp12 fp12::fromBytesBE(const span<const uint8_t, 576> in)
 {
-    fp6 c1 = fp6::fromBytes(*reinterpret_cast<const array<uint8_t, 288>*>(&in[0]));
-    fp6 c0 = fp6::fromBytes(*reinterpret_cast<const array<uint8_t, 288>*>(&in[288]));
+    fp6 c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]));
+    fp6 c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]));
     return fp12({c0, c1});
 }
 
-fp12 fp12::fromString(const string& s)
+fp12 fp12::fromBytesLE(const span<const uint8_t, 576> in)
 {
-    uint64_t start_idx = 0;
-    if(s[0] == '0' && s[1] == 'x')
-    {
-        start_idx = 2;
-    }
-
-    if((start_idx == 0 && s.length() != 576 * 2) || (start_idx == 2 && s.length() != 576 * 2 + 2))
-    {
-        throw invalid_argument("string length invalid!");
-    }
-
-    fp6 c1 = fp6::fromString(s.substr(start_idx, 288 * 2));
-    fp6 c0 = fp6::fromString(s.substr(start_idx + 288 * 2, 288 * 2));
+    fp6 c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]));
+    fp6 c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]));
     return fp12({c0, c1});
 }
 
-array<uint8_t, 576> fp12::toBytes() const
+void fp12::toBytesBE(const span<uint8_t, 576> out) const
+{
+    memcpy(&out[  0], &c1.toBytesBE()[0], 288);
+    memcpy(&out[288], &c0.toBytesBE()[0], 288);
+}
+
+void fp12::toBytesLE(const span<uint8_t, 576> out) const
+{
+    memcpy(&out[  0], &c0.toBytesBE()[0], 288);
+    memcpy(&out[288], &c1.toBytesBE()[0], 288);
+}
+
+array<uint8_t, 576> fp12::toBytesBE() const
 {
     array<uint8_t, 576> out;
-    memcpy(&out[  0], &c1.toBytes()[0], 288);
-    memcpy(&out[288], &c0.toBytes()[0], 288);
+    memcpy(&out[  0], &c1.toBytesBE()[0], 288);
+    memcpy(&out[288], &c0.toBytesBE()[0], 288);
+    return out;
+}
+
+array<uint8_t, 576> fp12::toBytesLE() const
+{
+    array<uint8_t, 576> out;
+    memcpy(&out[  0], &c0.toBytesBE()[0], 288);
+    memcpy(&out[288], &c1.toBytesBE()[0], 288);
     return out;
 }
 
