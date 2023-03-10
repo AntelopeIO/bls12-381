@@ -55,13 +55,17 @@ g1 g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
     {
         return zero();
     }
-    // reconstruct point
+    // reconstruct point from x coordinate
     bool ysign = ((in[0] >> 5) & 1) == 1;
     g1 p;
-    array<uint8_t, 48> buf;
-    memcpy(buf.data(), in.data(), 48);
-    buf[0] &= 0x1f;  // erase 3 msbs from given input
-    p.x = fp::fromBytesBE(buf);
+    scalar::fromBytesBE(in, p.x.d);
+    // erase 3 msbs from given input and perform validity check
+    p.x.d[5] &= 0x1FFFFFFFFFFFFFFF;
+    p.x = p.x.toMont();
+    if(!p.x.isValid())
+    {
+        throw invalid_argument("invalid compressed corrdinate: not a valid field element");
+    }
     // BLS 12-381 curve equation:
     //      y^2 = x^3 + B
     //  =>  y   = +/- sqrt(x^3 + B)
@@ -676,16 +680,18 @@ g2 g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     {
         return zero();
     }
-    // reconstruct point
+    // reconstruct point from x coordinate
     bool ysign = ((in[0] >> 5) & 1) == 1;
     g2 p;
-    array<uint8_t, 48> buf1;
-    array<uint8_t, 48> buf0;
-    memcpy(buf1.data(), in.data(), 48);
-    memcpy(buf0.data(), in.data() + 48, 48);
-    buf1[0] &= 0x1f;  // erase 3 msbs from given input
-    p.x.c1 = fp::fromBytesBE(buf1);
-    p.x.c0 = fp::fromBytesBE(buf0);
+    scalar::fromBytesBE(span<const uint8_t, 48>(&in[0], &in[48]), p.x.c1.d);
+    p.x.c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]));
+    // erase 3 msbs from given input and perform validity check
+    p.x.c1.d[5] &= 0x1FFFFFFFFFFFFFFF;
+    p.x.c1 = p.x.c1.toMont();
+    if(!p.x.c1.isValid())
+    {
+        throw invalid_argument("invalid compressed corrdinate: not a valid field element");
+    }
     // BLS 12-381 curve equation:
     //      y^2 = x^3 + B
     //  =>  y   = +/- sqrt(x^3 + B)
