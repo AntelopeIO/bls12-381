@@ -10,9 +10,9 @@ using namespace bls12_381;
 
 array<uint64_t, 4> random_scalar()
 {
-    std::random_device rd;
-    std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<uint64_t> dis;
+    random_device rd;
+    mt19937_64 gen(rd());
+    uniform_int_distribution<uint64_t> dis;
 
     return {
         dis(gen) % fp::Q[0],
@@ -24,9 +24,9 @@ array<uint64_t, 4> random_scalar()
 
 fp random_fe()
 {
-    std::random_device rd;
-    std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<uint64_t> dis;
+    random_device rd;
+    mt19937_64 gen(rd());
+    uniform_int_distribution<uint64_t> dis;
 
     return fp({
         dis(gen) % 0xb9feffffffffaaab,

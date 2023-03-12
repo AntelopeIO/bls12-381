@@ -1,0 +1,1 @@
+/usr/bin/c++  -march=native -O3 -DNDEBUG CMakeFiles/chia_bench.dir/chia_bench.cpp.o -o chia_bench  ../src/libbls12_381.a 
