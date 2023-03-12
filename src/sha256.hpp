@@ -5,6 +5,9 @@
 
 using namespace std;
 
+namespace bls12_381
+{
+
 class sha256
 {
 
@@ -51,3 +54,5 @@ private:
     void pad();
     void revert(array<uint8_t, 32>& hash);
 };
+
+} // namespace bls12_381

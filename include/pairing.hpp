@@ -2,6 +2,9 @@
 #include <array>
 #include <vector>
 
+namespace bls12_381
+{
+
 class fp;
 class fp2;
 class fp6;
@@ -21,3 +24,5 @@ public:
     static fp12 calculate(vector<tuple<g1, g2>>& pairs);
     static void addPair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2);
 };
+
+} // namespace bls12_381

@@ -1,5 +1,8 @@
 #include "../include/bls12_381.hpp"
 
+namespace bls12_381
+{
+
 void _add(fp* z, const fp* x, const fp* y)
 {
     uint64_t carry, _;
@@ -636,3 +639,5 @@ tuple<uint64_t, uint64_t> madd3(
     tie(hi, _) = Add64(hi, e, carry);
     return {hi, lo};
 }
+
+} // namespace bls12_381

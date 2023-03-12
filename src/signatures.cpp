@@ -2,6 +2,9 @@
 #include "sha256.hpp"
 #include <set>
 
+namespace bls12_381
+{
+
 // Domain Separation Tags
 const string CIPHERSUITE_ID = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 const string POP_CIPHERSUITE_ID = "BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
@@ -610,3 +613,5 @@ bool pop_fast_aggregate_verify(
 
     return verify(aggregate_public_keys(pubkeys), message, signature);
 }
+
+} // namespace bls12_381

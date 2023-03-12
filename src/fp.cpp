@@ -1,5 +1,8 @@
 #include "../include/bls12_381.hpp"
 
+namespace bls12_381
+{
+
 fp::fp() : d{0, 0, 0, 0, 0, 0}
 {
 }
@@ -1468,3 +1471,5 @@ const array<fp2, 12> fp12::frobeniusCoeffs12 = array<fp2, 12>({
         fp({0x3726c30af242c66c, 0x7c2ac1aad1b6fe70, 0xa04007fbba4b14a2, 0xef517c3266341429, 0x0095ba654ed2226b, 0x02e370eccc86f7dd}),
     }),
 });
+
+} // namespace bls12_381

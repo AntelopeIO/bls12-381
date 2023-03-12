@@ -6,6 +6,9 @@ typedef unsigned __int128 uint128_t;
 
 using namespace std;
 
+namespace bls12_381
+{
+
 class fp;
 
 void _add(fp* z, const fp* x, const fp* y);
@@ -120,3 +123,5 @@ tuple<uint64_t, uint64_t> madd3(
     const uint64_t& d,
     const uint64_t& e
 );
+
+} // namespace bls12_381

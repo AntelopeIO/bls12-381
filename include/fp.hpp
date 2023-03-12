@@ -9,6 +9,9 @@
 
 using namespace std;
 
+namespace bls12_381
+{
+
 // element representation of 'fp' field which is the base field
 class fp
 {
@@ -201,3 +204,5 @@ public:
 
     static const array<fp2, 12> frobeniusCoeffs12;
 };
+
+} // namespace bls12_381

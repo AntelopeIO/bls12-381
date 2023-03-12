@@ -1,5 +1,8 @@
 #include "../include/bls12_381.hpp"
 
+namespace bls12_381
+{
+
 void pairing::doublingStep(array<fp2, 3>& coeff, g2& r)
 {
     // Adaptation of Formula 3 in https://eprint.iacr.org/2010/526.pdf
@@ -194,3 +197,5 @@ void pairing::addPair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
         });
     }
 }
+
+} // namespace bls12_381

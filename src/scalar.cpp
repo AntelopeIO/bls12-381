@@ -1,5 +1,8 @@
 #include "../include/bls12_381.hpp"
 
+namespace bls12_381
+{
+
 vector<uint8_t> hexToBytes(const string& s)
 {
     uint64_t start_idx = 0;
@@ -329,3 +332,5 @@ void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int
     // Remainder should be not be longer than the divisor.
     bn_rshb_low(d, a, sb, norm);
 }
+
+} // namespace bls12_381

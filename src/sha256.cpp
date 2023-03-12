@@ -3,6 +3,9 @@
 #include <sstream>
 #include <iomanip>
 
+namespace bls12_381
+{
+
 sha256::sha256(): m_blocklen(0), m_bitlen(0)
 {
     m_state[0] = 0x6a09e667;
@@ -186,3 +189,5 @@ string sha256::toString(const array<uint8_t, 32>& digest)
 
     return s.str();
 }
+
+} // namespace bls12_381

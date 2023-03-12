@@ -6,6 +6,7 @@
 #include <bls12_381.hpp>
 
 using namespace std;
+using namespace bls12_381;
 
 array<uint64_t, 4> random_scalar()
 {

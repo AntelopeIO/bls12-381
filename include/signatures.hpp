@@ -6,6 +6,9 @@
 
 using namespace std;
 
+namespace bls12_381
+{
+
 class g1;
 class g2;
 
@@ -159,3 +162,5 @@ bool pop_fast_aggregate_verify(
     const vector<uint8_t>& message,
     const g2& signature
 );
+
+} // namespace bls12_381

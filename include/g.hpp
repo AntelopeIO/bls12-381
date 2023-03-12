@@ -2,6 +2,9 @@
 #include <cmath>
 #include <vector>
 
+namespace bls12_381
+{
+
 class fp;
 class fp2;
 class fp6;
@@ -101,3 +104,5 @@ public:
     static const g2 BASE;
     static const array<uint64_t, 1> cofactorEFF;
 };
+
+} // namespace bls12_381

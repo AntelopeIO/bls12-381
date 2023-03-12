@@ -1,5 +1,8 @@
 #include "../include/bls12_381.hpp"
 
+namespace bls12_381
+{
+
 g1::g1() : x(fp()), y(fp()), z(fp())
 {
 }
@@ -1460,3 +1463,5 @@ const g2 g2::BASE = g2({
 });
 
 const array<uint64_t, 1> g2::cofactorEFF = {0xd201000000010000};
+
+} // namespace bls12_381

@@ -11,6 +11,8 @@
 
 using namespace std;
 
+namespace bls12_381
+{
 namespace scalar
 {
 
@@ -361,3 +363,5 @@ array<uint8_t, N> hexToBytes(const string& s)
     return out;
 }
 vector<uint8_t> hexToBytes(const string& s);
+
+} // namespace bls12_381
