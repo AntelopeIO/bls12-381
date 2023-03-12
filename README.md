@@ -1,7 +1,14 @@
 # bls12_381
-All things BLS!
+All things BLS! This library supports:
 
-Build:
+- G1/G2 Arithmetic & Pairing
+- Aggregate Signatures
+
+Coming soon:
+- Groth16 Proving System
+- SIMD support (including WASM)
+
+## Build
 ```
 mkdir build
 cd build
@@ -9,12 +16,12 @@ cmake ..
 make -j
 ```
 
-Run unit tests:
+## Run unit tests
 ```
-./src/unittest
+./test/unittests
 ```
 
-Clean:
+## Clean
 ```
 make clean
 ```
