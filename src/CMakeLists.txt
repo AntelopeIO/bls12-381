@@ -15,7 +15,3 @@ target_include_directories(
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
-
-enable_testing()
-add_executable(unittest test.cpp)
-target_link_libraries(unittest PRIVATE bls12_381)
