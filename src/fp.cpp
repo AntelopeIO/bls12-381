@@ -1,4 +1,4 @@
-#include "bls12_381.hpp"
+#include "../include/bls12_381.hpp"
 
 fp::fp() : d{0, 0, 0, 0, 0, 0}
 {

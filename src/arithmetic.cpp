@@ -1,4 +1,4 @@
-#include "bls12_381.hpp"
+#include "../include/bls12_381.hpp"
 
 void _add(fp* z, const fp* x, const fp* y)
 {

@@ -1,4 +1,4 @@
-#include "bls12_381.hpp"
+#include "../include/bls12_381.hpp"
 
 g1::g1() : x(fp()), y(fp()), z(fp())
 {

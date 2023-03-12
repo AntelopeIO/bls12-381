@@ -1,4 +1,4 @@
-#include "bls12_381.hpp"
+#include "../include/bls12_381.hpp"
 
 vector<uint8_t> hexToBytes(const string& s)
 {

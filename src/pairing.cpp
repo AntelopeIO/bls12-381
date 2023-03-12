@@ -1,4 +1,4 @@
-#include "bls12_381.hpp"
+#include "../include/bls12_381.hpp"
 
 void pairing::doublingStep(array<fp2, 3>& coeff, g2& r)
 {
