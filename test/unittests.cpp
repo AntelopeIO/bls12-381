@@ -925,31 +925,7 @@ void TestG2MapToCurve()
         }
     }
 }
-/*
-void TestG1G2PackUnpack()
-{
-    for(uint64_t i = 0; i < fuz; i++)
-    {
-        g1 p = random_g1().affine();
-        array<uint8_t, 48> compressed = p.pack();
-        g1 q = g1::unpack(compressed);
-        if(!p.equal(q))
-        {
-            throw invalid_argument("G1: packing/unpacking error");
-        }
-    }
-    for(uint64_t i = 0; i < fuz; i++)
-    {
-        g2 p = random_g2().affine();
-        array<uint8_t, 96> compressed = p.pack();
-        g2 q = g2::unpack(compressed);
-        if(!p.equal(q))
-        {
-            throw invalid_argument("G2: packing/unpacking error");
-        }
-    }
-}
-*/
+
 ///////////////////////////////////////////////////////////
 
 void TestPairingExpected()

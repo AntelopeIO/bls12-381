@@ -9,7 +9,7 @@ add_compile_options(-Wall)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -march=native")
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release"
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo"
     CACHE STRING "Possible values are empty, Debug, Release, RelWithDebInfo, MinSizeRel, ..."
     FORCE
   )

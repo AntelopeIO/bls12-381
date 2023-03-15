@@ -3,6 +3,68 @@
 namespace bls12_381
 {
 
+#ifdef __x86_64__
+void _add(fp* z, const fp* x, const fp* y)
+{
+    // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
+    // z => %rdi
+    // x => %rsi
+    // y => %rdx
+    // callee needs to restore registers r15, r14, r13, r12, rbx before returning
+    asm("push %r15;");
+    asm("push %r14;");
+    asm("push %r13;");
+    asm("push %r12;");
+    asm("push %rbx;");
+    asm("mov     (%rsi),%r8;");
+    asm("mov 0x08(%rsi),%r9;");
+    asm("mov 0x10(%rsi),%r10;");
+    asm("mov 0x18(%rsi),%r11;");
+    asm("mov 0x20(%rsi),%r12;");
+    asm("mov 0x28(%rsi),%r13;");
+    asm("add     (%rdx),%r8;");
+    asm("adc 0x08(%rdx),%r9;");
+    asm("adc 0x10(%rdx),%r10;");
+    asm("adc 0x18(%rdx),%r11;");
+    asm("adc 0x20(%rdx),%r12;");
+    asm("adc 0x28(%rdx),%r13;");
+    asm("mov %r8,%r14;");
+    asm("mov %r9,%r15;");
+    asm("mov %r10,%rcx;");
+    asm("mov %r11,%rdx;");
+    asm("mov %r12,%rsi;");
+    asm("mov %r13,%rbx;");
+    asm("mov $0xb9feffffffffaaab,%rax;");
+    asm("sub %rax,%r14;");
+    asm("mov $0x1eabfffeb153ffff,%rax;");
+    asm("sbb %rax,%r15;");
+    asm("mov $0x6730d2a0f6b0f624,%rax;");
+    asm("sbb %rax,%rcx;");
+    asm("mov $0x64774b84f38512bf,%rax;");
+    asm("sbb %rax,%rdx;");
+    asm("mov $0x4b1ba7b6434bacd7,%rax;");
+    asm("sbb %rax,%rsi;");
+    asm("mov $0x1a0111ea397fe69a,%rax;");
+    asm("sbb %rax,%rbx;");
+    asm("cmovae %r14,%r8;");
+    asm("cmovae %r15,%r9;");
+    asm("cmovae %rcx,%r10;");
+    asm("cmovae %rdx,%r11;");
+    asm("cmovae %rsi,%r12;");
+    asm("cmovae %rbx,%r13;");
+    asm("mov %r8,     (%rdi);");
+    asm("mov %r9, 0x08(%rdi);");
+    asm("mov %r10,0x10(%rdi);");
+    asm("mov %r11,0x18(%rdi);");
+    asm("mov %r12,0x20(%rdi);");
+    asm("mov %r13,0x28(%rdi);");
+    asm("pop %rbx;");
+    asm("pop %r12;");
+    asm("pop %r13;");
+    asm("pop %r14;");
+    asm("pop %r15;");
+}
+#else
 void _add(fp* z, const fp* x, const fp* y)
 {
     uint64_t carry, _;
@@ -27,6 +89,7 @@ void _add(fp* z, const fp* x, const fp* y)
         tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
     }
 }
+#endif
 
 void _addAssign(fp* x, const fp* y)
 {
