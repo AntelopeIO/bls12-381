@@ -694,12 +694,13 @@ void __neg(fp* z, const fp* x)
 }
 void _neg(fp* z, const fp* x)
 {
+    __neg(z, x);
+    // put zero check after __neg because gcc messes up %rdi in -O3 (doesn't restore it before inlining asm code)
     if(x->isZero())
     {
         *z = *x;
         return;
     }
-    __neg(z, x);
 }
 #else
 void _neg(fp* z, const fp* x)
@@ -719,6 +720,422 @@ void _neg(fp* z, const fp* x)
 }
 #endif
 
+#define __BMI2__ // TODO: delete!!!
+#define __ADX__  // TODO: delete!!!
+#if defined(__x86_64__) && defined(__BMI2__) && defined(__ADX__)
+void _mul(fp* z, const fp* x, const fp* y)
+{
+    // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
+    // z => %rdi (=> stack)
+    // x => %rsi
+    // y => %rdx (=> %rdi)
+    // callee needs to restore registers r15, r14, r13, r12, rbx before returning
+    asm("push %rbp;");
+    asm("push %r15;");
+    asm("push %r14;");
+    asm("push %r13;");
+    asm("push %r12;");
+    asm("push %rbx;");
+
+    // this pushes the constants (INP and MODULUS) used in this function to the stack
+    // TODO: should be referenced from data section instead
+    asm("mov $0x89f3fffcfffcfffd,%rax;");
+    asm("push %rax;");
+    asm("mov %rsp,%rbp;");
+    asm("mov $0xb9feffffffffaaab,%rax;");
+    asm("push %rax;");
+    asm("mov $0x1eabfffeb153ffff,%rax;");
+    asm("push %rax;");
+    asm("mov $0x6730d2a0f6b0f624,%rax;");
+    asm("push %rax;");
+    asm("mov $0x64774b84f38512bf,%rax;");
+    asm("push %rax;");
+    asm("mov $0x4b1ba7b6434bacd7,%rax;");
+    asm("push %rax;");
+    asm("mov $0x1a0111ea397fe69a,%rax;");
+    asm("push %rax;");
+
+    asm("push %rdi;");                  // save z for later
+    asm("mov %rdx,%rdi;");              // move y to %rdi to free up %rdx for use in mulx
+    asm("xor %rax,%rax;");
+    // i0
+    asm("mov      (%rsi),%rdx;");       // x0
+    asm("mulx     (%rdi),%rax,%rcx;");  // x0 * y0
+    asm("push %rax;");
+    asm("mulx 0x08(%rdi),%rax,%r8;");   // x0 * y1
+    asm("adcx %rax,%rcx;");
+    asm("mulx 0x10(%rdi),%rax,%r9;");   // x0 * y2
+    asm("adcx %rax,%r8;");
+    asm("mulx 0x18(%rdi),%rax,%r10;");  // x0 * y3
+    asm("adcx %rax,%r9;");
+    asm("mulx 0x20(%rdi),%rax,%r11;");  // x0 * y4
+    asm("adcx %rax,%r10;");
+    asm("mulx 0x28(%rdi),%rax,%r12;");  // x0 * y5
+    asm("adcx %rax,%r11;");
+    asm("adc  $0,%r12;");
+    // i1
+    asm("mov 0x08(%rsi),%rdx;");        // x1
+    asm("xor %r13,%r13;");
+    asm("mulx     (%rdi),%rax,%rbx;");  // x1 * y0
+    asm("adox %rax,%rcx;");
+    asm("adcx %rbx,%r8;");
+    asm("push %rcx;");
+    asm("mulx 0x08(%rdi),%rax,%rbx;");  // x1 * y1
+    asm("adox %rax,%r8;");
+    asm("adcx %rbx,%r9;");
+    asm("mulx 0x10(%rdi),%rax,%rbx;");  // x1 * y2
+    asm("adox %rax,%r9;");
+    asm("adcx %rbx,%r10;");
+    asm("mulx 0x18(%rdi),%rax,%rbx;");  // x1 * y3
+    asm("adox %rax,%r10;");
+    asm("adcx %rbx,%r11;");
+    asm("mulx 0x20(%rdi),%rax,%rbx;");  // x1 * y4
+    asm("adox %rax,%r11;");
+    asm("adcx %rbx,%r12;");
+    asm("mulx 0x28(%rdi),%rax,%rbx;");  // x1 * y5
+    asm("adox %rax,%r12;");
+    asm("adox %r13,%r13;");
+    asm("adcx %rbx,%r13;");
+    // i2
+    asm("mov 0x10(%rsi),%rdx;");        // x2
+    asm("xor %r14,%r14;");
+    asm("mulx     (%rdi),%rax,%rbx;");  // x2 * y0
+    asm("adox %rax,%r8;");
+    asm("adcx %rbx,%r9;");
+    asm("mulx 0x08(%rdi),%rax,%rbx;");  // x2 * y1
+    asm("adox %rax,%r9;");
+    asm("adcx %rbx,%r10;");
+    asm("mulx 0x10(%rdi),%rax,%rbx;");  // x2 * y2
+    asm("adox %rax,%r10;");
+    asm("adcx %rbx,%r11;");
+    asm("mulx 0x18(%rdi),%rax,%rbx;");  // x2 * y3
+    asm("adox %rax,%r11;");
+    asm("adcx %rbx,%r12;");
+    asm("mulx 0x20(%rdi),%rax,%rbx;");  // x2 * y4
+    asm("adox %rax,%r12;");
+    asm("adcx %rbx,%r13;");
+    asm("mulx 0x28(%rdi),%rax,%rbx;");  // x2 * y5
+    asm("adox %rax,%r13;");
+    asm("adox %r14,%r14;");
+    asm("adcx %rbx,%r14;");
+    // i3
+    asm("mov 0x18(%rsi),%rdx;");        // x3
+    asm("xor %r15,%r15;");
+    asm("mulx     (%rdi),%rax,%rbx;");  // x3 * y0
+    asm("adox %rax,%r9;");
+    asm("adcx %rbx,%r10;");
+    asm("mulx 0x08(%rdi),%rax,%rbx;");  // x3 * y1
+    asm("adox %rax,%r10;");
+    asm("adcx %rbx,%r11;");
+    asm("mulx 0x10(%rdi),%rax,%rbx;");  // x3 * y2
+    asm("adox %rax,%r11;");
+    asm("adcx %rbx,%r12;");
+    asm("mulx 0x18(%rdi),%rax,%rbx;");  // x3 * y3
+    asm("adox %rax,%r12;");
+    asm("adcx %rbx,%r13;");
+    asm("mulx 0x20(%rdi),%rax,%rbx;");  // x3 * y4
+    asm("adox %rax,%r13;");
+    asm("adcx %rbx,%r14;");
+    asm("mulx 0x28(%rdi),%rax,%rbx;");  // x3 * y5
+    asm("adox %rax,%r14;");
+    asm("adox %r15,%r15;");
+    asm("adcx %rbx,%r15;");
+    // i4
+    asm("mov 0x20(%rsi),%rdx;");        // x4
+    asm("xor %rcx,%rcx;");
+    asm("mulx     (%rdi),%rax,%rbx;");  // x4 * y0
+    asm("adox %rax,%r10;");
+    asm("adcx %rbx,%r11;");
+    asm("mulx 0x08(%rdi),%rax,%rbx;");  // x4 * y1
+    asm("adox %rax,%r11;");
+    asm("adcx %rbx,%r12;");
+    asm("mulx 0x10(%rdi),%rax,%rbx;");  // x4 * y2
+    asm("adox %rax,%r12;");
+    asm("adcx %rbx,%r13;");
+    asm("mulx 0x18(%rdi),%rax,%rbx;");  // x4 * y3
+    asm("adox %rax,%r13;");
+    asm("adcx %rbx,%r14;");
+    asm("mulx 0x20(%rdi),%rax,%rbx;");  // x4 * y4
+    asm("adox %rax,%r14;");
+    asm("adcx %rbx,%r15;");
+    asm("mulx 0x28(%rdi),%rax,%rbx;");  // x4 * y5
+    asm("adox %rax,%r15;");
+    asm("adox %rcx,%rcx;");
+    asm("adcx %rbx,%rcx;");
+    // i5
+    asm("mov 0x28(%rsi),%rdx;");        // x5
+    asm("xor %rsi,%rsi;");
+    asm("mulx     (%rdi),%rax,%rbx;");  // x5 * y0
+    asm("adox %rax,%r11;");
+    asm("adcx %rbx,%r12;");
+    asm("mulx 0x08(%rdi),%rax,%rbx;");  // x5 * y1
+    asm("adox %rax,%r12;");
+    asm("adcx %rbx,%r13;");
+    asm("mulx 0x10(%rdi),%rax,%rbx;");  // x5 * y2
+    asm("adox %rax,%r13;");
+    asm("adcx %rbx,%r14;");
+    asm("mulx 0x18(%rdi),%rax,%rbx;");  // x5 * y3
+    asm("adox %rax,%r14;");
+    asm("adcx %rbx,%r15;");
+    asm("mulx 0x20(%rdi),%rax,%rbx;");  // x5 * y4
+    asm("adox %rax,%r15;");
+    asm("adcx %rbx,%rcx;");
+    asm("mulx 0x28(%rdi),%rax,%rbx;");  // x5 * y5
+    asm("adox %rax,%rcx;");
+    asm("adox %rbx,%rsi;");
+    asm("adc $0,%rsi;");
+
+    asm("pop %rdi;");
+    asm("pop %rbx;");
+    asm("push %rsi;");
+
+    // montgomery reduction
+    asm("xor %rax,%rax;");
+    // i0
+    asm("mov %rbx, %rdx");
+    asm("mulx      (%rbp),%rdx,%rsi;");
+    asm("mulx -0x08(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rdx,%%rsi;" : : "m" (fp::INP));
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[0])); // j0
+    asm("adox %rax,%rbx;");
+    asm("adcx %rsi,%rdi;");
+    asm("mulx -0x10(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[1])); // j1
+    asm("adox %rax,%rdi;");
+    asm("adcx %rsi,%r8;");
+    asm("mulx -0x18(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[2])); // j2
+    asm("adox %rax,%r8;");
+    asm("adcx %rsi,%r9;");
+    asm("mulx -0x20(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[3])); // j3
+    asm("adox %rax,%r9;");
+    asm("adcx %rsi,%r10;");
+    asm("mulx -0x28(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[4])); // j4
+    asm("adox %rax,%r10;");
+    asm("adcx %rsi,%r11;");
+    asm("mulx -0x30(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[5])); // j5
+    asm("adox %rax,%r11;");
+    asm("adcx %rsi,%r12;");
+    asm("adox %rbx,%r12;");
+    asm("adcx %rbx,%rbx;");
+    asm("mov $0,%rax;");
+    asm("adox %rax,%rbx;");
+    asm("xor %rax,%rax;");
+    // i1
+    asm("mov %rdi,%rdx;");
+    asm("mulx      (%rbp),%rdx,%rsi;");
+    asm("mulx -0x08(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rdx,%%rsi;" : : "m" (fp::INP));
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[0])); // j0
+    asm("adox %rax,%rdi;");
+    asm("adcx %rsi,%r8;");
+    asm("mulx -0x10(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[1])); // j1
+    asm("adox %rax,%r8;");
+    asm("adcx %rsi,%r9;");
+    asm("mulx -0x18(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[2])); // j2
+    asm("adox %rax,%r9;");
+    asm("adcx %rsi,%r10;");
+    asm("mulx -0x20(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[3])); // j3
+    asm("adox %rax,%r10;");
+    asm("adcx %rsi,%r11;");
+    asm("mulx -0x28(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[4])); // j4
+    asm("adox %rax,%r11;");
+    asm("adcx %rsi,%r12;");
+    asm("mulx -0x30(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[5])); // j5
+    asm("adox %rax,%r12;");
+    asm("adcx %rsi,%r13;");
+    asm("adox %rbx,%r13;");
+    asm("adcx %rdi,%rdi;");
+    asm("mov $0,%rax;");
+    asm("adox %rax,%rdi;");
+    asm("xor %rax,%rax;");
+    // i2
+    asm("mov %r8,%rdx;");
+    asm("mulx      (%rbp),%rdx,%rsi;");
+    asm("mulx -0x08(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rdx,%%rsi;" : : "m" (fp::INP));
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[0])); // j0
+    asm("adox %rax,%r8;");
+    asm("adcx %rsi,%r9;");
+    asm("mulx -0x10(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[1])); // j1
+    asm("adox %rax,%r9;");
+    asm("adcx %rsi,%r10;");
+    asm("mulx -0x18(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[2])); // j2
+    asm("adox %rax,%r10;");
+    asm("adcx %rsi,%r11;");
+    asm("mulx -0x20(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[3])); // j3
+    asm("adox %rax,%r11;");
+    asm("adcx %rsi,%r12;");
+    asm("mulx -0x28(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[4])); // j4
+    asm("adox %rax,%r12;");
+    asm("adcx %rsi,%r13;");
+    asm("mulx -0x30(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[5])); // j5
+    asm("adox %rax,%r13;");
+    asm("adcx %rsi,%r14;");
+    asm("adox %rdi,%r14;");
+    asm("adcx %r8,%r8;");
+    asm("mov $0,%rax;");
+    asm("adox %rax,%r8;");
+    asm("xor %rax,%rax;");
+    // i3
+    asm("mov %r9,%rdx;");
+    asm("mulx      (%rbp),%rdx,%rsi;");
+    asm("mulx -0x08(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rdx,%%rsi;" : : "m" (fp::INP));
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[0])); // j0
+    asm("adox %rax,%r9;");
+    asm("adcx %rsi,%r10;");
+    asm("mulx -0x10(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[1])); // j1
+    asm("adox %rax,%r10;");
+    asm("adcx %rsi,%r11;");
+    asm("mulx -0x18(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[2])); // j2
+    asm("adox %rax,%r11;");
+    asm("adcx %rsi,%r12;");
+    asm("mulx -0x20(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[3])); // j3
+    asm("adox %rax,%r12;");
+    asm("adcx %rsi,%r13;");
+    asm("mulx -0x28(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[4])); // j4
+    asm("adox %rax,%r13;");
+    asm("adcx %rsi,%r14;");
+    asm("mulx -0x30(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[5])); // j5
+    asm("adox %rax,%r14;");
+    asm("adcx %rsi,%r15;");
+    asm("adox %r8,%r15;");
+    asm("adcx %r9,%r9;");
+    asm("mov $0,%rax;");
+    asm("adox %rax,%r9;");
+    asm("xor %rax,%rax;");
+    // i4
+    asm("mov %r10,%rdx;");
+    asm("mulx      (%rbp),%rdx,%rsi;");
+    asm("mulx -0x08(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rdx,%%rsi;" : : "m" (fp::INP));
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[0])); // j0
+    asm("adox %rax,%r10;");
+    asm("adcx %rsi,%r11;");
+    asm("mulx -0x10(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[1])); // j1
+    asm("adox %rax,%r11;");
+    asm("adcx %rsi,%r12;");
+    asm("mulx -0x18(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[2])); // j2
+    asm("adox %rax,%r12;");
+    asm("adcx %rsi,%r13;");
+    asm("mulx -0x20(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[3])); // j3
+    asm("adox %rax,%r13;");
+    asm("adcx %rsi,%r14;");
+    asm("mulx -0x28(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[4])); // j4
+    asm("adox %rax,%r14;");
+    asm("adcx %rsi,%r15;");
+    asm("mulx -0x30(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[5])); // j5
+    asm("adox %rax,%r15;");
+    asm("adcx %rsi,%rcx;");
+    asm("adox %r9,%rcx;");
+    asm("adcx %r10,%r10;");
+    asm("mov $0,%rax;");
+    asm("adox %rax,%r10;");
+    asm("xor %rax,%rax;");
+    // i5
+    asm("mov %r11,%rdx;");
+    asm("mulx      (%rbp),%rdx,%rsi;");
+    asm("mulx -0x08(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rdx,%%rsi;" : : "m" (fp::INP));
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[0])); // j0
+    asm("adox %rax,%r11;");
+    asm("adcx %rsi,%r12;");
+    asm("mulx -0x10(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[1])); // j1
+    asm("adox %rax,%r12;");
+    asm("adcx %rsi,%r13;");
+    asm("mulx -0x18(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[2])); // j2
+    asm("adox %rax,%r13;");
+    asm("adcx %rsi,%r14;");
+    asm("mulx -0x20(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[3])); // j3
+    asm("adox %rax,%r14;");
+    asm("adcx %rsi,%r15;");
+    asm("mulx -0x28(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[4])); // j4
+    asm("adox %rax,%r15;");
+    asm("adcx %rsi,%rcx;");
+    asm("mulx -0x30(%rbp),%rax,%rsi;");
+    //asm("mulx %0,%%rax,%%rsi;" : : "m" (fp::MODULUS.d[5])); // j5
+    asm("adox %rax,%rcx;");
+    asm("pop %rbx;");
+    asm("adcx %rsi,%rbx;");
+    asm("adox %r10,%rbx;");
+    // modular reduction
+    asm("mov %r12,%rax;");
+    asm("sub -0x08(%rbp),%rax;");
+    //asm("sub %0,%%rax;" : : "m" (fp::MODULUS.d[0]));
+    asm("mov %r13,%rsi;");
+    asm("sbb -0x10(%rbp),%rsi;");
+    //asm("sbb %0,%%rsi;" : : "m" (fp::MODULUS.d[1]));
+    asm("mov %r14,%rdi;");
+    asm("sbb -0x18(%rbp),%rdi;");
+    //asm("sbb %0,%%rdi;" : : "m" (fp::MODULUS.d[2]));
+    asm("mov %r15,%r8;");
+    asm("sbb -0x20(%rbp),%r8;");
+    //asm("sbb %0,%%r8;" : : "m" (fp::MODULUS.d[3]));
+    asm("mov %rcx,%r9;");
+    asm("sbb -0x28(%rbp),%r9;");
+    //asm("sbb %0,%%r9;" : : "m" (fp::MODULUS.d[4]));
+    asm("mov %rbx,%r10;");
+    asm("sbb -0x30(%rbp),%r10;");
+    //asm("sbb %0,%%r10;" : : "m" (fp::MODULUS.d[5]));
+    // out
+    asm("pop %r11;");
+    asm("cmovae %rax,%r12;");
+    asm("mov %r12,(%r11);");
+    asm("cmovae %rsi,%r13;");
+    asm("mov %r13,0x8(%r11);");
+    asm("cmovae %rdi,%r14;");
+    asm("mov %r14,0x10(%r11);");
+    asm("cmovae %r8,%r15;");
+    asm("mov %r15,0x18(%r11);");
+    asm("cmovae %r9,%rcx");
+    asm("mov %rcx,0x20(%r11);");
+    asm("cmovae %r10,%rbx;");
+    asm("mov %rbx,0x28(%r11);");
+
+    asm("pop %rax;");
+    asm("pop %rax;");
+    asm("pop %rax;");
+    asm("pop %rax;");
+    asm("pop %rax;");
+    asm("pop %rax;");
+    asm("pop %rax;");
+
+    asm("pop %rbx;");
+    asm("pop %r12;");
+    asm("pop %r13;");
+    asm("pop %r14;");
+    asm("pop %r15;");
+    asm("pop %rbp;");
+}
+#else
 void _mul(fp* z, const fp* x, const fp* y)
 {
     array<uint64_t, 6> t;
@@ -839,7 +1256,14 @@ void _mul(fp* z, const fp* x, const fp* y)
         tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
     }
 }
+#endif
 
+#if defined(__x86_64__) && defined(__BMI2__) && defined(__ADX__)
+void _square(fp* z, const fp* x)
+{
+    _mul(z, x, x);
+}
+#else
 void _square(fp* z, const fp* x)
 {
     array<uint64_t, 6> p;
@@ -944,6 +1368,7 @@ void _square(fp* z, const fp* x)
         tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
     }
 }
+#endif
 
 // Add64 returns the sum with carry of x, y and carry: sum = x + y + carry.
 // The carry input must be 0 or 1; otherwise the behavior is undefined.
