@@ -591,7 +591,7 @@ void TestG1MultiExpExpected()
     result = g1::multiExp(bases, scalars);
     if(!expected.equal(result))
     {
-        throw invalid_argument("bad multi-exponentiation");
+        throw invalid_argument("TestG1MultiExpExpected: bad multi-exponentiation");
     }
 }
 

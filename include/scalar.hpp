@@ -180,7 +180,7 @@ uint64_t bitLength(const array<uint64_t, N>& s)
 
 // shifts an array by a certain amount of bits to the right
 template<size_t N>
-void rsh(array<uint64_t, N>& arr, uint64_t bits)
+void rsh(array<uint64_t, N>& out, const array<uint64_t, N>& in, uint64_t bits)
 {
     uint64_t num_bytes = bits / 64;
     uint64_t num_bits  = bits % 64;
@@ -189,10 +189,10 @@ void rsh(array<uint64_t, N>& arr, uint64_t bits)
     {
         uint64_t i_from = i + num_bytes;
         uint64_t i_from_p1 = i + num_bytes + 1;
-        uint64_t v_from = i_from >= N ? 0 : arr[i_from];
-        uint64_t v_from_p1 = i_from_p1 >= N ? 0 : arr[i_from_p1];
+        uint64_t v_from = i_from >= N ? 0 : in[i_from];
+        uint64_t v_from_p1 = i_from_p1 >= N ? 0 : in[i_from_p1];
          
-        arr[i] = v_from >> num_bits | v_from_p1 << (64 - num_bits);
+        out[i] = v_from >> num_bits | v_from_p1 << (64 - num_bits);
     }
 }
 

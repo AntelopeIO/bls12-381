@@ -720,8 +720,8 @@ void _neg(fp* z, const fp* x)
 }
 #endif
 
-#define __BMI2__ // TODO: delete!!!
-#define __ADX__  // TODO: delete!!!
+//#define __BMI2__ // TODO: delete!!!
+//#define __ADX__  // TODO: delete!!!
 #if defined(__x86_64__) && defined(__BMI2__) && defined(__ADX__)
 void _mul(fp* z, const fp* x, const fp* y)
 {

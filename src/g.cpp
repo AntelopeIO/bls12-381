@@ -375,60 +375,52 @@ g1 g1::clearCofactor() const
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise an error is returned.
 // Result is assigned to point at first argument.
-g1 g1::multiExp(const vector<g1>& points, vector<array<uint64_t, 4>>& powers)
+g1 g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars)
 {
-    if(points.size() != powers.size())
+    if(points.size() != scalars.size())
     {
         throw invalid_argument("point and scalar vectors must have same length!");
     }
     uint64_t c = 3;
-    if(powers.size() >= 32)
+    if(scalars.size() >= 32)
     {
-        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(powers.size()))));
+        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(scalars.size()))));
     }
     uint64_t bucketSize = (1<<c)-1;
-    uint64_t numBits = 255;
+    uint64_t windowsSize = 255/c+1;
     vector<g1> windows;
-    windows.reserve(numBits/c+1);
+    windows.reserve(windowsSize);
     vector<g1> bucket;
-    bucket.reserve(bucketSize);
-    for(uint64_t i = 0; i < bucketSize; i++)
+    bucket.resize(bucketSize);
+    for(uint64_t j = 0; j < windowsSize; j++)
     {
-        bucket.push_back(zero());
-    }
-    g1 acc, sum;
-    uint64_t mask = (1<<c)-1;
-    uint64_t j = 0;
-    for(uint64_t cur = 0; cur <= numBits; cur += c)
-    {
-        acc = zero();
-        for(uint64_t i = 0; i < bucket.size(); i++)
+        for(uint64_t i = 0; i < bucketSize; i++)
         {
             bucket[i] = zero();
         }
-        for(uint64_t i = 0; i < powers.size(); i++)
+        for(uint64_t i = 0; i < scalars.size(); i++)
         {
-            uint64_t s0 = static_cast<uint64_t>(powers[i][0]);
-            uint64_t index = s0 & mask;
+            array<uint64_t, 4> shifted;
+            scalar::rsh(shifted, scalars[i], c*j);
+            uint64_t index = bucketSize & shifted[0];
             if(index != 0)
             {
                 bucket[index-1] = bucket[index-1].add(points[i]);
             }
-            scalar::rsh(powers[i], c);
         }
-        sum = zero();
-        for(int64_t i = bucket.size() - 1; i >= 0; i--)
+        g1 acc = zero();
+        g1 sum = zero();
+        for(int64_t i = bucketSize-1; i >= 0; i--)
         {
             sum = sum.add(bucket[i]);
             acc = acc.add(sum);
         }
         windows.push_back(acc);
-        j++;
     }
-    acc = zero();
-    for(int64_t i = windows.size() - 1; i >= 0; i--)
+    g1 acc = zero();
+    for(int64_t i = windows.size()-1; i >= 0; i--)
     {
-        for(j = 0; j < c; j++)
+        for(uint64_t j = 0; j < c; j++)
         {
             acc = acc.dbl();
         }
@@ -1045,60 +1037,52 @@ g2 g2::frobeniusMap(int64_t power) const
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise an error is returned.
 // Result is assigned to point at first argument.
-g2 g2::multiExp(const vector<g2>& points, vector<array<uint64_t, 4>>& powers)
+g2 g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars)
 {
-    if(points.size() != powers.size())
+    if(points.size() != scalars.size())
     {
         throw invalid_argument("point and scalar vectors must have same length!");
     }
     uint64_t c = 3;
-    if(powers.size() >= 32)
+    if(scalars.size() >= 32)
     {
-        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(powers.size()))));
+        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(scalars.size()))));
     }
     uint64_t bucketSize = (1<<c)-1;
-    uint64_t numBits = 255;
+    uint64_t windowsSize = 255/c+1;
     vector<g2> windows;
-    windows.reserve(numBits/c+1);
+    windows.reserve(windowsSize);
     vector<g2> bucket;
-    bucket.reserve(bucketSize);
-    for(uint64_t i = 0; i < bucketSize; i++)
+    bucket.resize(bucketSize);
+    for(uint64_t j = 0; j < windowsSize; j++)
     {
-        bucket.push_back(zero());
-    }
-    g2 acc, sum;
-    uint64_t mask = (1<<c)-1;
-    uint64_t j = 0;
-    for(uint64_t cur = 0; cur <= numBits; cur += c)
-    {
-        acc = zero();
-        for(uint64_t i = 0; i < bucket.size(); i++)
+        for(uint64_t i = 0; i < bucketSize; i++)
         {
             bucket[i] = zero();
         }
-        for(uint64_t i = 0; i < powers.size(); i++)
+        for(uint64_t i = 0; i < scalars.size(); i++)
         {
-            uint64_t s0 = static_cast<uint64_t>(powers[i][0]);
-            uint64_t index = s0 & mask;
+            array<uint64_t, 4> shifted;
+            scalar::rsh(shifted, scalars[i], c*j);
+            uint64_t index = bucketSize & shifted[0];
             if(index != 0)
             {
                 bucket[index-1] = bucket[index-1].add(points[i]);
             }
-            scalar::rsh(powers[i], c);
         }
-        sum = zero();
-        for(int64_t i = bucket.size() - 1; i >= 0; i--)
+        g2 acc = zero();
+        g2 sum = zero();
+        for(int64_t i = bucketSize-1; i >= 0; i--)
         {
             sum = sum.add(bucket[i]);
             acc = acc.add(sum);
         }
         windows.push_back(acc);
-        j++;
     }
-    acc = zero();
-    for(int64_t i = windows.size() - 1; i >= 0; i--)
+    g2 acc = zero();
+    for(int64_t i = windows.size()-1; i >= 0; i--)
     {
-        for(j = 0; j < c; j++)
+        for(uint64_t j = 0; j < c; j++)
         {
             acc = acc.dbl();
         }

@@ -47,7 +47,7 @@ public:
     g1 sub(const g1& e) const;
     template<size_t N> g1 mulScalar(const array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
-    static g1 multiExp(const vector<g1>& points, vector<array<uint64_t, 4>>& powers);
+    static g1 multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars);
     static g1 mapToCurve(const array<uint8_t, 48>& in);
     static tuple<fp, fp> swuMapG1(const fp& e);
     static void isogenyMapG1(fp& x, fp& y);
@@ -94,7 +94,7 @@ public:
     template<size_t N> g2 mulScalar(const array<uint64_t, N>& s) const;
     g2 clearCofactor() const;
     g2 frobeniusMap(int64_t power) const;
-    static g2 multiExp(const vector<g2>& points, vector<array<uint64_t, 4>>& powers);
+    static g2 multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars);
     static g2 mapToCurve(const fp2& e);
     static g2 fromMessage(const vector<uint8_t>& msg, const string& dst);
     static tuple<fp2, fp2> swuMapG2(const fp2& e);
