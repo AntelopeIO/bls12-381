@@ -947,7 +947,7 @@ void TestPairingExpected()
     g1 g1One = g1::one();
     g2 g2One = g2::one();
     vector<tuple<g1, g2>> v;
-    pairing::addPair(v, g1One, g2One);
+    pairing::add_pair(v, g1One, g2One);
     fp12 r = pairing::calculate(v);
     if(!r.equal(expected))
     {
@@ -968,7 +968,7 @@ void TestPairingNonDegeneracy()
     // e(g1^a, g2^b) != 1
     {
         vector<tuple<g1, g2>> v;
-        pairing::addPair(v, g1One, g2One);
+        pairing::add_pair(v, g1One, g2One);
         fp12 e = pairing::calculate(v);
         if(e.isOne())
         {
@@ -982,7 +982,7 @@ void TestPairingNonDegeneracy()
     // e(g1^a, 0) == 1
     {
         vector<tuple<g1, g2>> v;
-        pairing::addPair(v, g1One, g2Zero);
+        pairing::add_pair(v, g1One, g2Zero);
         fp12 e = pairing::calculate(v);
         if(!e.isOne())
         {
@@ -992,7 +992,7 @@ void TestPairingNonDegeneracy()
     // e(0, g2^b) == 1
     {
         vector<tuple<g1, g2>> v;
-        pairing::addPair(v, g1Zero, g2One);
+        pairing::add_pair(v, g1Zero, g2One);
         fp12 e = pairing::calculate(v);
         if(!e.isOne())
         {
@@ -1002,9 +1002,9 @@ void TestPairingNonDegeneracy()
     //
     {
         vector<tuple<g1, g2>> v;
-        pairing::addPair(v, g1Zero, g2One);
-        pairing::addPair(v, g1One, g2Zero);
-        pairing::addPair(v, g1Zero, g2Zero);
+        pairing::add_pair(v, g1Zero, g2One);
+        pairing::add_pair(v, g1One, g2Zero);
+        pairing::add_pair(v, g1Zero, g2Zero);
         fp12 e = pairing::calculate(v);
         if(!e.isOne())
         {
@@ -1028,10 +1028,10 @@ void TestPairingNonDegeneracy()
             "1250ebd871fc0a92a7b2d83168d0d727272d441befa15c503dd8e90ce98db3e7b6d194f60839c508a84305aaca1789b6"
         ));
         vector<tuple<g1, g2>> v;
-        pairing::addPair(v, g1Zero, g2One);
-        pairing::addPair(v, g1One, g2Zero);
-        pairing::addPair(v, g1Zero, g2Zero);
-        pairing::addPair(v, g1One, g2One);
+        pairing::add_pair(v, g1Zero, g2One);
+        pairing::add_pair(v, g1One, g2Zero);
+        pairing::add_pair(v, g1Zero, g2Zero);
+        pairing::add_pair(v, g1One, g2One);
         fp12 e = pairing::calculate(v);
         if(!e.equal(expected))
         {
@@ -1051,12 +1051,12 @@ void TestPairingBilinearity()
         g1 G1 = g1::one();
         g2 G2 = g2::one();
         vector<tuple<g1, g2>> v;
-        pairing::addPair(v, G1, G2);
+        pairing::add_pair(v, G1, G2);
         fp12 e0 = pairing::calculate(v);
         g1 P1 = G1.mulScalar(a);
         g2 P2 = G2.mulScalar(b);
         v = {};
-        pairing::addPair(v, P1, P2);
+        pairing::add_pair(v, P1, P2);
         fp12 e1 = pairing::calculate(v);
         e0 = e0.cyclotomicExp(c);
         if(!e0.equal(e1))
@@ -1076,14 +1076,14 @@ void TestPairingBilinearity()
         g1 G1 = g1::one();
         g2 G2 = g2::one();
         G1 = G1.mulScalar(c);
-        pairing::addPair(v, G1, G2);
+        pairing::add_pair(v, G1, G2);
         // RHS
         g1 P1 = g1::one();
         g2 P2 = g2::one();
         P1 = P1.mulScalar(a);
         P2 = P2.mulScalar(b);
         P1 = P1.neg();
-        pairing::addPair(v, P1, P2);
+        pairing::add_pair(v, P1, P2);
         // should be one
         if(!pairing::calculate(v).isOne())
         {
@@ -1102,14 +1102,14 @@ void TestPairingBilinearity()
         g1 G1 = g1::one();
         g2 G2 = g2::one();
         G2 = G2.mulScalar(c);
-        pairing::addPair(v, G1, G2);
+        pairing::add_pair(v, G1, G2);
         // RHS
         g1 H1 = g1::one();
         g2 H2 = g2::one();
         H1 = H1.mulScalar(a);
         H2 = H2.mulScalar(b);
         H1 = H1.neg();
-        pairing::addPair(v, H1, H2);
+        pairing::add_pair(v, H1, H2);
         // should be one
         if(!pairing::calculate(v).isOne())
         {
@@ -1135,7 +1135,7 @@ void TestPairingMulti()
         g2 P2 = g2::one();
         P1 = P1.mulScalar(a1);
         P2 = P2.mulScalar(a2);
-        pairing::addPair(v, P1, P2);
+        pairing::add_pair(v, P1, P2);
         // accumulate targetExp
         // t += (ai1 * ai2)
         array<uint64_t, 10> tmp = scalar::mul<10, 4, 4>(a1, a2);
@@ -1147,7 +1147,7 @@ void TestPairingMulti()
     g2 T2 = g2::one();
     T1 = T1.mulScalar(targetExp);
     T1 = T1.neg();
-    pairing::addPair(v, T1, T2);
+    pairing::add_pair(v, T1, T2);
     if(!pairing::calculate(v).isOne())
     {
         throw invalid_argument("fail multi pairing");

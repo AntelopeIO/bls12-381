@@ -3,7 +3,7 @@
 namespace bls12_381
 {
 
-void pairing::doublingStep(array<fp2, 3>& coeff, g2& r)
+void pairing::doubling_step(array<fp2, 3>& coeff, g2& r)
 {
     // Adaptation of Formula 3 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
@@ -37,7 +37,7 @@ void pairing::doublingStep(array<fp2, 3>& coeff, g2& r)
     coeff[2] = t[6].neg();
 }
 
-void pairing::additionStep(array<fp2, 3>& coeff, g2& r, g2& tp)
+void pairing::addition_step(array<fp2, 3>& coeff, g2& r, g2& tp)
 {
     // Algorithm 12 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
@@ -68,7 +68,7 @@ void pairing::additionStep(array<fp2, 3>& coeff, g2& r, g2& tp)
     coeff[2] = t[1];
 }
 
-void pairing::preCompute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
+void pairing::pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
 {
     // Algorithm 5 in  https://eprint.iacr.org/2019/077.pdf
     if(twistPoint.isZero())
@@ -79,24 +79,24 @@ void pairing::preCompute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
     int64_t k = 0;
     for(int64_t i = 64 - 2; i >= 0; i--)
     {
-        doublingStep(ellCoeffs[k], r);
+        doubling_step(ellCoeffs[k], r);
         if(((g2::cofactorEFF[0] >> i) & 1) == 1)
         {
             k++;
-            additionStep(ellCoeffs[k], r, twistPoint);
+            addition_step(ellCoeffs[k], r, twistPoint);
         }
         k++;
     }
 }
 
-fp12 pairing::millerLoop(vector<tuple<g1, g2>>& pairs)
+fp12 pairing::miller_loop(vector<tuple<g1, g2>>& pairs)
 {
     vector<array<array<fp2, 3>, 68>> ellCoeffs;
     //ellCoeffs.reserve(pairs.size());
     ellCoeffs.resize(pairs.size());
     for(uint64_t i = 0; i < pairs.size(); i++)
     {
-        preCompute(ellCoeffs[i], get<g2>(pairs[i]));
+        pre_compute(ellCoeffs[i], get<g2>(pairs[i]));
     }
     fp2 t[10];
     fp12 f = fp12::one();
@@ -129,7 +129,7 @@ fp12 pairing::millerLoop(vector<tuple<g1, g2>>& pairs)
     return f;
 }
 
-void pairing::finalExp(fp12& f)
+void pairing::final_exponentiation(fp12& f)
 {
     fp12 t[9];
     // easy part
@@ -182,12 +182,12 @@ fp12 pairing::calculate(vector<tuple<g1, g2>>& pairs)
     {
         return f;
     }
-    f = millerLoop(pairs);
-    finalExp(f);
+    f = miller_loop(pairs);
+    final_exponentiation(f);
     return f;
 }
 
-void pairing::addPair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
+void pairing::add_pair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
 {
     if(!(g1(e1).isZero() || g2(e2).isZero()))
     {

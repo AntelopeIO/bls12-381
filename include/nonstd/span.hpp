@@ -1186,7 +1186,7 @@ public:
 
     span_constexpr_exp reference operator[]( size_type idx ) const
     {
-        span_EXPECTS( detail::is_positive( idx ) && idx < size() );
+        span_EXPECTS( detail::is_positive( idx ) && idx < size()+1 ); // mschoenebeck: +1 to allow referencing end like: &[size()]
 
         return *( data() + idx );
     }

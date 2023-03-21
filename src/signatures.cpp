@@ -482,9 +482,9 @@ bool verify(
 )
 {
     vector<tuple<g1, g2>> v;
-    pairing::addPair(v, g1::one().neg(), signature);
+    pairing::add_pair(v, g1::one().neg(), signature);
     const g2 hashedPoint = g2::fromMessage(message, CIPHERSUITE_ID);
-    pairing::addPair(v, pubkey, hashedPoint);
+    pairing::add_pair(v, pubkey, hashedPoint);
 
     if(!pubkey.isOnCurve() || !pubkey.inCorrectSubgroup())
     {
@@ -527,7 +527,7 @@ bool aggregate_verify(
 )
 {
     vector<tuple<g1, g2>> v;
-    pairing::addPair(v, g1::one().neg(), signature);
+    pairing::add_pair(v, g1::one().neg(), signature);
 
     if(!signature.isOnCurve() || !signature.inCorrectSubgroup())
     {
@@ -560,7 +560,7 @@ bool aggregate_verify(
         {
             return false;
         }
-        pairing::addPair(v, pubkeys[i], g2::fromMessage(messages[i], CIPHERSUITE_ID));
+        pairing::add_pair(v, pubkeys[i], g2::fromMessage(messages[i], CIPHERSUITE_ID));
     }
 
     // 1 =? prod e(pubkey[i], hash[i]) * e(-g1, aggSig)
@@ -593,8 +593,8 @@ bool pop_verify(
     }
 
     vector<tuple<g1, g2>> v;
-    pairing::addPair(v, g1::one().neg(), signature_proof);
-    pairing::addPair(v, pubkey, hashedPoint);
+    pairing::add_pair(v, g1::one().neg(), signature_proof);
+    pairing::add_pair(v, pubkey, hashedPoint);
 
     // 1 =? prod e(pubkey[i], hash[i]) * e(-g1, aggSig)
     return fp12::one().equal(pairing::calculate(v));
