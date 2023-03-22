@@ -329,7 +329,7 @@ g1 derive_shild_g1_unhardened(
     bn_divn_low(quotient.data(), remainder.data(), nonce.data(), 4, q.data(), 4);
     nonce = {remainder[0], remainder[1], remainder[2], remainder[3]};
 
-    return g1(pk).add(g1::one().mulScalar(nonce));
+    return pk.add(g1::one().mulScalar(nonce));
 }
 
 g2 derive_child_g2_unhardened(
@@ -356,7 +356,7 @@ g2 derive_child_g2_unhardened(
     bn_divn_low(quotient.data(), remainder.data(), nonce.data(), 4, q.data(), 4);
     nonce = {remainder[0], remainder[1], remainder[2], remainder[3]};
 
-    return g2(pk).add(g2::one().mulScalar(nonce));
+    return pk.add(g2::one().mulScalar(nonce));
 }
 
 array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)

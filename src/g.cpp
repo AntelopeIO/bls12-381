@@ -338,24 +338,23 @@ g1 g1::affine() const
 
 g1 g1::add(const g1& e) const
 {
-    g1 b = e;
     // www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#addition-add-2007-bl
     if(isZero())
     {
-        return b;
+        return e;
     }
-    if(b.isZero())
+    if(e.isZero())
     {
         return *this;
     }
     fp t[9];
     _square(&t[7], &z);
-    _mul(&t[1], &b.x, &t[7]);
+    _mul(&t[1], &e.x, &t[7]);
     _mul(&t[2], &z, &t[7]);
-    _mul(&t[0], &b.y, &t[2]);
-    _square(&t[8], &b.z);
+    _mul(&t[0], &e.y, &t[2]);
+    _square(&t[8], &e.z);
     _mul(&t[3], &x, &t[8]);
-    _mul(&t[4], &b.z, &t[8]);
+    _mul(&t[4], &e.z, &t[8]);
     _mul(&t[2], &y, &t[4]);
     if(t[1].equal(t[3]))
     {
@@ -382,7 +381,7 @@ g1 g1::add(const g1& e) const
     _double(&t[6], &t[6]);
     _mul(&t[0], &t[0], &t[4]);
     _sub(&r.y, &t[0], &t[6]);
-    _add(&t[0], &z, &b.z);
+    _add(&t[0], &z, &e.z);
     _square(&t[0], &t[0]);
     _sub(&t[0], &t[0], &t[7]);
     _sub(&t[0], &t[0], &t[8]);
@@ -435,8 +434,8 @@ g1 g1::neg() const
 
 g1 g1::sub(const g1& e) const
 {
-    g1 c, d, b = e;
-    d = b.neg();
+    g1 c, d;
+    d = e.neg();
     c = this->add(d);
     return c;
 }
@@ -537,8 +536,7 @@ tuple<fp, fp> g1::swuMapG1(const fp& e)
         fp({0x052583c93555a7fe, 0x3b40d72430f93c82, 0x1b75faa0105ec983, 0x2527e7dc63851767, 0x99fffd1f34fc181d, 0x097cab54770ca0d3})
     };
     fp tv[4];
-    fp u = e;
-    _square(&tv[0], &u);
+    _square(&tv[0], &e);
     _mul(&tv[0], &tv[0], &params.z);
     _square(&tv[1], &tv[0]);
     fp x1;
@@ -576,7 +574,7 @@ tuple<fp, fp> g1::swuMapG1(const fp& e)
     }
     fp y;
     y2.sqrt(y);
-    if(y.sign() != u.sign())
+    if(y.sign() != e.sign())
     {
         _neg(&y, &y);
     }
@@ -962,24 +960,23 @@ bool g2::isZero() const
 
 bool g2::equal(const g2& e) const
 {
-    g2 b = e;
     if(isZero())
     {
-        return b.isZero();
+        return e.isZero();
     }
-    if(b.isZero())
+    if(e.isZero())
     {
         return isZero();
     }
     fp2 t[9];
     t[0] = z.square();
-    t[1] = b.z.square();
-    t[2] = t[0].mul(b.x);
+    t[1] = e.z.square();
+    t[2] = t[0].mul(e.x);
     t[3] = t[1].mul(x);
     t[0] = t[0].mul(z);
-    t[1] = t[1].mul(b.z);
+    t[1] = t[1].mul(e.z);
     t[1] = t[1].mul(y);
-    t[0] = t[0].mul(b.y);
+    t[0] = t[0].mul(e.y);
     return t[0].equal(t[1]) && t[2].equal(t[3]);
 }
 
@@ -1030,24 +1027,23 @@ g2 g2::affine() const
 
 g2 g2::add(const g2& e) const
 {
-    g2 b = e;
     // http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#addition-add-2007-bl
     if(isZero())
     {
-        return b;
+        return e;
     }
-    if(b.isZero())
+    if(e.isZero())
     {
         return *this;
     }
     fp2 t[9];
     t[7] = z.square();
-    t[1] = b.x.mul(t[7]);
+    t[1] = e.x.mul(t[7]);
     t[2] = z.mul(t[7]);
-    t[0] = b.y.mul(t[2]);
-    t[8] = b.z.square();
+    t[0] = e.y.mul(t[2]);
+    t[8] = e.z.square();
     t[3] = x.mul(t[8]);
-    t[4] = b.z.mul(t[8]);
+    t[4] = e.z.mul(t[8]);
     t[2] = y.mul(t[4]);
     if(t[1].equal(t[3]))
     {
@@ -1074,7 +1070,7 @@ g2 g2::add(const g2& e) const
     t[6] = t[6].dbl();
     t[0] = t[0].mul(t[4]);
     r.y = t[0].sub(t[6]);
-    t[0] = z.add(b.z);
+    t[0] = z.add(e.z);
     t[0] = t[0].square();
     t[0] = t[0].sub(t[7]);
     t[0] = t[0].sub(t[8]);
@@ -1127,8 +1123,8 @@ g2 g2::neg() const
 
 g2 g2::sub(const g2& e) const
 {
-    g2 c, d, b = e;
-    d = b.neg();
+    g2 c, d;
+    d = e.neg();
     c = this->add(d);
     return c;
 }
@@ -1245,9 +1241,8 @@ g2 g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scal
 // Input byte slice should be a valid field element, otherwise an error is returned.
 g2 g2::mapToCurve(const fp2& e)
 {
-    fp2 u = e;
     fp2 x, y, z = fp2::one();
-    tie(x, y) = swuMapG2(u);
+    tie(x, y) = swuMapG2(e);
     g2 p({x, y, z});
     p = p.isogenyMap();
     p = p.clearCofactor();
@@ -1311,8 +1306,7 @@ tuple<fp2, fp2> g2::swuMapG2(const fp2& e)
         }),
     };
     fp2 tv[4];
-    fp2 u = e;
-    tv[0] = u.square();
+    tv[0] = e.square();
     tv[0] = tv[0].mul(params.z);
     tv[1] = tv[0].square();
     fp2 x1;
@@ -1349,7 +1343,7 @@ tuple<fp2, fp2> g2::swuMapG2(const fp2& e)
     }
     fp2 y;
     y2.sqrt(y);
-    if(y.sign() != u.sign())
+    if(y.sign() != e.sign())
     {
         y = y.neg();
     }

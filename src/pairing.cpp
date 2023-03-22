@@ -94,7 +94,6 @@ void pairing::pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
 fp12 pairing::miller_loop(vector<tuple<g1, g2>>& pairs)
 {
     vector<array<array<fp2, 3>, 68>> ellCoeffs;
-    //ellCoeffs.reserve(pairs.size());
     ellCoeffs.resize(pairs.size());
     for(uint64_t i = 0; i < pairs.size(); i++)
     {
@@ -144,22 +143,17 @@ void pairing::final_exponentiation(fp12& f)
     t[1] = t[2].cyclotomicSquare();
     t[1] = t[1].conjugate();
     // hard part
-    //e.exp(&t[3], &t[2]);
     t[3] = t[2].cyclotomicExp(g2::cofactorEFF);
     t[3] = t[3].conjugate();
     t[4] = t[3].cyclotomicSquare();
     t[5] = t[1].mul(t[3]);
-    //e.exp(&t[1], &t[5]);
     t[1] = t[5].cyclotomicExp(g2::cofactorEFF);
     t[1] = t[1].conjugate();
-    //e.exp(&t[0], &t[1]);
     t[0] = t[1].cyclotomicExp(g2::cofactorEFF);
     t[0] = t[0].conjugate();
-    //e.exp(&t[6], &t[0]);
     t[6] = t[0].cyclotomicExp(g2::cofactorEFF);
     t[6] = t[6].conjugate();
     t[6].mulAssign(t[4]);
-    //e.exp(&t[4], &t[6]);
     t[4] = t[6].cyclotomicExp(g2::cofactorEFF);
     t[4] = t[4].conjugate();
     t[5] = t[5].conjugate();
@@ -191,11 +185,11 @@ fp12 pairing::calculate(vector<tuple<g1, g2>>& pairs)
 
 void pairing::add_pair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
 {
-    if(!(g1(e1).isZero() || g2(e2).isZero()))
+    if(!(e1.isZero() || e2.isZero()))
     {
         pairs.push_back({
-            g1(e1).affine(),
-            g2(e2).affine()
+            e1.affine(),
+            e2.affine()
         });
     }
 }
