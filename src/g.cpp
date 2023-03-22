@@ -17,11 +17,11 @@ g1::g1(const g1& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-g1 g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check)
+g1 g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
-    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]));
-    fp z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]));
+    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    fp z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]), check, raw);
     g1 p = g1({x, y, z});
     if(check && !p.isOnCurve())
     {
@@ -30,11 +30,11 @@ g1 g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check)
     return p;
 }
 
-g1 g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check)
+g1 g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
-    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]));
-    fp z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]));
+    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    fp z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]), check, raw);
     g1 p = g1({x, y, z});
     if(check && !p.isOnCurve())
     {
@@ -43,10 +43,10 @@ g1 g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check)
     return p;
 }
 
-g1 g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check)
+g1 g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
-    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]));
+    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -61,10 +61,10 @@ g1 g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check)
     return p;
 }
 
-g1 g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool check)
+g1 g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
-    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]));
+    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -121,21 +121,21 @@ g1 g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
     return p;
 }
 
-void g1::toJacobianBytesBE(const span<uint8_t, 144> out) const
+void g1::toJacobianBytesBE(const span<uint8_t, 144> out, const bool raw) const
 {
-    memcpy(&out[ 0], &x.toBytesBE()[0], 48);
-    memcpy(&out[48], &y.toBytesBE()[0], 48);
-    memcpy(&out[96], &z.toBytesBE()[0], 48);
+    memcpy(&out[ 0], &x.toBytesBE(raw)[0], 48);
+    memcpy(&out[48], &y.toBytesBE(raw)[0], 48);
+    memcpy(&out[96], &z.toBytesBE(raw)[0], 48);
 }
 
-void g1::toJacobianBytesLE(const span<uint8_t, 144> out) const
+void g1::toJacobianBytesLE(const span<uint8_t, 144> out, const bool raw) const
 {
-    memcpy(&out[ 0], &x.toBytesLE()[0], 48);
-    memcpy(&out[48], &y.toBytesLE()[0], 48);
-    memcpy(&out[96], &z.toBytesLE()[0], 48);
+    memcpy(&out[ 0], &x.toBytesLE(raw)[0], 48);
+    memcpy(&out[48], &y.toBytesLE(raw)[0], 48);
+    memcpy(&out[96], &z.toBytesLE(raw)[0], 48);
 }
 
-void g1::toAffineBytesBE(const span<uint8_t, 96> out) const
+void g1::toAffineBytesBE(const span<uint8_t, 96> out, const bool raw) const
 {
     if(isZero())
     {
@@ -143,11 +143,11 @@ void g1::toAffineBytesBE(const span<uint8_t, 96> out) const
         return;
     }
     g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE()[0], 48);
-    memcpy(&out[48], &r.y.toBytesBE()[0], 48);
+    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 48);
+    memcpy(&out[48], &r.y.toBytesBE(raw)[0], 48);
 }
 
-void g1::toAffineBytesLE(const span<uint8_t, 96> out) const
+void g1::toAffineBytesLE(const span<uint8_t, 96> out, const bool raw) const
 {
     if(isZero())
     {
@@ -155,8 +155,8 @@ void g1::toAffineBytesLE(const span<uint8_t, 96> out) const
         return;
     }
     g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE()[0], 48);
-    memcpy(&out[48], &r.y.toBytesLE()[0], 48);
+    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 48);
+    memcpy(&out[48], &r.y.toBytesLE(raw)[0], 48);
 }
 
 void g1::toCompressedBytesBE(const span<uint8_t, 48> out) const
@@ -180,25 +180,25 @@ void g1::toCompressedBytesBE(const span<uint8_t, 48> out) const
     out[0] |= 0x80;
 }
 
-array<uint8_t, 144> g1::toJacobianBytesBE() const
+array<uint8_t, 144> g1::toJacobianBytesBE(const bool raw) const
 {
     array<uint8_t, 144> out;
-    memcpy(&out[ 0], &x.toBytesBE()[0], 48);
-    memcpy(&out[48], &y.toBytesBE()[0], 48);
-    memcpy(&out[96], &z.toBytesBE()[0], 48);
+    memcpy(&out[ 0], &x.toBytesBE(raw)[0], 48);
+    memcpy(&out[48], &y.toBytesBE(raw)[0], 48);
+    memcpy(&out[96], &z.toBytesBE(raw)[0], 48);
     return out;
 }
 
-array<uint8_t, 144> g1::toJacobianBytesLE() const
+array<uint8_t, 144> g1::toJacobianBytesLE(const bool raw) const
 {
     array<uint8_t, 144> out;
-    memcpy(&out[ 0], &x.toBytesLE()[0], 48);
-    memcpy(&out[48], &y.toBytesLE()[0], 48);
-    memcpy(&out[96], &z.toBytesLE()[0], 48);
+    memcpy(&out[ 0], &x.toBytesLE(raw)[0], 48);
+    memcpy(&out[48], &y.toBytesLE(raw)[0], 48);
+    memcpy(&out[96], &z.toBytesLE(raw)[0], 48);
     return out;
 }
 
-array<uint8_t, 96> g1::toAffineBytesBE() const
+array<uint8_t, 96> g1::toAffineBytesBE(const bool raw) const
 {
     array<uint8_t, 96> out;
     if(isZero())
@@ -207,12 +207,12 @@ array<uint8_t, 96> g1::toAffineBytesBE() const
         return out;
     }
     g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE()[0], 48);
-    memcpy(&out[48], &r.y.toBytesBE()[0], 48);
+    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 48);
+    memcpy(&out[48], &r.y.toBytesBE(raw)[0], 48);
     return out;
 }
 
-array<uint8_t, 96> g1::toAffineBytesLE() const
+array<uint8_t, 96> g1::toAffineBytesLE(const bool raw) const
 {
     array<uint8_t, 96> out;
     if(isZero())
@@ -221,8 +221,8 @@ array<uint8_t, 96> g1::toAffineBytesLE() const
         return out;
     }
     g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE()[0], 48);
-    memcpy(&out[48], &r.y.toBytesLE()[0], 48);
+    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 48);
+    memcpy(&out[48], &r.y.toBytesLE(raw)[0], 48);
     return out;
 }
 
@@ -705,11 +705,11 @@ g2::g2(const g2& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-g2 g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check)
+g2 g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
-    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
-    fp2 z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]));
+    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    fp2 z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
     g2 p = g2({x, y, z});
     if(check && !p.isOnCurve())
     {
@@ -718,11 +718,11 @@ g2 g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check)
     return p;
 }
 
-g2 g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check)
+g2 g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
-    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]));
-    fp2 z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]));
+    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    fp2 z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
     g2 p = g2({x, y, z});
     if(check && !p.isOnCurve())
     {
@@ -731,10 +731,10 @@ g2 g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check)
     return p;
 }
 
-g2 g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check)
+g2 g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
-    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -749,10 +749,10 @@ g2 g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check)
     return p;
 }
 
-g2 g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool check)
+g2 g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
-    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -810,21 +810,21 @@ g2 g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     return p;
 }
 
-void g2::toJacobianBytesBE(const span<uint8_t, 288> out) const
+void g2::toJacobianBytesBE(const span<uint8_t, 288> out, const bool raw) const
 {
-    memcpy(&out[  0], &x.toBytesBE()[0], 96);
-    memcpy(&out[ 96], &y.toBytesBE()[0], 96);
-    memcpy(&out[192], &z.toBytesBE()[0], 96);
+    memcpy(&out[  0], &x.toBytesBE(raw)[0], 96);
+    memcpy(&out[ 96], &y.toBytesBE(raw)[0], 96);
+    memcpy(&out[192], &z.toBytesBE(raw)[0], 96);
 }
 
-void g2::toJacobianBytesLE(const span<uint8_t, 288> out) const
+void g2::toJacobianBytesLE(const span<uint8_t, 288> out, const bool raw) const
 {
-    memcpy(&out[  0], &x.toBytesLE()[0], 96);
-    memcpy(&out[ 96], &y.toBytesLE()[0], 96);
-    memcpy(&out[192], &z.toBytesLE()[0], 96);
+    memcpy(&out[  0], &x.toBytesLE(raw)[0], 96);
+    memcpy(&out[ 96], &y.toBytesLE(raw)[0], 96);
+    memcpy(&out[192], &z.toBytesLE(raw)[0], 96);
 }
 
-void g2::toAffineBytesBE(const span<uint8_t, 192> out) const
+void g2::toAffineBytesBE(const span<uint8_t, 192> out, const bool raw) const
 {
     if(isZero())
     {
@@ -832,11 +832,11 @@ void g2::toAffineBytesBE(const span<uint8_t, 192> out) const
         return;
     }
     g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE()[0], 96);
-    memcpy(&out[96], &r.y.toBytesBE()[0], 96);
+    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 96);
+    memcpy(&out[96], &r.y.toBytesBE(raw)[0], 96);
 }
 
-void g2::toAffineBytesLE(const span<uint8_t, 192> out) const
+void g2::toAffineBytesLE(const span<uint8_t, 192> out, const bool raw) const
 {
     if(isZero())
     {
@@ -844,8 +844,8 @@ void g2::toAffineBytesLE(const span<uint8_t, 192> out) const
         return;
     }
     g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE()[0], 96);
-    memcpy(&out[96], &r.y.toBytesLE()[0], 96);
+    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 96);
+    memcpy(&out[96], &r.y.toBytesLE(raw)[0], 96);
 }
 
 void g2::toCompressedBytesBE(const span<uint8_t, 96> out) const
@@ -870,25 +870,25 @@ void g2::toCompressedBytesBE(const span<uint8_t, 96> out) const
     out[0] |= 0x80;
 }
 
-array<uint8_t, 288> g2::toJacobianBytesBE() const
+array<uint8_t, 288> g2::toJacobianBytesBE(const bool raw) const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &x.toBytesBE()[0], 96);
-    memcpy(&out[ 96], &y.toBytesBE()[0], 96);
-    memcpy(&out[192], &z.toBytesBE()[0], 96);
+    memcpy(&out[  0], &x.toBytesBE(raw)[0], 96);
+    memcpy(&out[ 96], &y.toBytesBE(raw)[0], 96);
+    memcpy(&out[192], &z.toBytesBE(raw)[0], 96);
     return out;
 }
 
-array<uint8_t, 288> g2::toJacobianBytesLE() const
+array<uint8_t, 288> g2::toJacobianBytesLE(const bool raw) const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &x.toBytesLE()[0], 96);
-    memcpy(&out[ 96], &y.toBytesLE()[0], 96);
-    memcpy(&out[192], &z.toBytesLE()[0], 96);
+    memcpy(&out[  0], &x.toBytesLE(raw)[0], 96);
+    memcpy(&out[ 96], &y.toBytesLE(raw)[0], 96);
+    memcpy(&out[192], &z.toBytesLE(raw)[0], 96);
     return out;
 }
 
-array<uint8_t, 192> g2::toAffineBytesBE() const
+array<uint8_t, 192> g2::toAffineBytesBE(const bool raw) const
 {
     array<uint8_t, 192> out;
     if(isZero())
@@ -897,12 +897,12 @@ array<uint8_t, 192> g2::toAffineBytesBE() const
         return out;
     }
     g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE()[0], 96);
-    memcpy(&out[96], &r.y.toBytesBE()[0], 96);
+    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 96);
+    memcpy(&out[96], &r.y.toBytesBE(raw)[0], 96);
     return out;
 }
 
-array<uint8_t, 192> g2::toAffineBytesLE() const
+array<uint8_t, 192> g2::toAffineBytesLE(const bool raw) const
 {
     array<uint8_t, 192> out;
     if(isZero())
@@ -911,8 +911,8 @@ array<uint8_t, 192> g2::toAffineBytesLE() const
         return out;
     }
     g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE()[0], 96);
-    memcpy(&out[96], &r.y.toBytesLE()[0], 96);
+    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 96);
+    memcpy(&out[96], &r.y.toBytesLE(raw)[0], 96);
     return out;
 }
 
