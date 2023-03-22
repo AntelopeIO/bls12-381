@@ -2,6 +2,8 @@
 #include "sha256.hpp"
 #include <set>
 
+using namespace std;
+
 namespace bls12_381
 {
 

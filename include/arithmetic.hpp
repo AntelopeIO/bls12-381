@@ -4,8 +4,6 @@
 typedef __int128 int128_t;
 typedef unsigned __int128 uint128_t;
 
-using namespace std;
-
 namespace bls12_381
 {
 
@@ -30,7 +28,7 @@ void _square(fp* z, const fp* x);
 // The carryOut output is guaranteed to be 0 or 1.
 //
 // This function's execution time does not depend on the inputs.
-tuple<uint64_t, uint64_t> Add64(
+std::tuple<uint64_t, uint64_t> Add64(
     const uint64_t& x,
     const uint64_t& y,
     const uint64_t& carry
@@ -41,7 +39,7 @@ tuple<uint64_t, uint64_t> Add64(
 // The borrowOut output is guaranteed to be 0 or 1.
 //
 // This function's execution time does not depend on the inputs.
-tuple<uint64_t, uint64_t> Sub64(
+std::tuple<uint64_t, uint64_t> Sub64(
     const uint64_t& x,
     const uint64_t& y,
     const uint64_t& borrow
@@ -52,12 +50,12 @@ tuple<uint64_t, uint64_t> Sub64(
 // half returned in lo.
 //
 // This function's execution time does not depend on the inputs.
-tuple<uint64_t, uint64_t> Mul64(
+std::tuple<uint64_t, uint64_t> Mul64(
     const uint64_t& x,
     const uint64_t& y
 );
 
-tuple<uint64_t, uint64_t, uint64_t> madd(
+std::tuple<uint64_t, uint64_t, uint64_t> madd(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& t,
@@ -73,14 +71,14 @@ uint64_t madd0(
 );
 
 // madd1 hi, lo = a*b + c
-tuple<uint64_t, uint64_t> madd1(
+std::tuple<uint64_t, uint64_t> madd1(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& c
 );
 
 // madd2 hi, lo = a*b + c + d
-tuple<uint64_t, uint64_t> madd2(
+std::tuple<uint64_t, uint64_t> madd2(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& c,
@@ -88,7 +86,7 @@ tuple<uint64_t, uint64_t> madd2(
 );
 
 // madd2s superhi, hi, lo = 2*a*b + c + d + e
-tuple<uint64_t, uint64_t, uint64_t> madd2s(
+std::tuple<uint64_t, uint64_t, uint64_t> madd2s(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& c,
@@ -96,27 +94,27 @@ tuple<uint64_t, uint64_t, uint64_t> madd2s(
     const uint64_t& e
 );
 
-tuple<uint64_t, uint64_t, uint64_t> madd1s(
+std::tuple<uint64_t, uint64_t, uint64_t> madd1s(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& d,
     const uint64_t& e
 );
 
-tuple<uint64_t, uint64_t, uint64_t> madd2sb(
+std::tuple<uint64_t, uint64_t, uint64_t> madd2sb(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& c,
     const uint64_t& e
 );
 
-tuple<uint64_t, uint64_t, uint64_t> madd1sb(
+std::tuple<uint64_t, uint64_t, uint64_t> madd1sb(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& e
 );
 
-tuple<uint64_t, uint64_t> madd3(
+std::tuple<uint64_t, uint64_t> madd3(
     const uint64_t& a,
     const uint64_t& b,
     const uint64_t& c,

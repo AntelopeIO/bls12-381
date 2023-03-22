@@ -1,5 +1,7 @@
 #include "../include/bls12_381.hpp"
 
+using namespace std;
+
 namespace bls12_381
 {
 

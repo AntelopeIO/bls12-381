@@ -5,12 +5,7 @@
 
 using std::string;
 using std::vector;
-using std::cout;
-using std::endl;
-
-
-using std::string;
-using std::vector;
+using std::array;
 using std::cout;
 using std::endl;
 
@@ -36,9 +31,9 @@ void endStopwatch(string testName,
 
 std::vector<uint8_t> getRandomSeed() {
     uint64_t buf[4];
-    random_device rd;
-    mt19937_64 gen(rd());
-    uniform_int_distribution<uint64_t> dis;
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<uint64_t> dis;
     buf[0] = dis(gen);
     buf[1] = dis(gen);
     buf[2] = dis(gen);
@@ -90,7 +85,7 @@ void benchVerification() {
         IntToFourBytes(message, i);
         vector<uint8_t> messageBytes(message, message + 4);
         bool ok = verify(pk, messageBytes, sigs[i]);
-        if(!ok) throw invalid_argument("benchVerification: !ok");
+        if(!ok) throw std::invalid_argument("benchVerification: !ok");
     }
     endStopwatch(testName, start, numIters);
 }
@@ -137,7 +132,7 @@ void benchBatchVerification() {
 
     start = startStopwatch();
     bool ok = aggregate_verify(pks, ms, aggSig);
-    if(!ok) throw invalid_argument("benchBatchVerification: !ok");
+    if(!ok) throw std::invalid_argument("benchBatchVerification: !ok");
     endStopwatch("Batch verification", start, numIters);
 }
 
@@ -165,13 +160,13 @@ void benchFastAggregateVerification() {
     start = startStopwatch();
     for (int i = 0; i < numIters; i++) {
         bool ok = pop_verify(pks[i], pops[i]);
-        if(!ok) throw invalid_argument("benchBatchVerification, pop_verify: !ok");
+        if(!ok) throw std::invalid_argument("benchBatchVerification, pop_verify: !ok");
     }
     endStopwatch("PopScheme Proofs verification", start, numIters);
 
     start = startStopwatch();
     bool ok = pop_fast_aggregate_verify(pks, message, aggSig);
-    if(!ok) throw invalid_argument("benchBatchVerification, pop_fast_aggregate_verify: !ok");
+    if(!ok) throw std::invalid_argument("benchBatchVerification, pop_fast_aggregate_verify: !ok");
     endStopwatch("PopScheme verification", start, numIters);
 }
 
