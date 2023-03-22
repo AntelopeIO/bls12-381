@@ -28,10 +28,41 @@ g1 g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check)
     return p;
 }
 
+g1 g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check)
+{
+    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
+    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]));
+    fp z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]));
+    g1 p = g1({x, y, z});
+    if(check && !p.isOnCurve())
+    {
+        throw invalid_argument("point is not on curve!");
+    }
+    return p;
+}
+
 g1 g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check)
 {
     fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
     fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]));
+    // check if given input points to infinity
+    if(x.isZero() && y.isZero())
+    {
+        return zero();
+    }
+    fp z = fp::one();
+    g1 p = g1({x, y, z});
+    if(check && !p.isOnCurve())
+    {
+        throw invalid_argument("point is not on curve!");
+    }
+    return p;
+}
+
+g1 g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool check)
+{
+    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]));
+    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]));
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -95,6 +126,13 @@ void g1::toJacobianBytesBE(const span<uint8_t, 144> out) const
     memcpy(&out[96], &z.toBytesBE()[0], 48);
 }
 
+void g1::toJacobianBytesLE(const span<uint8_t, 144> out) const
+{
+    memcpy(&out[ 0], &x.toBytesLE()[0], 48);
+    memcpy(&out[48], &y.toBytesLE()[0], 48);
+    memcpy(&out[96], &z.toBytesLE()[0], 48);
+}
+
 void g1::toAffineBytesBE(const span<uint8_t, 96> out) const
 {
     if(isZero())
@@ -105,6 +143,18 @@ void g1::toAffineBytesBE(const span<uint8_t, 96> out) const
     g1 r = affine();
     memcpy(&out[ 0], &r.x.toBytesBE()[0], 48);
     memcpy(&out[48], &r.y.toBytesBE()[0], 48);
+}
+
+void g1::toAffineBytesLE(const span<uint8_t, 96> out) const
+{
+    if(isZero())
+    {
+        memset(&out[0], 0, 96);
+        return;
+    }
+    g1 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesLE()[0], 48);
+    memcpy(&out[48], &r.y.toBytesLE()[0], 48);
 }
 
 void g1::toCompressedBytesBE(const span<uint8_t, 48> out) const
@@ -137,6 +187,15 @@ array<uint8_t, 144> g1::toJacobianBytesBE() const
     return out;
 }
 
+array<uint8_t, 144> g1::toJacobianBytesLE() const
+{
+    array<uint8_t, 144> out;
+    memcpy(&out[ 0], &x.toBytesLE()[0], 48);
+    memcpy(&out[48], &y.toBytesLE()[0], 48);
+    memcpy(&out[96], &z.toBytesLE()[0], 48);
+    return out;
+}
+
 array<uint8_t, 96> g1::toAffineBytesBE() const
 {
     array<uint8_t, 96> out;
@@ -148,6 +207,20 @@ array<uint8_t, 96> g1::toAffineBytesBE() const
     g1 r = affine();
     memcpy(&out[ 0], &r.x.toBytesBE()[0], 48);
     memcpy(&out[48], &r.y.toBytesBE()[0], 48);
+    return out;
+}
+
+array<uint8_t, 96> g1::toAffineBytesLE() const
+{
+    array<uint8_t, 96> out;
+    if(isZero())
+    {
+        memset(&out[0], 0, 96);
+        return out;
+    }
+    g1 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesLE()[0], 48);
+    memcpy(&out[48], &r.y.toBytesLE()[0], 48);
     return out;
 }
 
@@ -645,10 +718,41 @@ g2 g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check)
     return p;
 }
 
+g2 g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check)
+{
+    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
+    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    fp2 z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]));
+    g2 p = g2({x, y, z});
+    if(check && !p.isOnCurve())
+    {
+        throw invalid_argument("point is not on curve!");
+    }
+    return p;
+}
+
 g2 g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check)
 {
     fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
     fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    // check if given input points to infinity
+    if(x.isZero() && y.isZero())
+    {
+        return zero();
+    }
+    fp2 z = fp2::one();
+    g2 p = g2({x, y, z});
+    if(check && !p.isOnCurve())
+    {
+        throw invalid_argument("point is not on curve!");
+    }
+    return p;
+}
+
+g2 g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool check)
+{
+    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]));
+    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]));
     // check if given input points to infinity
     if(x.isZero() && y.isZero())
     {
@@ -713,6 +817,13 @@ void g2::toJacobianBytesBE(const span<uint8_t, 288> out) const
     memcpy(&out[192], &z.toBytesBE()[0], 96);
 }
 
+void g2::toJacobianBytesLE(const span<uint8_t, 288> out) const
+{
+    memcpy(&out[  0], &x.toBytesLE()[0], 96);
+    memcpy(&out[ 96], &y.toBytesLE()[0], 96);
+    memcpy(&out[192], &z.toBytesLE()[0], 96);
+}
+
 void g2::toAffineBytesBE(const span<uint8_t, 192> out) const
 {
     if(isZero())
@@ -723,6 +834,18 @@ void g2::toAffineBytesBE(const span<uint8_t, 192> out) const
     g2 r = affine();
     memcpy(&out[ 0], &r.x.toBytesBE()[0], 96);
     memcpy(&out[96], &r.y.toBytesBE()[0], 96);
+}
+
+void g2::toAffineBytesLE(const span<uint8_t, 192> out) const
+{
+    if(isZero())
+    {
+        memset(&out[0], 0, 192);
+        return;
+    }
+    g2 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesLE()[0], 96);
+    memcpy(&out[96], &r.y.toBytesLE()[0], 96);
 }
 
 void g2::toCompressedBytesBE(const span<uint8_t, 96> out) const
@@ -756,6 +879,15 @@ array<uint8_t, 288> g2::toJacobianBytesBE() const
     return out;
 }
 
+array<uint8_t, 288> g2::toJacobianBytesLE() const
+{
+    array<uint8_t, 288> out;
+    memcpy(&out[  0], &x.toBytesLE()[0], 96);
+    memcpy(&out[ 96], &y.toBytesLE()[0], 96);
+    memcpy(&out[192], &z.toBytesLE()[0], 96);
+    return out;
+}
+
 array<uint8_t, 192> g2::toAffineBytesBE() const
 {
     array<uint8_t, 192> out;
@@ -767,6 +899,20 @@ array<uint8_t, 192> g2::toAffineBytesBE() const
     g2 r = affine();
     memcpy(&out[ 0], &r.x.toBytesBE()[0], 96);
     memcpy(&out[96], &r.y.toBytesBE()[0], 96);
+    return out;
+}
+
+array<uint8_t, 192> g2::toAffineBytesLE() const
+{
+    array<uint8_t, 192> out;
+    if(isZero())
+    {
+        memset(&out[0], 0, 192);
+        return out;
+    }
+    g2 r = affine();
+    memcpy(&out[ 0], &r.x.toBytesLE()[0], 96);
+    memcpy(&out[96], &r.y.toBytesLE()[0], 96);
     return out;
 }
 

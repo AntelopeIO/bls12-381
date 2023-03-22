@@ -369,6 +369,26 @@ void TestG1Serialization()
             throw invalid_argument("g1, compressed: bad serialization from/to");
         }
     }
+    for(uint64_t i = 0; i < fuz; i++)
+    {
+        g1 a = random_g1();
+        array<uint8_t, 144> buf = a.toJacobianBytesLE();
+        g1 b = g1::fromJacobianBytesLE(buf);
+        if(!a.equal(b))
+        {
+            throw invalid_argument("g1, jacobian, LE: bad serialization from/to");
+        }
+    }
+    for(uint64_t i = 0; i < fuz; i++)
+    {
+        g1 a = random_g1();
+        array<uint8_t, 96> buf = a.toAffineBytesLE();
+        g1 b = g1::fromAffineBytesLE(buf);
+        if(!a.equal(b))
+        {
+            throw invalid_argument("g1, affine, LE: bad serialization from/to");
+        }
+    }
 }
 
 void TestG1IsOnCurve()
@@ -694,6 +714,26 @@ void TestG2Serialization()
         if(!a.equal(b))
         {
             throw invalid_argument("g1, compressed: bad serialization from/to");
+        }
+    }
+    for(uint64_t i = 0; i < fuz; i++)
+    {
+        g2 a = random_g2();
+        array<uint8_t, 288> buf = a.toJacobianBytesLE();
+        g2 b = g2::fromJacobianBytesLE(buf);
+        if(!a.equal(b))
+        {
+            throw invalid_argument("g1, jacobian, LE: bad serialization from/to");
+        }
+    }
+    for(uint64_t i = 0; i < fuz; i++)
+    {
+        g2 a = random_g2();
+        array<uint8_t, 192> buf = a.toAffineBytesLE();
+        g2 b = g2::fromAffineBytesLE(buf);
+        if(!a.equal(b))
+        {
+            throw invalid_argument("g1, affine, LE: bad serialization from/to");
         }
     }
 }
