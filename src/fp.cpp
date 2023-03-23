@@ -706,9 +706,9 @@ fp6 fp6::fromBytesBE(const span<const uint8_t, 288> in, const bool check, const 
 
 fp6 fp6::fromBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
 {
-    fp2 c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    fp2 c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
-    fp2 c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
+    fp2 c0 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    fp2 c1 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    fp2 c2 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
     return fp6({c0, c1, c2});
 }
 
@@ -721,9 +721,9 @@ void fp6::toBytesBE(const span<uint8_t, 288> out, const bool raw) const
 
 void fp6::toBytesLE(const span<uint8_t, 288> out, const bool raw) const
 {
-    memcpy(&out[  0], &c0.toBytesBE(raw)[0], 96);
-    memcpy(&out[ 96], &c1.toBytesBE(raw)[0], 96);
-    memcpy(&out[192], &c2.toBytesBE(raw)[0], 96);
+    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 96);
+    memcpy(&out[ 96], &c1.toBytesLE(raw)[0], 96);
+    memcpy(&out[192], &c2.toBytesLE(raw)[0], 96);
 }
 
 array<uint8_t, 288> fp6::toBytesBE(const bool raw) const
@@ -738,9 +738,9 @@ array<uint8_t, 288> fp6::toBytesBE(const bool raw) const
 array<uint8_t, 288> fp6::toBytesLE(const bool raw) const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &c0.toBytesBE(raw)[0], 96);
-    memcpy(&out[ 96], &c1.toBytesBE(raw)[0], 96);
-    memcpy(&out[192], &c2.toBytesBE(raw)[0], 96);
+    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 96);
+    memcpy(&out[ 96], &c1.toBytesLE(raw)[0], 96);
+    memcpy(&out[192], &c2.toBytesLE(raw)[0], 96);
     return out;
 }
 
@@ -1146,8 +1146,8 @@ fp12 fp12::fromBytesBE(const span<const uint8_t, 576> in, const bool check, cons
 
 fp12 fp12::fromBytesLE(const span<const uint8_t, 576> in, const bool check, const bool raw)
 {
-    fp6 c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
-    fp6 c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
+    fp6 c0 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
+    fp6 c1 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
     return fp12({c0, c1});
 }
 
@@ -1159,8 +1159,8 @@ void fp12::toBytesBE(const span<uint8_t, 576> out, const bool raw) const
 
 void fp12::toBytesLE(const span<uint8_t, 576> out, const bool raw) const
 {
-    memcpy(&out[  0], &c0.toBytesBE(raw)[0], 288);
-    memcpy(&out[288], &c1.toBytesBE(raw)[0], 288);
+    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 288);
+    memcpy(&out[288], &c1.toBytesLE(raw)[0], 288);
 }
 
 array<uint8_t, 576> fp12::toBytesBE(const bool raw) const
@@ -1174,8 +1174,8 @@ array<uint8_t, 576> fp12::toBytesBE(const bool raw) const
 array<uint8_t, 576> fp12::toBytesLE(const bool raw) const
 {
     array<uint8_t, 576> out;
-    memcpy(&out[  0], &c0.toBytesBE(raw)[0], 288);
-    memcpy(&out[288], &c1.toBytesBE(raw)[0], 288);
+    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 288);
+    memcpy(&out[288], &c1.toBytesLE(raw)[0], 288);
     return out;
 }
 
