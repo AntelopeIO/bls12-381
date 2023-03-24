@@ -507,16 +507,14 @@ g1 g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scal
 // This mapping function implements the Simplified Shallue-van de Woestijne-Ulas method.
 // https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-06
 // Input byte slice should be a valid field element, otherwise an error is returned.
-g1 g1::mapToCurve(const array<uint8_t, 48>& in)
+g1 g1::mapToCurve(const fp& e)
 {
-    fp u = fp::fromBytesBE(in);
-    fp x, y;
-    tie(x, y) = swuMapG1(u);
+    fp x, y, z = fp::one();
+    tie(x, y) = swuMapG1(e);
     isogenyMapG1(x, y);
-    fp z = fp::one();
     g1 p({x, y, z});
     p = p.clearCofactor();
-    return p.affine();
+    return p;
 }
 
 tuple<fp, fp> g1::swuMapG1(const fp& e)
@@ -1256,22 +1254,26 @@ g2 g2::fromMessage(const vector<uint8_t>& msg, const string& dst)
     
     array<uint64_t, 8> k = {0};
     fp2 t = fp2::zero();
-    g2 p;
+    fp2 x, y, z = fp2::one();
+    g2 p, q;
 
     k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf, buf + 64));
     t.c0 = fp::modPrime(k);
     k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 64, buf + 2*64));
     t.c1 = fp::modPrime(k);
 
-    p = g2::mapToCurve(t);
+    tie(x, y) = swuMapG2(t);
+    p = g2({x, y, z}).isogenyMap();
 
     k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 2*64, buf + 3*64));
     t.c0 = fp::modPrime(k);
     k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 3*64, buf + 4*64));
     t.c1 = fp::modPrime(k);
 
-    p = p.add(g2::mapToCurve(t));
-    return p;
+    tie(x, y) = swuMapG2(t);
+    q = g2({x, y, z}).isogenyMap();
+
+    return p.add(q).clearCofactor();
 }
 
 tuple<fp2, fp2> g2::swuMapG2(const fp2& e)

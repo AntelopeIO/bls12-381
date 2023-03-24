@@ -674,7 +674,7 @@ void TestG1MapToCurve()
     };
     for(uint64_t i = 0; i < 5; i++)
     {
-        g1 p0 = g1::mapToCurve(pairs[i].u);
+        g1 p0 = g1::mapToCurve(fp::fromBytesBE(pairs[i].u));
         if(!p0.equal(pairs[i].expected))
         {
             throw invalid_argument("G1: map to curve fails");
@@ -958,7 +958,7 @@ void TestG2MapToCurve()
     };
     for(uint64_t i = 0; i < 5; i++)
     {
-        g2 p0 = g2::mapToCurve(fp2::fromBytesBE(pairs[i].u)).affine();
+        g2 p0 = g2::mapToCurve(fp2::fromBytesBE(pairs[i].u));
         if(!p0.equal(pairs[i].expected))
         {
             throw invalid_argument("G2: map to curve fails");

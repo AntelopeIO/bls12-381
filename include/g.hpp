@@ -55,7 +55,7 @@ public:
     template<size_t N> g1 mulScalar(const std::array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
     static g1 multiExp(const std::vector<g1>& points, const std::vector<std::array<uint64_t, 4>>& scalars);
-    static g1 mapToCurve(const std::array<uint8_t, 48>& in);
+    static g1 mapToCurve(const fp& e);
     static std::tuple<fp, fp> swuMapG1(const fp& e);
     static void isogenyMapG1(fp& x, fp& y);
 
