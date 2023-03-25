@@ -10,6 +10,14 @@ add_library (
     signatures.cpp
 )
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    # On 64 bit machines enable CPU extensions for fast ECC per default.
+    # ADX:  available in Intel CPUs since 2014 and AMD CPUs since 2017
+    # BMI2: available in Intel CPUs since 2013 and AMD CPUs since 2015
+    set(CMAKE_CXX_FLAGS "-madx -mbmi2")
+    message(STATUS "X86_64 architecture detected: enable support for ADX and BMI2")
+endif()
+
 find_path(GMP_INCLUDE_DIR NAMES gmp.h)
 find_library(GMP_LIBRARY gmp)
 if(GMP_LIBRARY MATCHES ${CMAKE_SHARED_LIBRARY_SUFFIX})

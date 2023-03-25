@@ -722,8 +722,7 @@ void _neg(fp* z, const fp* x)
 }
 #endif
 
-// On x86_64 machines the features BMI2 and ADX are being assumed!
-#if defined(__x86_64__) //&& defined(__BMI2__) && defined(__ADX__)
+#if defined(__x86_64__) && defined(__BMI2__) && defined(__ADX__)
 void _mul(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
@@ -1259,8 +1258,7 @@ void _mul(fp* z, const fp* x, const fp* y)
 }
 #endif
 
-// On x86_64 machines the features BMI2 and ADX are being assumed!
-#if defined(__x86_64__) //&& defined(__BMI2__) && defined(__ADX__)
+#if defined(__x86_64__) && defined(__BMI2__) && defined(__ADX__)
 void _square(fp* z, const fp* x)
 {
     _mul(z, x, x);
