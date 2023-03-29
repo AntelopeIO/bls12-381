@@ -233,6 +233,8 @@ uint64_t bn_rshb_low(uint64_t *c, const uint64_t *a, int size, int bits)
 }
 
 #ifdef __USE_GMP
+// This is how GMP could be used under the hood for modular reduction. However, benchmarks show zero difference
+// to the cpp implementation used in this library (borrowed from relic-toolkit). See #else case below.
 #include <gmp.h>
 void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb)
 {

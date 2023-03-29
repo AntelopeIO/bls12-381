@@ -1,6 +1,5 @@
 #include <cstdint>
 #include <tuple>
-#include <functional>
 
 typedef __int128 int128_t;
 typedef unsigned __int128 uint128_t;
@@ -10,51 +9,31 @@ namespace bls12_381
 
 class fp;
 
-extern std::function<void(fp*, const fp*, const fp*)> _add;
-extern std::function<void(fp*, const fp*)> _addAssign;
-extern std::function<void(fp*, const fp*, const fp*)> _ladd;
-extern std::function<void(fp*, const fp*)> _laddAssign;
-extern std::function<void(fp*, const fp*)> _double;
-extern std::function<void(fp*)> _doubleAssign;
-extern std::function<void(fp*, const fp*)> _ldouble;
-extern std::function<void(fp*, const fp*, const fp*)> _sub;
-extern std::function<void(fp*, const fp*)> _subAssign;
-extern std::function<void(fp*, const fp*)> _lsubAssign;
-extern std::function<void(fp*, const fp*)> _neg;
-extern std::function<void(fp*, const fp*, const fp*)> _mul;
-extern std::function<void(fp*, const fp*)> _square;
-
 void init();
 
-void _add_cpp(fp* z, const fp* x, const fp* y);
-void _addAssign_cpp(fp* x, const fp* y);
-void _ladd_cpp(fp* z, const fp* x, const fp* y);
-void _laddAssign_cpp(fp* x, const fp* y);
-void _double_cpp(fp* z, const fp* x);
-void _doubleAssign_cpp(fp* z);
-void _ldouble_cpp(fp* z, const fp* x);
-void _sub_cpp(fp* z, const fp* x, const fp* y);
-void _subAssign_cpp(fp* z, const fp* x);
-void _lsubAssign_cpp(fp* z, const fp* x);
-void _neg_cpp(fp* z, const fp* x);
-void _mul_cpp(fp* z, const fp* x, const fp* y);
-void _square_cpp(fp* z, const fp* x);
+void _add(fp* z, const fp* x, const fp* y);
+void _addAssign(fp* x, const fp* y);
+void _ladd(fp* z, const fp* x, const fp* y);
+void _laddAssign(fp* x, const fp* y);
+void _double(fp* z, const fp* x);
+void _doubleAssign(fp* z);
+void _ldouble(fp* z, const fp* x);
+void _sub(fp* z, const fp* x, const fp* y);
+void _subAssign(fp* z, const fp* x);
+void _lsubAssign(fp* z, const fp* x);
+void _neg(fp* z, const fp* x);
+void _square(fp* z, const fp* x);
 
-#ifdef __x86_64__
-void _add_x86_64(fp* z, const fp* x, const fp* y);
-void _addAssign_x86_64(fp* x, const fp* y);
-void _ladd_x86_64(fp* z, const fp* x, const fp* y);
-void _laddAssign_x86_64(fp* x, const fp* y);
-void _double_x86_64(fp* z, const fp* x);
-void _doubleAssign_x86_64(fp* z);
-void _ldouble_x86_64(fp* z, const fp* x);
-void _sub_x86_64(fp* z, const fp* x, const fp* y);
-void _subAssign_x86_64(fp* z, const fp* x);
-void _lsubAssign_x86_64(fp* z, const fp* x);
-void _neg_x86_64(fp* z, const fp* x);
-void _mul_x86_64(fp* z, const fp* x, const fp* y);
-void _mul_x86_64_ex(fp* z, const fp* x, const fp* y);
-void _square_x86_64(fp* z, const fp* x);
+#if defined(__x86_64__)
+void __mul(fp* z, const fp* x, const fp* y);
+void __mul_ex(fp* z, const fp* x, const fp* y);
+    #if defined(__ADX__) && defined(__BMI2__)
+    void _mul(fp* z, const fp* x, const fp* y);
+    #else
+    extern void (*_mul)(fp*, const fp*, const fp*);
+    #endif
+#else
+void _mul(fp* z, const fp* x, const fp* y);
 #endif
 
 // Add64 returns the sum with carry of x, y and carry: sum = x + y + carry.
