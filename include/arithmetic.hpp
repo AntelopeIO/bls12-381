@@ -53,6 +53,7 @@ void _subAssign_x86_64(fp* z, const fp* x);
 void _lsubAssign_x86_64(fp* z, const fp* x);
 void _neg_x86_64(fp* z, const fp* x);
 void _mul_x86_64(fp* z, const fp* x, const fp* y);
+void _mul_x86_64_ex(fp* z, const fp* x, const fp* y);
 void _square_x86_64(fp* z, const fp* x);
 #endif
 
