@@ -5,8 +5,69 @@ using namespace std;
 namespace bls12_381
 {
 
+std::function<void(fp*, const fp*, const fp*)> _add = &_add_cpp;
+std::function<void(fp*, const fp*)> _addAssign = &_addAssign_cpp;
+std::function<void(fp*, const fp*, const fp*)> _ladd = &_ladd_cpp;
+std::function<void(fp*, const fp*)> _laddAssign = &_laddAssign_cpp;
+std::function<void(fp*, const fp*)> _double = &_double_cpp;
+std::function<void(fp*)> _doubleAssign = &_doubleAssign_cpp;
+std::function<void(fp*, const fp*)> _ldouble = &_ldouble_cpp;
+std::function<void(fp*, const fp*, const fp*)> _sub = &_sub_cpp;
+std::function<void(fp*, const fp*)> _subAssign = &_subAssign_cpp;
+std::function<void(fp*, const fp*)> _lsubAssign = &_lsubAssign_cpp;
+std::function<void(fp*, const fp*)> _neg = &_neg_cpp;
+std::function<void(fp*, const fp*, const fp*)> _mul = &_mul_cpp;
+std::function<void(fp*, const fp*)> _square = &_square_cpp;
+
+void init()
+{
 #ifdef __x86_64__
-void _add(fp* z, const fp* x, const fp* y)
+    _add = &_add_x86_64;
+    _addAssign = &_addAssign_x86_64;
+    _ladd = &_ladd_x86_64;
+    _laddAssign = &_laddAssign_x86_64;
+    _double = &_double_x86_64;
+    _doubleAssign = &_doubleAssign_x86_64;
+    _ldouble = &_ldouble_x86_64;
+    _sub = &_sub_x86_64;
+    _subAssign = &_subAssign_x86_64;
+    _lsubAssign = &_lsubAssign_x86_64;
+    _neg = &_neg_x86_64;
+    __builtin_cpu_init();
+    if(__builtin_cpu_supports("bmi2") && __builtin_cpu_supports("adx"))
+    {
+        _mul = &_mul_x86_64;
+        _square = &_square_x86_64;
+    }
+#endif
+}
+
+void _add_cpp(fp* z, const fp* x, const fp* y)
+{
+    uint64_t carry, _;
+
+    tie(z->d[0], carry) = Add64(x->d[0], y->d[0], 0);
+    tie(z->d[1], carry) = Add64(x->d[1], y->d[1], carry);
+    tie(z->d[2], carry) = Add64(x->d[2], y->d[2], carry);
+    tie(z->d[3], carry) = Add64(x->d[3], y->d[3], carry);
+    tie(z->d[4], carry) = Add64(x->d[4], y->d[4], carry);
+    tie(z->d[5], _)     = Add64(x->d[5], y->d[5], carry);
+
+    // if z > q --> z -= q
+    // note: this is NOT constant time
+    if(!(z->d[5] < fp::MODULUS.d[5] || (z->d[5] == fp::MODULUS.d[5] && (z->d[4] < fp::MODULUS.d[4] || (z->d[4] == fp::MODULUS.d[4] && (z->d[3] < fp::MODULUS.d[3] || (z->d[3] == fp::MODULUS.d[3] && (z->d[2] < fp::MODULUS.d[2] || (z->d[2] == fp::MODULUS.d[2] && (z->d[1] < fp::MODULUS.d[1] || (z->d[1] == fp::MODULUS.d[1] && (z->d[0] < fp::MODULUS.d[0]))))))))))))
+    {
+        uint64_t b;
+        tie(z->d[0], b) = Sub64(z->d[0], fp::MODULUS.d[0], 0);
+        tie(z->d[1], b) = Sub64(z->d[1], fp::MODULUS.d[1], b);
+        tie(z->d[2], b) = Sub64(z->d[2], fp::MODULUS.d[2], b);
+        tie(z->d[3], b) = Sub64(z->d[3], fp::MODULUS.d[3], b);
+        tie(z->d[4], b) = Sub64(z->d[4], fp::MODULUS.d[4], b);
+        tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
+    }
+}
+#ifdef __x86_64__
+void _add_x86_64(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -66,35 +127,34 @@ void _add(fp* z, const fp* x, const fp* y)
     asm("pop %r14;");
     asm("pop %r15;");
 }
-#else
-void _add(fp* z, const fp* x, const fp* y)
+#endif
+
+void _addAssign_cpp(fp* x, const fp* y)
 {
     uint64_t carry, _;
 
-    tie(z->d[0], carry) = Add64(x->d[0], y->d[0], 0);
-    tie(z->d[1], carry) = Add64(x->d[1], y->d[1], carry);
-    tie(z->d[2], carry) = Add64(x->d[2], y->d[2], carry);
-    tie(z->d[3], carry) = Add64(x->d[3], y->d[3], carry);
-    tie(z->d[4], carry) = Add64(x->d[4], y->d[4], carry);
-    tie(z->d[5], _)     = Add64(x->d[5], y->d[5], carry);
+    tie(x->d[0], carry) = Add64(x->d[0], y->d[0], 0);
+    tie(x->d[1], carry) = Add64(x->d[1], y->d[1], carry);
+    tie(x->d[2], carry) = Add64(x->d[2], y->d[2], carry);
+    tie(x->d[3], carry) = Add64(x->d[3], y->d[3], carry);
+    tie(x->d[4], carry) = Add64(x->d[4], y->d[4], carry);
+    tie(x->d[5], _)     = Add64(x->d[5], y->d[5], carry);
 
     // if z > q --> z -= q
     // note: this is NOT constant time
-    if(!(z->d[5] < fp::MODULUS.d[5] || (z->d[5] == fp::MODULUS.d[5] && (z->d[4] < fp::MODULUS.d[4] || (z->d[4] == fp::MODULUS.d[4] && (z->d[3] < fp::MODULUS.d[3] || (z->d[3] == fp::MODULUS.d[3] && (z->d[2] < fp::MODULUS.d[2] || (z->d[2] == fp::MODULUS.d[2] && (z->d[1] < fp::MODULUS.d[1] || (z->d[1] == fp::MODULUS.d[1] && (z->d[0] < fp::MODULUS.d[0]))))))))))))
+    if(!(x->d[5] < fp::MODULUS.d[5] || (x->d[5] == fp::MODULUS.d[5] && (x->d[4] < fp::MODULUS.d[4] || (x->d[4] == fp::MODULUS.d[4] && (x->d[3] < fp::MODULUS.d[3] || (x->d[3] == fp::MODULUS.d[3] && (x->d[2] < fp::MODULUS.d[2] || (x->d[2] == fp::MODULUS.d[2] && (x->d[1] < fp::MODULUS.d[1] || (x->d[1] == fp::MODULUS.d[1] && (x->d[0] < fp::MODULUS.d[0]))))))))))))
     {
         uint64_t b;
-        tie(z->d[0], b) = Sub64(z->d[0], fp::MODULUS.d[0], 0);
-        tie(z->d[1], b) = Sub64(z->d[1], fp::MODULUS.d[1], b);
-        tie(z->d[2], b) = Sub64(z->d[2], fp::MODULUS.d[2], b);
-        tie(z->d[3], b) = Sub64(z->d[3], fp::MODULUS.d[3], b);
-        tie(z->d[4], b) = Sub64(z->d[4], fp::MODULUS.d[4], b);
-        tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
+        tie(x->d[0], b) = Sub64(x->d[0], fp::MODULUS.d[0], 0);
+        tie(x->d[1], b) = Sub64(x->d[1], fp::MODULUS.d[1], b);
+        tie(x->d[2], b) = Sub64(x->d[2], fp::MODULUS.d[2], b);
+        tie(x->d[3], b) = Sub64(x->d[3], fp::MODULUS.d[3], b);
+        tie(x->d[4], b) = Sub64(x->d[4], fp::MODULUS.d[4], b);
+        tie(x->d[5], _) = Sub64(x->d[5], fp::MODULUS.d[5], b);
     }
 }
-#endif
-
 #ifdef __x86_64__
-void _addAssign(fp* x, const fp* y)
+void _addAssign_x86_64(fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // x => %rdi
@@ -153,35 +213,20 @@ void _addAssign(fp* x, const fp* y)
     asm("pop %r14;");
     asm("pop %r15;");
 }
-#else
-void _addAssign(fp* x, const fp* y)
-{
-    uint64_t carry, _;
-
-    tie(x->d[0], carry) = Add64(x->d[0], y->d[0], 0);
-    tie(x->d[1], carry) = Add64(x->d[1], y->d[1], carry);
-    tie(x->d[2], carry) = Add64(x->d[2], y->d[2], carry);
-    tie(x->d[3], carry) = Add64(x->d[3], y->d[3], carry);
-    tie(x->d[4], carry) = Add64(x->d[4], y->d[4], carry);
-    tie(x->d[5], _)     = Add64(x->d[5], y->d[5], carry);
-
-    // if z > q --> z -= q
-    // note: this is NOT constant time
-    if(!(x->d[5] < fp::MODULUS.d[5] || (x->d[5] == fp::MODULUS.d[5] && (x->d[4] < fp::MODULUS.d[4] || (x->d[4] == fp::MODULUS.d[4] && (x->d[3] < fp::MODULUS.d[3] || (x->d[3] == fp::MODULUS.d[3] && (x->d[2] < fp::MODULUS.d[2] || (x->d[2] == fp::MODULUS.d[2] && (x->d[1] < fp::MODULUS.d[1] || (x->d[1] == fp::MODULUS.d[1] && (x->d[0] < fp::MODULUS.d[0]))))))))))))
-    {
-        uint64_t b;
-        tie(x->d[0], b) = Sub64(x->d[0], fp::MODULUS.d[0], 0);
-        tie(x->d[1], b) = Sub64(x->d[1], fp::MODULUS.d[1], b);
-        tie(x->d[2], b) = Sub64(x->d[2], fp::MODULUS.d[2], b);
-        tie(x->d[3], b) = Sub64(x->d[3], fp::MODULUS.d[3], b);
-        tie(x->d[4], b) = Sub64(x->d[4], fp::MODULUS.d[4], b);
-        tie(x->d[5], _) = Sub64(x->d[5], fp::MODULUS.d[5], b);
-    }
-}
 #endif
 
+void _ladd_cpp(fp* z, const fp* x, const fp* y)
+{
+    uint64_t carry, _;
+    tie(z->d[0], carry) = Add64(x->d[0], y->d[0], 0);
+    tie(z->d[1], carry) = Add64(x->d[1], y->d[1], carry);
+    tie(z->d[2], carry) = Add64(x->d[2], y->d[2], carry);
+    tie(z->d[3], carry) = Add64(x->d[3], y->d[3], carry);
+    tie(z->d[4], carry) = Add64(x->d[4], y->d[4], carry);
+    tie(z->d[5], _)     = Add64(x->d[5], y->d[5], carry);
+}
 #ifdef __x86_64__
-void _ladd(fp* z, const fp* x, const fp* y)
+void _ladd_x86_64(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -207,21 +252,20 @@ void _ladd(fp* z, const fp* x, const fp* y)
     asm("mov %rcx,0x20(%rdi);");
     asm("mov %rax,0x28(%rdi);");
 }
-#else
-void _ladd(fp* z, const fp* x, const fp* y)
-{
-    uint64_t carry, _;
-    tie(z->d[0], carry) = Add64(x->d[0], y->d[0], 0);
-    tie(z->d[1], carry) = Add64(x->d[1], y->d[1], carry);
-    tie(z->d[2], carry) = Add64(x->d[2], y->d[2], carry);
-    tie(z->d[3], carry) = Add64(x->d[3], y->d[3], carry);
-    tie(z->d[4], carry) = Add64(x->d[4], y->d[4], carry);
-    tie(z->d[5], _)     = Add64(x->d[5], y->d[5], carry);
-}
 #endif
 
+void _laddAssign_cpp(fp* x, const fp* y)
+{
+    uint64_t carry, _;
+    tie(x->d[0], carry) = Add64(x->d[0], y->d[0], 0);
+    tie(x->d[1], carry) = Add64(x->d[1], y->d[1], carry);
+    tie(x->d[2], carry) = Add64(x->d[2], y->d[2], carry);
+    tie(x->d[3], carry) = Add64(x->d[3], y->d[3], carry);
+    tie(x->d[4], carry) = Add64(x->d[4], y->d[4], carry);
+    tie(x->d[5], _)     = Add64(x->d[5], y->d[5], carry);
+}
 #ifdef __x86_64__
-void _laddAssign(fp* x, const fp* y)
+void _laddAssign_x86_64(fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // x => %rdi
@@ -246,21 +290,34 @@ void _laddAssign(fp* x, const fp* y)
     asm("mov %rcx,0x20(%rdi);");
     asm("mov %rax,0x28(%rdi);");
 }
-#else
-void _laddAssign(fp* x, const fp* y)
-{
-    uint64_t carry, _;
-    tie(x->d[0], carry) = Add64(x->d[0], y->d[0], 0);
-    tie(x->d[1], carry) = Add64(x->d[1], y->d[1], carry);
-    tie(x->d[2], carry) = Add64(x->d[2], y->d[2], carry);
-    tie(x->d[3], carry) = Add64(x->d[3], y->d[3], carry);
-    tie(x->d[4], carry) = Add64(x->d[4], y->d[4], carry);
-    tie(x->d[5], _)     = Add64(x->d[5], y->d[5], carry);
-}
 #endif
 
+void _double_cpp(fp* z, const fp* x)
+{
+    uint64_t carry, _;
+
+    tie(z->d[0], carry) = Add64(x->d[0], x->d[0], 0);
+    tie(z->d[1], carry) = Add64(x->d[1], x->d[1], carry);
+    tie(z->d[2], carry) = Add64(x->d[2], x->d[2], carry);
+    tie(z->d[3], carry) = Add64(x->d[3], x->d[3], carry);
+    tie(z->d[4], carry) = Add64(x->d[4], x->d[4], carry);
+    tie(z->d[5], _)     = Add64(x->d[5], x->d[5], carry);
+
+    // if z > q --> z -= q
+    // note: this is NOT constant time
+    if(!(z->d[5] < fp::MODULUS.d[5] || (z->d[5] == fp::MODULUS.d[5] && (z->d[4] < fp::MODULUS.d[4] || (z->d[4] == fp::MODULUS.d[4] && (z->d[3] < fp::MODULUS.d[3] || (z->d[3] == fp::MODULUS.d[3] && (z->d[2] < fp::MODULUS.d[2] || (z->d[2] == fp::MODULUS.d[2] && (z->d[1] < fp::MODULUS.d[1] || (z->d[1] == fp::MODULUS.d[1] && (z->d[0] < fp::MODULUS.d[0]))))))))))))
+    {
+        uint64_t b;
+        tie(z->d[0], b) = Sub64(z->d[0], fp::MODULUS.d[0], 0);
+        tie(z->d[1], b) = Sub64(z->d[1], fp::MODULUS.d[1], b);
+        tie(z->d[2], b) = Sub64(z->d[2], fp::MODULUS.d[2], b);
+        tie(z->d[3], b) = Sub64(z->d[3], fp::MODULUS.d[3], b);
+        tie(z->d[4], b) = Sub64(z->d[4], fp::MODULUS.d[4], b);
+        tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
+    }
+}
 #ifdef __x86_64__
-void _double(fp* z, const fp* x)
+void _double_x86_64(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -319,17 +376,18 @@ void _double(fp* z, const fp* x)
     asm("pop %r14;");
     asm("pop %r15;");
 }
-#else
-void _double(fp* z, const fp* x)
+#endif
+
+void _doubleAssign_cpp(fp* z)
 {
     uint64_t carry, _;
 
-    tie(z->d[0], carry) = Add64(x->d[0], x->d[0], 0);
-    tie(z->d[1], carry) = Add64(x->d[1], x->d[1], carry);
-    tie(z->d[2], carry) = Add64(x->d[2], x->d[2], carry);
-    tie(z->d[3], carry) = Add64(x->d[3], x->d[3], carry);
-    tie(z->d[4], carry) = Add64(x->d[4], x->d[4], carry);
-    tie(z->d[5], _)     = Add64(x->d[5], x->d[5], carry);
+    tie(z->d[0], carry) = Add64(z->d[0], z->d[0], 0);
+    tie(z->d[1], carry) = Add64(z->d[1], z->d[1], carry);
+    tie(z->d[2], carry) = Add64(z->d[2], z->d[2], carry);
+    tie(z->d[3], carry) = Add64(z->d[3], z->d[3], carry);
+    tie(z->d[4], carry) = Add64(z->d[4], z->d[4], carry);
+    tie(z->d[5], _)     = Add64(z->d[5], z->d[5], carry);
 
     // if z > q --> z -= q
     // note: this is NOT constant time
@@ -344,10 +402,8 @@ void _double(fp* z, const fp* x)
         tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
     }
 }
-#endif
-
 #ifdef __x86_64__
-void _doubleAssign(fp* z)
+void _doubleAssign_x86_64(fp* z)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -405,35 +461,21 @@ void _doubleAssign(fp* z)
     asm("pop %r14;");
     asm("pop %r15;");
 }
-#else
-void _doubleAssign(fp* z)
+#endif
+
+void _ldouble_cpp(fp* z, const fp* x)
 {
     uint64_t carry, _;
 
-    tie(z->d[0], carry) = Add64(z->d[0], z->d[0], 0);
-    tie(z->d[1], carry) = Add64(z->d[1], z->d[1], carry);
-    tie(z->d[2], carry) = Add64(z->d[2], z->d[2], carry);
-    tie(z->d[3], carry) = Add64(z->d[3], z->d[3], carry);
-    tie(z->d[4], carry) = Add64(z->d[4], z->d[4], carry);
-    tie(z->d[5], _)     = Add64(z->d[5], z->d[5], carry);
-
-    // if z > q --> z -= q
-    // note: this is NOT constant time
-    if(!(z->d[5] < fp::MODULUS.d[5] || (z->d[5] == fp::MODULUS.d[5] && (z->d[4] < fp::MODULUS.d[4] || (z->d[4] == fp::MODULUS.d[4] && (z->d[3] < fp::MODULUS.d[3] || (z->d[3] == fp::MODULUS.d[3] && (z->d[2] < fp::MODULUS.d[2] || (z->d[2] == fp::MODULUS.d[2] && (z->d[1] < fp::MODULUS.d[1] || (z->d[1] == fp::MODULUS.d[1] && (z->d[0] < fp::MODULUS.d[0]))))))))))))
-    {
-        uint64_t b;
-        tie(z->d[0], b) = Sub64(z->d[0], fp::MODULUS.d[0], 0);
-        tie(z->d[1], b) = Sub64(z->d[1], fp::MODULUS.d[1], b);
-        tie(z->d[2], b) = Sub64(z->d[2], fp::MODULUS.d[2], b);
-        tie(z->d[3], b) = Sub64(z->d[3], fp::MODULUS.d[3], b);
-        tie(z->d[4], b) = Sub64(z->d[4], fp::MODULUS.d[4], b);
-        tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
-    }
+    tie(z->d[0], carry) = Add64(x->d[0], x->d[0], 0);
+    tie(z->d[1], carry) = Add64(x->d[1], x->d[1], carry);
+    tie(z->d[2], carry) = Add64(x->d[2], x->d[2], carry);
+    tie(z->d[3], carry) = Add64(x->d[3], x->d[3], carry);
+    tie(z->d[4], carry) = Add64(x->d[4], x->d[4], carry);
+    tie(z->d[5], _)     = Add64(x->d[5], x->d[5], carry);
 }
-#endif
-
 #ifdef __x86_64__
-void _ldouble(fp* z, const fp* x)
+void _ldouble_x86_64(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -458,22 +500,30 @@ void _ldouble(fp* z, const fp* x)
     asm("mov %rcx,0x20(%rdi);");
     asm("mov %rax,0x28(%rdi);");
 }
-#else
-void _ldouble(fp* z, const fp* x)
-{
-    uint64_t carry, _;
-
-    tie(z->d[0], carry) = Add64(x->d[0], x->d[0], 0);
-    tie(z->d[1], carry) = Add64(x->d[1], x->d[1], carry);
-    tie(z->d[2], carry) = Add64(x->d[2], x->d[2], carry);
-    tie(z->d[3], carry) = Add64(x->d[3], x->d[3], carry);
-    tie(z->d[4], carry) = Add64(x->d[4], x->d[4], carry);
-    tie(z->d[5], _)     = Add64(x->d[5], x->d[5], carry);
-}
 #endif
 
+void _sub_cpp(fp* z, const fp* x, const fp* y)
+{
+    uint64_t b;
+    tie(z->d[0], b) = Sub64(x->d[0], y->d[0], 0);
+    tie(z->d[1], b) = Sub64(x->d[1], y->d[1], b);
+    tie(z->d[2], b) = Sub64(x->d[2], y->d[2], b);
+    tie(z->d[3], b) = Sub64(x->d[3], y->d[3], b);
+    tie(z->d[4], b) = Sub64(x->d[4], y->d[4], b);
+    tie(z->d[5], b) = Sub64(x->d[5], y->d[5], b);
+    if(b != 0)
+    {
+        uint64_t c, _;
+        tie(z->d[0], c) = Add64(z->d[0], fp::MODULUS.d[0], 0);
+        tie(z->d[1], c) = Add64(z->d[1], fp::MODULUS.d[1], c);
+        tie(z->d[2], c) = Add64(z->d[2], fp::MODULUS.d[2], c);
+        tie(z->d[3], c) = Add64(z->d[3], fp::MODULUS.d[3], c);
+        tie(z->d[4], c) = Add64(z->d[4], fp::MODULUS.d[4], c);
+        tie(z->d[5], _) = Add64(z->d[5], fp::MODULUS.d[5], c);
+    }
+}
 #ifdef __x86_64__
-void _sub(fp* z, const fp* x, const fp* y)
+void _sub_x86_64(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -528,16 +578,17 @@ void _sub(fp* z, const fp* x, const fp* y)
     asm("pop %r14;");
     asm("pop %r15;");
 }
-#else
-void _sub(fp* z, const fp* x, const fp* y)
+#endif
+
+void _subAssign_cpp(fp* z, const fp* x)
 {
     uint64_t b;
-    tie(z->d[0], b) = Sub64(x->d[0], y->d[0], 0);
-    tie(z->d[1], b) = Sub64(x->d[1], y->d[1], b);
-    tie(z->d[2], b) = Sub64(x->d[2], y->d[2], b);
-    tie(z->d[3], b) = Sub64(x->d[3], y->d[3], b);
-    tie(z->d[4], b) = Sub64(x->d[4], y->d[4], b);
-    tie(z->d[5], b) = Sub64(x->d[5], y->d[5], b);
+    tie(z->d[0], b) = Sub64(z->d[0], x->d[0], 0);
+    tie(z->d[1], b) = Sub64(z->d[1], x->d[1], b);
+    tie(z->d[2], b) = Sub64(z->d[2], x->d[2], b);
+    tie(z->d[3], b) = Sub64(z->d[3], x->d[3], b);
+    tie(z->d[4], b) = Sub64(z->d[4], x->d[4], b);
+    tie(z->d[5], b) = Sub64(z->d[5], x->d[5], b);
     if(b != 0)
     {
         uint64_t c, _;
@@ -549,10 +600,8 @@ void _sub(fp* z, const fp* x, const fp* y)
         tie(z->d[5], _) = Add64(z->d[5], fp::MODULUS.d[5], c);
     }
 }
-#endif
-
 #ifdef __x86_64__
-void _subAssign(fp* z, const fp* x)
+void _subAssign_x86_64(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -606,31 +655,20 @@ void _subAssign(fp* z, const fp* x)
     asm("pop %r14;");
     asm("pop %r15;");
 }
-#else
-void _subAssign(fp* z, const fp* x)
+#endif
+
+void _lsubAssign_cpp(fp* z, const fp* x)
 {
-    uint64_t b;
+    uint64_t b, _;
     tie(z->d[0], b) = Sub64(z->d[0], x->d[0], 0);
     tie(z->d[1], b) = Sub64(z->d[1], x->d[1], b);
     tie(z->d[2], b) = Sub64(z->d[2], x->d[2], b);
     tie(z->d[3], b) = Sub64(z->d[3], x->d[3], b);
     tie(z->d[4], b) = Sub64(z->d[4], x->d[4], b);
-    tie(z->d[5], b) = Sub64(z->d[5], x->d[5], b);
-    if(b != 0)
-    {
-        uint64_t c, _;
-        tie(z->d[0], c) = Add64(z->d[0], fp::MODULUS.d[0], 0);
-        tie(z->d[1], c) = Add64(z->d[1], fp::MODULUS.d[1], c);
-        tie(z->d[2], c) = Add64(z->d[2], fp::MODULUS.d[2], c);
-        tie(z->d[3], c) = Add64(z->d[3], fp::MODULUS.d[3], c);
-        tie(z->d[4], c) = Add64(z->d[4], fp::MODULUS.d[4], c);
-        tie(z->d[5], _) = Add64(z->d[5], fp::MODULUS.d[5], c);
-    }
+    tie(z->d[5], _) = Sub64(z->d[5], x->d[5], b);
 }
-#endif
-
 #ifdef __x86_64__
-void _lsubAssign(fp* z, const fp* x)
+void _lsubAssign_x86_64(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -655,21 +693,25 @@ void _lsubAssign(fp* z, const fp* x)
     asm("mov %rcx,0x20(%rdi);");
     asm("mov %rax,0x28(%rdi);");
 }
-#else
-void _lsubAssign(fp* z, const fp* x)
-{
-    uint64_t b, _;
-    tie(z->d[0], b) = Sub64(z->d[0], x->d[0], 0);
-    tie(z->d[1], b) = Sub64(z->d[1], x->d[1], b);
-    tie(z->d[2], b) = Sub64(z->d[2], x->d[2], b);
-    tie(z->d[3], b) = Sub64(z->d[3], x->d[3], b);
-    tie(z->d[4], b) = Sub64(z->d[4], x->d[4], b);
-    tie(z->d[5], _) = Sub64(z->d[5], x->d[5], b);
-}
 #endif
 
+void _neg_cpp(fp* z, const fp* x)
+{
+    if(x->isZero())
+    {
+        *z = *x;
+        return;
+    }
+    uint64_t borrow, _;
+    tie(z->d[0], borrow) = Sub64(fp::MODULUS.d[0], x->d[0], 0);
+    tie(z->d[1], borrow) = Sub64(fp::MODULUS.d[1], x->d[1], borrow);
+    tie(z->d[2], borrow) = Sub64(fp::MODULUS.d[2], x->d[2], borrow);
+    tie(z->d[3], borrow) = Sub64(fp::MODULUS.d[3], x->d[3], borrow);
+    tie(z->d[4], borrow) = Sub64(fp::MODULUS.d[4], x->d[4], borrow);
+    tie(z->d[5], _)      = Sub64(fp::MODULUS.d[5], x->d[5], borrow);
+}
 #ifdef __x86_64__
-void __neg(fp* z, const fp* x)
+void __neg_x86_64(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -694,9 +736,9 @@ void __neg(fp* z, const fp* x)
     asm("mov %rcx,0x20(%rdi);");
     asm("mov %rax,0x28(%rdi);");
 }
-void _neg(fp* z, const fp* x)
+void _neg_x86_64(fp* z, const fp* x)
 {
-    __neg(z, x);
+    __neg_x86_64(z, x);
     // put zero check after __neg because gcc messes up %rdi in -O3 (doesn't restore it before inlining asm code)
     if(x->isZero())
     {
@@ -704,26 +746,130 @@ void _neg(fp* z, const fp* x)
         return;
     }
 }
-#else
-void _neg(fp* z, const fp* x)
-{
-    if(x->isZero())
-    {
-        *z = *x;
-        return;
-    }
-    uint64_t borrow, _;
-    tie(z->d[0], borrow) = Sub64(fp::MODULUS.d[0], x->d[0], 0);
-    tie(z->d[1], borrow) = Sub64(fp::MODULUS.d[1], x->d[1], borrow);
-    tie(z->d[2], borrow) = Sub64(fp::MODULUS.d[2], x->d[2], borrow);
-    tie(z->d[3], borrow) = Sub64(fp::MODULUS.d[3], x->d[3], borrow);
-    tie(z->d[4], borrow) = Sub64(fp::MODULUS.d[4], x->d[4], borrow);
-    tie(z->d[5], _)      = Sub64(fp::MODULUS.d[5], x->d[5], borrow);
-}
 #endif
 
-#if defined(__x86_64__) && defined(__BMI2__) && defined(__ADX__)
-void _mul(fp* z, const fp* x, const fp* y)
+void _mul_cpp(fp* z, const fp* x, const fp* y)
+{
+    array<uint64_t, 6> t;
+    array<uint64_t, 3> c;
+    {
+        // round 0
+        uint64_t v = x->d[0];
+        tie(c[1], c[0]) = Mul64(v, y->d[0]);
+        uint64_t m = c[0] * fp::INP;
+        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
+        tie(c[1], c[0]) = madd1(v, y->d[1], c[1]);
+        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
+        tie(c[1], c[0]) = madd1(v, y->d[2], c[1]);
+        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
+        tie(c[1], c[0]) = madd1(v, y->d[3], c[1]);
+        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
+        tie(c[1], c[0]) = madd1(v, y->d[4], c[1]);
+        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
+        tie(c[1], c[0]) = madd1(v, y->d[5], c[1]);
+        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
+    }
+    {
+        // round 1
+        uint64_t v = x->d[1];
+        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
+        uint64_t m = c[0] * fp::INP;
+        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
+        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
+        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
+        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
+        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
+        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
+    }
+    {
+        // round 2
+        uint64_t v = x->d[2];
+        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
+        uint64_t m = c[0] * fp::INP;
+        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
+        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
+        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
+        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
+        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
+        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
+    }
+    {
+        // round 3
+        uint64_t v = x->d[3];
+        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
+        uint64_t m = c[0] * fp::INP;
+        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
+        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
+        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
+        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
+        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
+        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
+    }
+    {
+        // round 4
+        uint64_t v = x->d[4];
+        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
+        uint64_t m = c[0] * fp::INP;
+        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
+        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
+        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
+        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
+        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
+        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
+        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
+    }
+    {
+        // round 5
+        uint64_t v = x->d[5];
+        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
+        uint64_t m = c[0] * fp::INP;
+        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
+        tie(c[1], c[0])    = madd2(v, y->d[1], c[1], t[1]);
+        tie(c[2], z->d[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
+        tie(c[1], c[0])    = madd2(v, y->d[2], c[1], t[2]);
+        tie(c[2], z->d[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
+        tie(c[1], c[0])    = madd2(v, y->d[3], c[1], t[3]);
+        tie(c[2], z->d[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
+        tie(c[1], c[0])    = madd2(v, y->d[4], c[1], t[4]);
+        tie(c[2], z->d[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
+        tie(c[1], c[0])    = madd2(v, y->d[5], c[1], t[5]);
+        tie(z->d[5], z->d[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
+    }
+
+    // if z > q --> z -= q
+    // note: this is NOT constant time
+    if(!(z->d[5] < fp::MODULUS.d[5] || (z->d[5] == fp::MODULUS.d[5] && (z->d[4] < fp::MODULUS.d[4] || (z->d[4] == fp::MODULUS.d[4] && (z->d[3] < fp::MODULUS.d[3] || (z->d[3] == fp::MODULUS.d[3] && (z->d[2] < fp::MODULUS.d[2] || (z->d[2] == fp::MODULUS.d[2] && (z->d[1] < fp::MODULUS.d[1] || (z->d[1] == fp::MODULUS.d[1] && (z->d[0] < fp::MODULUS.d[0]))))))))))))
+    {
+        uint64_t b, _;
+        tie(z->d[0], b) = Sub64(z->d[0], fp::MODULUS.d[0], 0);
+        tie(z->d[1], b) = Sub64(z->d[1], fp::MODULUS.d[1], b);
+        tie(z->d[2], b) = Sub64(z->d[2], fp::MODULUS.d[2], b);
+        tie(z->d[3], b) = Sub64(z->d[3], fp::MODULUS.d[3], b);
+        tie(z->d[4], b) = Sub64(z->d[4], fp::MODULUS.d[4], b);
+        tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
+    }
+}
+#ifdef __x86_64__
+void _mul_x86_64(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi (=> stack)
@@ -1135,136 +1281,9 @@ void _mul(fp* z, const fp* x, const fp* y)
     asm("pop %r15;");
     asm("pop %rbp;");
 }
-#else
-void _mul(fp* z, const fp* x, const fp* y)
-{
-    array<uint64_t, 6> t;
-    array<uint64_t, 3> c;
-    {
-        // round 0
-        uint64_t v = x->d[0];
-        tie(c[1], c[0]) = Mul64(v, y->d[0]);
-        uint64_t m = c[0] * fp::INP;
-        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
-        tie(c[1], c[0]) = madd1(v, y->d[1], c[1]);
-        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
-        tie(c[1], c[0]) = madd1(v, y->d[2], c[1]);
-        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
-        tie(c[1], c[0]) = madd1(v, y->d[3], c[1]);
-        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
-        tie(c[1], c[0]) = madd1(v, y->d[4], c[1]);
-        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
-        tie(c[1], c[0]) = madd1(v, y->d[5], c[1]);
-        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
-    }
-    {
-        // round 1
-        uint64_t v = x->d[1];
-        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
-        uint64_t m = c[0] * fp::INP;
-        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
-        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
-        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
-        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
-        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
-        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
-    }
-    {
-        // round 2
-        uint64_t v = x->d[2];
-        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
-        uint64_t m = c[0] * fp::INP;
-        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
-        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
-        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
-        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
-        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
-        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
-    }
-    {
-        // round 3
-        uint64_t v = x->d[3];
-        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
-        uint64_t m = c[0] * fp::INP;
-        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
-        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
-        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
-        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
-        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
-        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
-    }
-    {
-        // round 4
-        uint64_t v = x->d[4];
-        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
-        uint64_t m = c[0] * fp::INP;
-        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[1], c[1], t[1]);
-        tie(c[2], t[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[2], c[1], t[2]);
-        tie(c[2], t[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[3], c[1], t[3]);
-        tie(c[2], t[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[4], c[1], t[4]);
-        tie(c[2], t[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
-        tie(c[1], c[0]) = madd2(v, y->d[5], c[1], t[5]);
-        tie(t[5], t[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
-    }
-    {
-        // round 5
-        uint64_t v = x->d[5];
-        tie(c[1], c[0]) = madd1(v, y->d[0], t[0]);
-        uint64_t m = c[0] * fp::INP;
-        c[2] = madd0(m, fp::MODULUS.d[0], c[0]);
-        tie(c[1], c[0])    = madd2(v, y->d[1], c[1], t[1]);
-        tie(c[2], z->d[0]) = madd2(m, fp::MODULUS.d[1], c[2], c[0]);
-        tie(c[1], c[0])    = madd2(v, y->d[2], c[1], t[2]);
-        tie(c[2], z->d[1]) = madd2(m, fp::MODULUS.d[2], c[2], c[0]);
-        tie(c[1], c[0])    = madd2(v, y->d[3], c[1], t[3]);
-        tie(c[2], z->d[2]) = madd2(m, fp::MODULUS.d[3], c[2], c[0]);
-        tie(c[1], c[0])    = madd2(v, y->d[4], c[1], t[4]);
-        tie(c[2], z->d[3]) = madd2(m, fp::MODULUS.d[4], c[2], c[0]);
-        tie(c[1], c[0])    = madd2(v, y->d[5], c[1], t[5]);
-        tie(z->d[5], z->d[4]) = madd3(m, fp::MODULUS.d[5], c[0], c[2], c[1]);
-    }
-
-    // if z > q --> z -= q
-    // note: this is NOT constant time
-    if(!(z->d[5] < fp::MODULUS.d[5] || (z->d[5] == fp::MODULUS.d[5] && (z->d[4] < fp::MODULUS.d[4] || (z->d[4] == fp::MODULUS.d[4] && (z->d[3] < fp::MODULUS.d[3] || (z->d[3] == fp::MODULUS.d[3] && (z->d[2] < fp::MODULUS.d[2] || (z->d[2] == fp::MODULUS.d[2] && (z->d[1] < fp::MODULUS.d[1] || (z->d[1] == fp::MODULUS.d[1] && (z->d[0] < fp::MODULUS.d[0]))))))))))))
-    {
-        uint64_t b, _;
-        tie(z->d[0], b) = Sub64(z->d[0], fp::MODULUS.d[0], 0);
-        tie(z->d[1], b) = Sub64(z->d[1], fp::MODULUS.d[1], b);
-        tie(z->d[2], b) = Sub64(z->d[2], fp::MODULUS.d[2], b);
-        tie(z->d[3], b) = Sub64(z->d[3], fp::MODULUS.d[3], b);
-        tie(z->d[4], b) = Sub64(z->d[4], fp::MODULUS.d[4], b);
-        tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
-    }
-}
 #endif
 
-#if defined(__x86_64__) && defined(__BMI2__) && defined(__ADX__)
-void _square(fp* z, const fp* x)
-{
-    _mul(z, x, x);
-}
-#else
-void _square(fp* z, const fp* x)
+void _square_cpp(fp* z, const fp* x)
 {
     array<uint64_t, 6> p;
     uint64_t u, v;
@@ -1367,6 +1386,11 @@ void _square(fp* z, const fp* x)
         tie(z->d[4], b) = Sub64(z->d[4], fp::MODULUS.d[4], b);
         tie(z->d[5], _) = Sub64(z->d[5], fp::MODULUS.d[5], b);
     }
+}
+#ifdef __x86_64__
+void _square_x86_64(fp* z, const fp* x)
+{
+    _mul(z, x, x);
 }
 #endif
 

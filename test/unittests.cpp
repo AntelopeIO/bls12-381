@@ -1692,6 +1692,8 @@ void TestPopScheme()
 
 int main()
 {
+    init();
+
     TestScalar();
 
     TestFieldElementValidation();
