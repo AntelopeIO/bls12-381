@@ -26,15 +26,15 @@ make -j
 
 ## Run benchmarks
 ```
-./bench/bench           # eth benchmarks
+./bench/eth_bench       # eth benchmarks
 ./bench/chia_bench      # chia benchmarks
 ```
 The following numbers were generated running the above benchmarks (and their equivalents of Ethereum's and Chia's libraries) on an Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz.
 
 ### Ethereum Bench
 Ethereum's Go implementation of [bls12381](https://github.com/ethereum/go-ethereum/tree/master/crypto/bls12381) vs. this library. Two different compilations are benchmarked:
-- `go` vs. `cpp` - Native go vs native cpp implementation
-- `asm` vs. `asm` - The assembly implementations of both libraries are compared (cpu features enabled)
+- `go/cpp` - Native go/cpp implementation is benchmarked
+- `asm` - The assembly implementation is benchmarked
 ```
 Ethereum's library (go):                This library (cpp):                     Ethereum's library (asm):               This library (asm):
 G1 Addition                             G1 Addition                             G1 Addition                             G1 Addition
