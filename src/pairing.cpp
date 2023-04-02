@@ -4,8 +4,10 @@ using namespace std;
 
 namespace bls12_381
 {
+namespace pairing
+{
 
-void pairing::doubling_step(array<fp2, 3>& coeff, g2& r)
+void doubling_step(array<fp2, 3>& coeff, g2& r)
 {
     // Adaptation of Formula 3 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
@@ -39,7 +41,7 @@ void pairing::doubling_step(array<fp2, 3>& coeff, g2& r)
     coeff[2] = t[6].neg();
 }
 
-void pairing::addition_step(array<fp2, 3>& coeff, g2& r, g2& tp)
+void addition_step(array<fp2, 3>& coeff, g2& r, g2& tp)
 {
     // Algorithm 12 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
@@ -70,7 +72,7 @@ void pairing::addition_step(array<fp2, 3>& coeff, g2& r, g2& tp)
     coeff[2] = t[1];
 }
 
-void pairing::pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
+void pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
 {
     // Algorithm 5 in  https://eprint.iacr.org/2019/077.pdf
     if(twistPoint.isZero())
@@ -91,7 +93,7 @@ void pairing::pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
     }
 }
 
-fp12 pairing::miller_loop(vector<tuple<g1, g2>>& pairs)
+fp12 miller_loop(vector<tuple<g1, g2>>& pairs)
 {
     vector<array<array<fp2, 3>, 68>> ellCoeffs;
     ellCoeffs.resize(pairs.size());
@@ -130,7 +132,7 @@ fp12 pairing::miller_loop(vector<tuple<g1, g2>>& pairs)
     return f;
 }
 
-void pairing::final_exponentiation(fp12& f)
+void final_exponentiation(fp12& f)
 {
     fp12 t[9];
     // easy part
@@ -171,7 +173,7 @@ void pairing::final_exponentiation(fp12& f)
     f = t[3].mul(t[4]);
 }
 
-fp12 pairing::calculate(vector<tuple<g1, g2>>& pairs)
+fp12 calculate(vector<tuple<g1, g2>>& pairs)
 {
     fp12 f = fp12::one();
     if(pairs.size() == 0)
@@ -183,7 +185,7 @@ fp12 pairing::calculate(vector<tuple<g1, g2>>& pairs)
     return f;
 }
 
-void pairing::add_pair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
+void add_pair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
 {
     if(!(e1.isZero() || e2.isZero()))
     {
@@ -194,4 +196,5 @@ void pairing::add_pair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
     }
 }
 
+} // namespace pairing
 } // namespace bls12_381

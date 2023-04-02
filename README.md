@@ -26,9 +26,33 @@ make -j
 
 ## Run benchmarks
 ```
-./bench/chia_bench
+./bench/bench           # eth benchmarks
+./bench/chia_bench      # chia benchmarks
 ```
+The following numbers were generated running the above benchmarks (and their equivalents of Ethereum's and Chia's libraries) on an Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz.
 
+### Ethereum Bench
+Ethereum's Go implementation of [bls12381](https://github.com/ethereum/go-ethereum/tree/master/crypto/bls12381) vs. this library. Two different compilations are benchmarked:
+- `go` vs. `cpp` - Native go vs native cpp implementation
+- `asm` vs. `asm` - The assembly implementations of both libraries are compared (cpu features enabled)
+```
+Ethereum's library (go):                This library (cpp):                     Ethereum's library (asm):               This library (asm):
+G1 Addition                             G1 Addition                             G1 Addition                             G1 Addition
+886 ns/op                               875 ns/op                               743 ns/op                               747 ns/op
+
+G1 Multiplication                       G1 Multiplication                       G1 Multiplication                       G1 Multiplication
+338003 ns/op                            336085 ns/op                            281708 ns/op                            281852 ns/op
+
+G2 Addition                             G2 Addition                             G2 Addition                             G2 Addition
+2714 ns/op                              2451 ns/op                              1851 ns/op                              1848 ns/op
+
+G2 Multiplication                       G2 Multiplication                       G2 Multiplication                       G2 Multiplication
+1075886 ns/op                           1011230 ns/op                           821738 ns/op                            752900 ns/op
+
+Pairing                                 Pairing                                 Pairing                                 Pairing
+1372026 ns/op                           1231320 ns/op                           1022350 ns/op                           982783 ns/op
+```
+### Chia Bench
 Chia Network's [bls-signatures](https://github.com/Chia-Network/bls-signatures) library vs. this library. Four different compilations are benchmarked:
 - `cpu-ext-ct, asm` - CPU features ADX and BMI2 are enabled at compile-time, the x86_64 assembly implementation is used
 - `cpu-ext-rt, asm` - CPU features ADX and BMI2 are enabled at run-time, the x86_64 assembly implementation is used
