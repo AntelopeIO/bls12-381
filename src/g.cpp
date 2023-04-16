@@ -292,8 +292,7 @@ bool g1::equal(const g1& e) const
 
 bool g1::inCorrectSubgroup() const
 {
-    g1 tmp = mulScalar(fp::Q);
-    return tmp.isZero();
+    return mulScalar(fp::Q).isZero();
 }
 
 bool g1::isOnCurve() const
@@ -996,7 +995,7 @@ bool g2::isOnCurve() const
     t[2] = z.square();
     t[3] = t[2].square();
     t[2] = t[2].mul(t[3]);
-    t[2] = fp2(fp2::B).mul(t[2]);
+    t[2] = fp2::B.mul(t[2]);
     t[1] = t[1].add(t[2]);
     return t[0].equal(t[1]);
 }
