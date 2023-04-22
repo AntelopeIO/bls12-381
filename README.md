@@ -1,15 +1,22 @@
 # BLS12-381
-All things BLS! Features include:
+All things BLS! This library features:
 
 - High speed assembly implementation for x86_64
 - G1/G2 Arithmetic & Pairing
 - Aggregate Signatures
+- Groth16
 - [EIP-2537](https://eips.ethereum.org/EIPS/eip-2537)
 - [EIP-2333](https://eips.ethereum.org/EIPS/eip-2333)
-- Zero dependency build possible (only stdlib, WASM support)
+- Zero dependencies
+- WASM build
 
-Coming soon:
-- Groth16
+Reference Libraries:
+- [zkcrypto/bls12_381](https://github.com/zkcrypto/bls12_381) (Rust)
+- [zkcrypto/bellman](https://github.com/zkcrypto/bellman) (Rust)
+- [go-ethereum/bls12381](https://github.com/ethereum/go-ethereum/tree/master/crypto/bls12381) (Go)
+- [ConsenSys/bls12-381](https://github.com/ConsenSys/gnark-crypto/tree/master/ecc/bls12-381) (Go)
+- [Chia-Network/bls-signatures](https://github.com/Chia-Network/bls-signatures) (C++)
+- [Relic-Toolkit](https://github.com/relic-toolkit/relic) (C)
 
 ## Build
 ```

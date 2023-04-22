@@ -119,10 +119,12 @@ namespace groth16
     };
 
     PreparedVerifyingKey prepare_verifying_key(const VerifyingKey& vk);
+
     bool verify_proof(
         const PreparedVerifyingKey& pvk,
         const Proof& proof,
         std::vector<std::array<uint64_t, 4>>& public_inputs
     );
+
 } // namespace groth16
 } // namespace bls12_381
