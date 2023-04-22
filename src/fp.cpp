@@ -242,15 +242,15 @@ bool fp::isLexicographicallyLargest() const
         0x0F55FFFF58A9FFFF,
         0xDCFF7FFFFFFFD556
     };
-    array<uint64_t, 6> yValue = toMont().d;
+    array<uint64_t, 6> yValue = fromMont().d;
     
     uint64_t _, borrow;
-    tie(_, borrow) = Sub64(yValue[0], halfQ[5], 0);     // If the element was smaller, the subtraction will underflow
-    tie(_, borrow) = Sub64(yValue[1], halfQ[4], 0);     // producing a borrow value of 0xffff...ffff, otherwise it will
-    tie(_, borrow) = Sub64(yValue[2], halfQ[3], 0);     // be zero. We create a Choice representing true if there was
-    tie(_, borrow) = Sub64(yValue[3], halfQ[2], 0);     // overflow (and so this element is not lexicographically larger
-    tie(_, borrow) = Sub64(yValue[4], halfQ[1], 0);     // than its negation) and then negate it.
-    tie(_, borrow) = Sub64(yValue[5], halfQ[0], 0);
+    tie(_, borrow) = Sub64(yValue[0], halfQ[5], 0);         // If the element was smaller, the subtraction will underflow
+    tie(_, borrow) = Sub64(yValue[1], halfQ[4], borrow);    // producing a borrow value of 0xffff...ffff, otherwise it will
+    tie(_, borrow) = Sub64(yValue[2], halfQ[3], borrow);    // be zero. We create a Choice representing true if there was
+    tie(_, borrow) = Sub64(yValue[3], halfQ[2], borrow);    // overflow (and so this element is not lexicographically larger
+    tie(_, borrow) = Sub64(yValue[4], halfQ[1], borrow);    // than its negation) and then negate it.
+    tie(_, borrow) = Sub64(yValue[5], halfQ[0], borrow);
     
     // if underflow bit is NOT set this field element is larger than Q/2
     return borrow == 0;
@@ -379,16 +379,14 @@ void fp2::toBytesLE(const span<uint8_t, 96> out, const bool raw) const
 array<uint8_t, 96> fp2::toBytesBE(const bool raw) const
 {
     array<uint8_t, 96> out;
-    memcpy(&out[ 0], &c1.toBytesBE(raw)[0], 48);
-    memcpy(&out[48], &c0.toBytesBE(raw)[0], 48);
+    toBytesBE(out, raw);
     return out;
 }
 
 array<uint8_t, 96> fp2::toBytesLE(const bool raw) const
 {
     array<uint8_t, 96> out;
-    memcpy(&out[ 0], &c0.toBytesLE(raw)[0], 48);
-    memcpy(&out[48], &c1.toBytesLE(raw)[0], 48);
+    toBytesLE(out, raw);
     return out;
 }
 
@@ -729,18 +727,14 @@ void fp6::toBytesLE(const span<uint8_t, 288> out, const bool raw) const
 array<uint8_t, 288> fp6::toBytesBE(const bool raw) const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &c2.toBytesBE(raw)[0], 96);
-    memcpy(&out[ 96], &c1.toBytesBE(raw)[0], 96);
-    memcpy(&out[192], &c0.toBytesBE(raw)[0], 96);
+    toBytesBE(out, raw);
     return out;
 }
 
 array<uint8_t, 288> fp6::toBytesLE(const bool raw) const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 96);
-    memcpy(&out[ 96], &c1.toBytesLE(raw)[0], 96);
-    memcpy(&out[192], &c2.toBytesLE(raw)[0], 96);
+    toBytesLE(out, raw);
     return out;
 }
 
@@ -1166,16 +1160,14 @@ void fp12::toBytesLE(const span<uint8_t, 576> out, const bool raw) const
 array<uint8_t, 576> fp12::toBytesBE(const bool raw) const
 {
     array<uint8_t, 576> out;
-    memcpy(&out[  0], &c1.toBytesBE(raw)[0], 288);
-    memcpy(&out[288], &c0.toBytesBE(raw)[0], 288);
+    toBytesBE(out, raw);
     return out;
 }
 
 array<uint8_t, 576> fp12::toBytesLE(const bool raw) const
 {
     array<uint8_t, 576> out;
-    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 288);
-    memcpy(&out[288], &c1.toBytesLE(raw)[0], 288);
+    toBytesLE(out, raw);
     return out;
 }
 

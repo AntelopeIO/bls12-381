@@ -183,68 +183,35 @@ void g1::toCompressedBytesBE(const span<uint8_t, 48> out) const
 array<uint8_t, 144> g1::toJacobianBytesBE(const bool raw) const
 {
     array<uint8_t, 144> out;
-    memcpy(&out[ 0], &x.toBytesBE(raw)[0], 48);
-    memcpy(&out[48], &y.toBytesBE(raw)[0], 48);
-    memcpy(&out[96], &z.toBytesBE(raw)[0], 48);
+    toJacobianBytesBE(out, raw);
     return out;
 }
 
 array<uint8_t, 144> g1::toJacobianBytesLE(const bool raw) const
 {
     array<uint8_t, 144> out;
-    memcpy(&out[ 0], &x.toBytesLE(raw)[0], 48);
-    memcpy(&out[48], &y.toBytesLE(raw)[0], 48);
-    memcpy(&out[96], &z.toBytesLE(raw)[0], 48);
+    toJacobianBytesLE(out, raw);
     return out;
 }
 
 array<uint8_t, 96> g1::toAffineBytesBE(const bool raw) const
 {
     array<uint8_t, 96> out;
-    if(isZero())
-    {
-        memset(&out[0], 0, 96);
-        return out;
-    }
-    g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 48);
-    memcpy(&out[48], &r.y.toBytesBE(raw)[0], 48);
+    toAffineBytesBE(out, raw);
     return out;
 }
 
 array<uint8_t, 96> g1::toAffineBytesLE(const bool raw) const
 {
     array<uint8_t, 96> out;
-    if(isZero())
-    {
-        memset(&out[0], 0, 96);
-        return out;
-    }
-    g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 48);
-    memcpy(&out[48], &r.y.toBytesLE(raw)[0], 48);
+    toAffineBytesLE(out, raw);
     return out;
 }
 
 array<uint8_t, 48> g1::toCompressedBytesBE() const
 {
-    g1 p = affine();
     array<uint8_t, 48> out;
-    // check if point is at infinity
-    if(p.x.isZero() && p.y.isZero())
-    {
-        memset(out.data(), 0, 48);
-        out[0] |= 0xC0;
-        return out;
-    }
-    memcpy(out.data(), p.x.toBytesBE().data(), 48);
-    // checks if y component is larger than its negation
-    if(p.y.isLexicographicallyLargest())
-    {
-        out[0] |= 0x20;
-    }
-    // set compression bit
-    out[0] |= 0x80;
+    toCompressedBytesBE(out);
     return out;
 }
 
@@ -870,69 +837,35 @@ void g2::toCompressedBytesBE(const span<uint8_t, 96> out) const
 array<uint8_t, 288> g2::toJacobianBytesBE(const bool raw) const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &x.toBytesBE(raw)[0], 96);
-    memcpy(&out[ 96], &y.toBytesBE(raw)[0], 96);
-    memcpy(&out[192], &z.toBytesBE(raw)[0], 96);
+    toJacobianBytesBE(out, raw);
     return out;
 }
 
 array<uint8_t, 288> g2::toJacobianBytesLE(const bool raw) const
 {
     array<uint8_t, 288> out;
-    memcpy(&out[  0], &x.toBytesLE(raw)[0], 96);
-    memcpy(&out[ 96], &y.toBytesLE(raw)[0], 96);
-    memcpy(&out[192], &z.toBytesLE(raw)[0], 96);
+    toJacobianBytesLE(out, raw);
     return out;
 }
 
 array<uint8_t, 192> g2::toAffineBytesBE(const bool raw) const
 {
     array<uint8_t, 192> out;
-    if(isZero())
-    {
-        memset(&out[0], 0, 192);
-        return out;
-    }
-    g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 96);
-    memcpy(&out[96], &r.y.toBytesBE(raw)[0], 96);
+    toAffineBytesBE(out, raw);
     return out;
 }
 
 array<uint8_t, 192> g2::toAffineBytesLE(const bool raw) const
 {
     array<uint8_t, 192> out;
-    if(isZero())
-    {
-        memset(&out[0], 0, 192);
-        return out;
-    }
-    g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 96);
-    memcpy(&out[96], &r.y.toBytesLE(raw)[0], 96);
+    toAffineBytesLE(out, raw);
     return out;
 }
 
 array<uint8_t, 96> g2::toCompressedBytesBE() const
 {
-    g2 p = affine();
     array<uint8_t, 96> out;
-    // check if point is at infinity
-    if(p.x.isZero() && p.y.isZero())
-    {
-        memset(out.data(), 0, 96);
-        out[0] |= 0xC0;
-        return out;
-    }
-    memcpy(out.data(), p.x.c1.toBytesBE().data(), 48);
-    memcpy(out.data() + 48, p.x.c0.toBytesBE().data(), 48);
-    // check y component
-    if(p.y.isLexicographicallyLargest())
-    {
-        out[0] |= 0x20;
-    }
-    // set compression bit
-    out[0] |= 0x80;
+    toCompressedBytesBE(out);
     return out;
 }
 

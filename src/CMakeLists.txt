@@ -8,6 +8,7 @@ add_library (
     scalar.cpp
     sha256.cpp
     signatures.cpp
+    groth16.cpp
 )
 
 target_include_directories(
