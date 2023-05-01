@@ -413,8 +413,7 @@ g1 g1::clearCofactor() const
 
 // MultiExp calculates multi exponentiation. Given pairs of G1 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
-// Length of points and scalars are expected to be equal, otherwise an error is returned.
-// Result is assigned to point at first argument.
+// Length of points and scalars are expected to be equal, otherwise an error is thrown.
 g1 g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars)
 {
     if(points.size() != scalars.size())
@@ -1109,8 +1108,7 @@ g2 g2::frobeniusMap(int64_t power) const
 
 // MultiExp calculates multi exponentiation. Given pairs of G2 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
-// Length of points and scalars are expected to be equal, otherwise an error is returned.
-// Result is assigned to point at first argument.
+// Length of points and scalars are expected to be equal, otherwise an error is thrown.
 g2 g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars)
 {
     if(points.size() != scalars.size())

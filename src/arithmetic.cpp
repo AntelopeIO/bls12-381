@@ -1,4 +1,5 @@
 #include "../include/bls12_381.hpp"
+#include <cpuid.h>
 
 using namespace std;
 
@@ -13,11 +14,20 @@ void init()
 {
 #if defined(__x86_64__) && (!defined(__ADX__) || !defined(__BMI2__))
     _mul = &__mul;
+    #if defined(__GNUC__) && __GNUC__ >= 11
     __builtin_cpu_init();
     if(__builtin_cpu_supports("bmi2") && __builtin_cpu_supports("adx"))
     {
         _mul = &__mul_ex;
     }
+    #else
+    int32_t eax, ecx, info[4];
+    __cpuid_count(eax, ecx, info[0], info[1], info[2], info[3]);
+    if((info[1] & (1 <<  8)) != 0 && (info[1] & (1 << 19)) != 0) // BMI2 && ADX
+    {
+        _mul = &__mul_ex;
+    }
+    #endif
 #endif
 }
 
