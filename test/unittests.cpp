@@ -1535,12 +1535,14 @@ void TestAugScheme()
 
     g1 pk1 = public_key(sk1);
     g1 pk2 = public_key(sk2);
+    array<uint8_t, 96UL> pk1_bytes = pk1.toAffineBytesBE();
+    array<uint8_t, 96UL> pk2_bytes = pk2.toAffineBytesBE();
 
     // Augmented Scheme: Each signer extends the same message with their individual public keys
     vector<uint8_t> augMsg1 = message;
-    augMsg1.insert(augMsg1.end(), pk1.toAffineBytesBE().begin(), pk1.toAffineBytesBE().end());
+    augMsg1.insert(augMsg1.end(), pk1_bytes.begin(), pk1_bytes.end());
     vector<uint8_t> augMsg2 = message;
-    augMsg2.insert(augMsg2.end(), pk2.toAffineBytesBE().begin(), pk2.toAffineBytesBE().end());
+    augMsg2.insert(augMsg2.end(), pk2_bytes.begin(), pk2_bytes.end());
     g2 sig1Aug = sign(sk1, augMsg1);
     g2 sig2Aug = sign(sk2, augMsg2);
     g2 aggSigAug = aggregate_signatures({sig1Aug, sig2Aug});

@@ -203,7 +203,9 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
     array<uint64_t, 6> skBn = scalar::fromBytesBE<6>(span<uint8_t, 48>(okmHkdf.begin(), okmHkdf.end()));
     array<uint64_t, 6> quotient = {0, 0, 0, 0, 0, 0};
     array<uint64_t, 6> remainder = {0, 0, 0, 0, 0, 0};
-    array<uint64_t, 4> q = fp::Q;
+    // be conservative with scratch memory (https://github.com/relic-toolkit/relic/blob/ddd1984a76aa9c96a12ebdf5c6786b0ee6a26ef8/src/bn/relic_bn_div.c#L79)
+    // with gcc array<uint64_t, 4> q = fp::Q works fine but clang needs the two extra words
+    array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
     bn_divn_low(quotient.data(), remainder.data(), skBn.data(), 6, q.data(), 4);
     array<uint64_t, 4> k = {remainder[0], remainder[1], remainder[2], remainder[3]};
 

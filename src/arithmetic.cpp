@@ -21,9 +21,9 @@ void init()
         _mul = &__mul_ex;
     }
     #else
-    int32_t eax, ecx, info[4];
-    __cpuid_count(eax, ecx, info[0], info[1], info[2], info[3]);
-    if((info[1] & (1 <<  8)) != 0 && (info[1] & (1 << 19)) != 0) // BMI2 && ADX
+    int32_t info[4];
+    __cpuid_count(0x00000007, 0, info[0], info[1], info[2], info[3]);
+    if((info[1] & (1 <<  8)) && (info[1] & (1 << 19))) // BMI2 && ADX
     {
         _mul = &__mul_ex;
     }
@@ -1918,6 +1918,16 @@ void _mul(fp* z, const fp* x, const fp* y)
 #ifdef __x86_64__
 void _square(fp* z, const fp* x)
 {
+    #ifdef __clang__
+    // The clang compiler completely optimizes out the _square() function and inlines __mul() wherever
+    // it occurs. However, for some reason the compiler forgets that it has to move the third
+    // parameter ('y') of __mul() into %rdx according to the calling convention. The first two
+    // parameters, 'z' (%rdi) and 'x' (%rsi), are set properly because they are the exact same as for
+    // __square(). But the third parameter (which sould be 'x' as well) is somehow ignored by the
+    // clang compiler. So we need to help out by moving it into %rdx before calling __mul().
+    // This is probably a bug in clang!
+    asm("mov %rsi,%rdx;");
+    #endif
     __mul(z, x, x);
 }
 #else
