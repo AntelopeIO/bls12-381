@@ -21,11 +21,17 @@ void init()
         _mul = &__mul_ex;
     }
     #else
+    // borrowed from: https://github.com/Mysticial/FeatureDetector/blob/master/src/x86/cpu_x86.cpp
     int32_t info[4];
-    __cpuid_count(0x00000007, 0, info[0], info[1], info[2], info[3]);
-    if((info[1] & (1 <<  8)) && (info[1] & (1 << 19))) // BMI2 && ADX
+    __cpuid_count(0, 0, info[0], info[1], info[2], info[3]);
+    int nIds = info[0];
+    if(nIds >= 0x00000007)
     {
-        _mul = &__mul_ex;
+        __cpuid_count(0x00000007, 0, info[0], info[1], info[2], info[3]);
+        if((info[1] & (1 <<  8)) && (info[1] & (1 << 19))) // BMI2 && ADX
+        {
+            _mul = &__mul_ex;
+        }
     }
     #endif
 #endif
