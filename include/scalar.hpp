@@ -203,7 +203,15 @@ fp fp::modPrime(std::array<uint64_t, N> k)
 {
     std::array<uint64_t, N> quotient = {0};
     std::array<uint64_t, N> remainder = {0};
-    std::array<uint64_t, 6> modulus = fp::MODULUS.d;
+    // be conservative with scratch memory (https://github.com/relic-toolkit/relic/blob/ddd1984a76aa9c96a12ebdf5c6786b0ee6a26ef8/src/bn/relic_bn_div.c#L79)
+    // with gcc std::array<uint64_t, 6> modulus = fp::MODULUS.d works fine but clang needs the extra words
+    std::array<uint64_t, N> modulus = {0};
+    modulus[0] = fp::MODULUS.d[0];
+    modulus[1] = fp::MODULUS.d[1];
+    modulus[2] = fp::MODULUS.d[2];
+    modulus[3] = fp::MODULUS.d[3];
+    modulus[4] = fp::MODULUS.d[4];
+    modulus[5] = fp::MODULUS.d[5];
     bn_divn_low(quotient.data(), remainder.data(), k.data(), N, modulus.data(), 6);
     std::array<uint64_t, 6> _r = {remainder[0], remainder[1], remainder[2], remainder[3], remainder[4], remainder[5]};
     return fp(_r).toMont();

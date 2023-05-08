@@ -8,6 +8,7 @@ add_compile_options(-Wall)
 
 # compile with "-march" or enable cpu features explicitly for best performance:
 #set(CMAKE_CXX_FLAGS "-madx -mbmi2")
+set(CMAKE_CXX_FLAGS "-fstack-protector-strong")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release"
