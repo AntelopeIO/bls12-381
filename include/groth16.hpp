@@ -109,12 +109,18 @@ namespace groth16
             const std::vector<g1>& ic
         );
         PreparedVerifyingKey(const PreparedVerifyingKey& pvk);
-        static PreparedVerifyingKey fromBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static PreparedVerifyingKey fromBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
-        void toBytesBE(uint8_t* out, const bool raw = false) const;
-        void toBytesLE(uint8_t* out, const bool raw = false) const;
-        std::vector<uint8_t> toBytesBE(const bool raw = false) const;
-        std::vector<uint8_t> toBytesLE(const bool raw = false) const;
+        static PreparedVerifyingKey fromJacobianBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static PreparedVerifyingKey fromJacobianBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static PreparedVerifyingKey fromAffineBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static PreparedVerifyingKey fromAffineBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
+        void toJacobianBytesBE(uint8_t* out, const bool raw = false) const;
+        void toJacobianBytesLE(uint8_t* out, const bool raw = false) const;
+        void toAffineBytesBE(uint8_t* out, const bool raw = false) const;
+        void toAffineBytesLE(uint8_t* out, const bool raw = false) const;
+        std::vector<uint8_t> toJacobianBytesBE(const bool raw = false) const;
+        std::vector<uint8_t> toJacobianBytesLE(const bool raw = false) const;
+        std::vector<uint8_t> toAffineBytesBE(const bool raw = false) const;
+        std::vector<uint8_t> toAffineBytesLE(const bool raw = false) const;
         bool equal(const PreparedVerifyingKey& pvk) const;
     };
 

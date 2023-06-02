@@ -235,12 +235,12 @@ bool fp::isQuadraticNonResidue() const
 bool fp::isLexicographicallyLargest() const
 {
     array<uint64_t, 6> halfQ = {
-        0x0D0088F51CBFF34D,
-        0x258DD3DB21A5D66B,
-        0xB23BA5C279C2895F,
-        0xB39869507B587B12,
-        0x0F55FFFF58A9FFFF,
-        0xDCFF7FFFFFFFD556
+        0x0D00'88F5'1CBF'F34D,
+        0x258D'D3DB'21A5'D66B,
+        0xB23B'A5C2'79C2'895F,
+        0xB398'6950'7B58'7B12,
+        0x0F55'FFFF'58A9'FFFF,
+        0xDCFF'7FFF'FFFF'D556
     };
     array<uint64_t, 6> yValue = fromMont().d;
     
@@ -296,46 +296,46 @@ const fp fp::B = fp({
 });
 
 const fp fp::twoInv = fp({
-    0x1804000000015554,
-    0x855000053ab00001,
-    0x633cb57c253c276f,
-    0x6e22d1ec31ebb502,
-    0xd3916126f2d14ca2,
-    0x17fbb8571a006596
+    0x1804'0000'0001'5554,
+    0x8550'0005'3ab0'0001,
+    0x633c'b57c'253c'276f,
+    0x6e22'd1ec'31eb'b502,
+    0xd391'6126'f2d1'4ca2,
+    0x17fb'b857'1a00'6596
 });
 
 const array<uint64_t, 4> fp::Q = {
-    0xffffffff00000001,
-    0x53bda402fffe5bfe,
-    0x3339d80809a1d805,
-    0x73eda753299d7d48
+    0xffff'ffff'0000'0001,
+    0x53bd'a402'fffe'5bfe,
+    0x3339'd808'09a1'd805,
+    0x73ed'a753'299d'7d48
 };
 
 const array<uint64_t, 6> fp::pPlus1Over4 = {
-    0xee7fbfffffffeaab,
-    0x07aaffffac54ffff,
-    0xd9cc34a83dac3d89,
-    0xd91dd2e13ce144af,
-    0x92c6e9ed90d2eb35,
-    0x0680447a8e5ff9a6
+    0xee7f'bfff'ffff'eaab,
+    0x07aa'ffff'ac54'ffff,
+    0xd9cc'34a8'3dac'3d89,
+    0xd91d'd2e1'3ce1'44af,
+    0x92c6'e9ed'90d2'eb35,
+    0x0680'447a'8e5f'f9a6
 };
 
 const array<uint64_t, 6> fp::pMinus1Over2 = {
-    0xdcff7fffffffd555,
-    0x0f55ffff58a9ffff,
-    0xb39869507b587b12,
-    0xb23ba5c279c2895f,
-    0x258dd3db21a5d66b,
-    0x0d0088f51cbff34d
+    0xdcff'7fff'ffff'd555,
+    0x0f55'ffff'58a9'ffff,
+    0xb398'6950'7b58'7b12,
+    0xb23b'a5c2'79c2'895f,
+    0x258d'd3db'21a5'd66b,
+    0x0d00'88f5'1cbf'f34d
 };
 
 const array<uint64_t, 6> fp::pMinus3Over4 = {
-    0xee7fbfffffffeaaa,
-    0x07aaffffac54ffff,
-    0xd9cc34a83dac3d89,
-    0xd91dd2e13ce144af,
-    0x92c6e9ed90d2eb35,
-    0x0680447a8e5ff9a6
+    0xee7f'bfff'ffff'eaaa,
+    0x07aa'ffff'ac54'ffff,
+    0xd9cc'34a8'3dac'3d89,
+    0xd91d'd2e1'3ce1'44af,
+    0x92c6'e9ed'90d2'eb35,
+    0x0680'447a'8e5f'f9a6
 };
 
 fp2::fp2() : c0(fp()), c1(fp())
@@ -646,20 +646,20 @@ bool fp2::isLexicographicallyLargest() const
 
 const fp2 fp2::negativeOne2 = fp2({
     fp({
-        0x43f5fffffffcaaae,
-        0x32b7fff2ed47fffd,
-        0x07e83a49a2e99d69,
-        0xeca8f3318332bb7a,
-        0xef148d1ea0f4c069,
-        0x040ab3263eff0206
+        0x43f5'ffff'fffc'aaae,
+        0x32b7'fff2'ed47'fffd,
+        0x07e8'3a49'a2e9'9d69,
+        0xeca8'f331'8332'bb7a,
+        0xef14'8d1e'a0f4'c069,
+        0x040a'b326'3eff'0206
     }),
     fp({
-        0x0000000000000000,
-        0x0000000000000000,
-        0x0000000000000000,
-        0x0000000000000000,
-        0x0000000000000000,
-        0x0000000000000000
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000
     }),
 });
 

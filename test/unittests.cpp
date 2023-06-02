@@ -1709,6 +1709,11 @@ void TestGroth16()
     if(!groth16::VerifyingKey::fromCompressedBytesBE(vk.toCompressedBytesBE().data()).equal(vk)) throw invalid_argument("Groth16, vk: CompressedBytesBE error");
 
     groth16::PreparedVerifyingKey pvk = groth16::prepare_verifying_key(vk);
+    if(!groth16::PreparedVerifyingKey::fromJacobianBytesBE(pvk.toJacobianBytesBE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: JacobianBytesBE error");
+    if(!groth16::PreparedVerifyingKey::fromJacobianBytesLE(pvk.toJacobianBytesLE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: JacobianBytesLE error");
+    if(!groth16::PreparedVerifyingKey::fromAffineBytesBE(pvk.toAffineBytesBE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: AffineBytesBE error");
+    if(!groth16::PreparedVerifyingKey::fromAffineBytesLE(pvk.toAffineBytesLE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: AffineBytesLE error");
+
     vector<array<uint64_t, 4>> public_inputs = {scalar::fromBytesLE<4>(hexToBytes("2912224b7353476a255f2aeeb0c57b39d5a8e721225bba6620cc2b2011c42245"))};
     if(!groth16::verify_proof(pvk, proof, public_inputs)) throw invalid_argument("Groth16: proof invalid");
 }

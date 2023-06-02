@@ -485,7 +485,7 @@ PreparedVerifyingKey::PreparedVerifyingKey(const PreparedVerifyingKey& pvk) :
 {
 }
 
-PreparedVerifyingKey PreparedVerifyingKey::fromBytesBE(const uint8_t* in, const bool check, const bool raw)
+PreparedVerifyingKey PreparedVerifyingKey::fromJacobianBytesBE(const uint8_t* in, const bool check, const bool raw)
 {
     fp12 alpha_g1_beta_g2 = fp12::fromBytesBE(span<const uint8_t, 576>(&in[   0], &in[ 576]), check, raw);
     g2 neg_gamma_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
@@ -505,7 +505,7 @@ PreparedVerifyingKey PreparedVerifyingKey::fromBytesBE(const uint8_t* in, const 
     );
 }
 
-PreparedVerifyingKey PreparedVerifyingKey::fromBytesLE(const uint8_t* in, const bool check, const bool raw)
+PreparedVerifyingKey PreparedVerifyingKey::fromJacobianBytesLE(const uint8_t* in, const bool check, const bool raw)
 {
     fp12 alpha_g1_beta_g2 = fp12::fromBytesLE(span<const uint8_t, 576>(&in[   0], &in[ 576]), check, raw);
     g2 neg_gamma_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
@@ -525,7 +525,47 @@ PreparedVerifyingKey PreparedVerifyingKey::fromBytesLE(const uint8_t* in, const 
     );
 }
 
-void PreparedVerifyingKey::toBytesBE(uint8_t* out, const bool raw) const
+PreparedVerifyingKey PreparedVerifyingKey::fromAffineBytesBE(const uint8_t* in, const bool check, const bool raw)
+{
+    fp12 alpha_g1_beta_g2 = fp12::fromBytesBE(span<const uint8_t, 576>(&in[  0], &in[576]), check, raw);
+    g2 neg_gamma_g2 =   g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[576], &in[768]), check, raw);
+    g2 neg_delta_g2 =   g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[768], &in[960]), check, raw);
+    vector<g1> ic;
+    uint32_t n_ic = in[960] << 24 | in[961] << 16 | in[962] << 8 | in[963];
+    ic.reserve(n_ic);
+    for(uint32_t i = 0; i < n_ic; i++)
+    {
+        ic.push_back(g1::fromAffineBytesBE(span<const uint8_t, 96>(&in[964 + i*96], &in[964 + (i+1)*96]), check, raw));
+    }
+    return PreparedVerifyingKey(
+        alpha_g1_beta_g2,
+        neg_gamma_g2,
+        neg_delta_g2,
+        ic
+    );
+}
+
+PreparedVerifyingKey PreparedVerifyingKey::fromAffineBytesLE(const uint8_t* in, const bool check, const bool raw)
+{
+    fp12 alpha_g1_beta_g2 = fp12::fromBytesLE(span<const uint8_t, 576>(&in[  0], &in[576]), check, raw);
+    g2 neg_gamma_g2 =   g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[576], &in[768]), check, raw);
+    g2 neg_delta_g2 =   g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[768], &in[960]), check, raw);
+    vector<g1> ic;
+    uint32_t n_ic = in[960] | in[961] << 8 | in[962] << 16 | in[963] << 24;
+    ic.reserve(n_ic);
+    for(uint32_t i = 0; i < n_ic; i++)
+    {
+        ic.push_back(g1::fromAffineBytesLE(span<const uint8_t, 96>(&in[964 + i*96], &in[964 + (i+1)*96]), check, raw));
+    }
+    return PreparedVerifyingKey(
+        alpha_g1_beta_g2,
+        neg_gamma_g2,
+        neg_delta_g2,
+        ic
+    );
+}
+
+void PreparedVerifyingKey::toJacobianBytesBE(uint8_t* out, const bool raw) const
 {
     memcpy(&out[   0],     &alpha_g1_beta_g2.toBytesBE(raw)[0], 576);
     memcpy(&out[ 576], &neg_gamma_g2.toJacobianBytesBE(raw)[0], 288);
@@ -541,7 +581,7 @@ void PreparedVerifyingKey::toBytesBE(uint8_t* out, const bool raw) const
     }
 }
 
-void PreparedVerifyingKey::toBytesLE(uint8_t* out, const bool raw) const
+void PreparedVerifyingKey::toJacobianBytesLE(uint8_t* out, const bool raw) const
 {
     memcpy(&out[   0],     &alpha_g1_beta_g2.toBytesLE(raw)[0], 576);
     memcpy(&out[ 576], &neg_gamma_g2.toJacobianBytesLE(raw)[0], 288);
@@ -557,19 +597,67 @@ void PreparedVerifyingKey::toBytesLE(uint8_t* out, const bool raw) const
     }
 }
 
-std::vector<uint8_t> PreparedVerifyingKey::toBytesBE(const bool raw) const
+void PreparedVerifyingKey::toAffineBytesBE(uint8_t* out, const bool raw) const
+{
+    memcpy(&out[  0],   &alpha_g1_beta_g2.toBytesBE(raw)[0], 576);
+    memcpy(&out[576], &neg_gamma_g2.toAffineBytesBE(raw)[0], 192);
+    memcpy(&out[768], &neg_delta_g2.toAffineBytesBE(raw)[0], 192);
+    uint32_t n_ic = ic.size();
+    out[960] = n_ic >> 24;
+    out[961] = n_ic >> 16;
+    out[962] = n_ic >>  8;
+    out[963] = n_ic;
+    for(uint32_t i = 0; i < n_ic; i++)
+    {
+        memcpy(&out[964 + i*96], &ic[i].toAffineBytesBE(raw)[0], 96);
+    }
+}
+
+void PreparedVerifyingKey::toAffineBytesLE(uint8_t* out, const bool raw) const
+{
+    memcpy(&out[  0],   &alpha_g1_beta_g2.toBytesLE(raw)[0], 576);
+    memcpy(&out[576], &neg_gamma_g2.toAffineBytesLE(raw)[0], 192);
+    memcpy(&out[768], &neg_delta_g2.toAffineBytesLE(raw)[0], 192);
+    uint32_t n_ic = ic.size();
+    out[960] = n_ic;
+    out[961] = n_ic >>  8;
+    out[962] = n_ic >> 16;
+    out[963] = n_ic >> 24;
+    for(uint32_t i = 0; i < n_ic; i++)
+    {
+        memcpy(&out[964 + i*96], &ic[i].toAffineBytesLE(raw)[0], 96);
+    }
+}
+
+std::vector<uint8_t> PreparedVerifyingKey::toJacobianBytesBE(const bool raw) const
 {
     vector<uint8_t> out;
     out.resize(1152 + 4 + ic.size()*144);
-    toBytesBE(out.data(), raw);
+    toJacobianBytesBE(out.data(), raw);
     return out;
 }
 
-std::vector<uint8_t> PreparedVerifyingKey::toBytesLE(const bool raw) const
+std::vector<uint8_t> PreparedVerifyingKey::toJacobianBytesLE(const bool raw) const
 {
     vector<uint8_t> out;
     out.resize(1152 + 4 + ic.size()*144);
-    toBytesLE(out.data(), raw);
+    toJacobianBytesLE(out.data(), raw);
+    return out;
+}
+
+std::vector<uint8_t> PreparedVerifyingKey::toAffineBytesBE(const bool raw) const
+{
+    vector<uint8_t> out;
+    out.resize(960 + 4 + ic.size()*96);
+    toAffineBytesBE(out.data(), raw);
+    return out;
+}
+
+std::vector<uint8_t> PreparedVerifyingKey::toAffineBytesLE(const bool raw) const
+{
+    vector<uint8_t> out;
+    out.resize(960 + 4 + ic.size()*96);
+    toAffineBytesLE(out.data(), raw);
     return out;
 }
 
