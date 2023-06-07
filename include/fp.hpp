@@ -40,6 +40,7 @@ public:
     uint64_t mul2();
     fp toMont() const;
     fp fromMont() const;
+    fp phi() const;
     template<size_t N> fp exp(const std::array<uint64_t, N>& s) const;
     fp inverse() const;
     bool sqrt(fp& c) const;
@@ -53,7 +54,8 @@ public:
     static const fp R2;                                 // fp identity squared: R2 = 2^(384*2) mod p
     static const fp B;                                  // B coefficient from cure equation: y^2 = x^3 + B
     static const fp twoInv;
-    static const std::array<uint64_t, 4> Q;                  // scalar field modulus: q = 52435875175126190479447740508185965837690552500527637822603658699938581184513 or 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
+    static const fp glvPhi1;                            // glvPhi1 ^ 3 = 1
+    static const std::array<uint64_t, 4> Q;             // scalar field modulus: q = 52435875175126190479447740508185965837690552500527637822603658699938581184513 or 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
     static const std::array<uint64_t, 6> pPlus1Over4;
     static const std::array<uint64_t, 6> pMinus1Over2;
     static const std::array<uint64_t, 6> pMinus3Over4;
@@ -92,6 +94,7 @@ public:
     fp2 sub(const fp2& e) const;
     void subAssign(const fp2& e);
     fp2 neg() const;
+    fp2 conj() const;
     fp2 mul(const fp2& e) const;
     void mulAssign(const fp2& e);
     fp2 square() const;
@@ -109,6 +112,8 @@ public:
 
     static const fp2 negativeOne2;
     static const fp2 B;
+    static const fp2 psiX;
+    static const fp2 psiY;
 };
 
 // element representation of 'fp6' field which is cubic extension of 'fp2' field

@@ -1283,7 +1283,7 @@ void TestUnhardenedHDKeys()
         g1 pk = public_key(sk);
 
         array<uint64_t, 4> childSk = derive_child_sk_unhardened(sk, 42);
-        g1 childPk = derive_shild_g1_unhardened(pk, 42);
+        g1 childPk = derive_child_g1_unhardened(pk, 42);
 
         if(!public_key(childSk).equal(childPk))
         {
@@ -1291,7 +1291,7 @@ void TestUnhardenedHDKeys()
         }
 
         array<uint64_t, 4> grandchildSk = derive_child_sk_unhardened(childSk, 12142);
-        g1 grandcihldPk = derive_shild_g1_unhardened(childPk, 12142);
+        g1 grandcihldPk = derive_child_g1_unhardened(childPk, 12142);
 
         if(!public_key(grandchildSk).equal(grandcihldPk))
         {
@@ -1305,7 +1305,7 @@ void TestUnhardenedHDKeys()
         g1 pk = public_key(sk);
 
         array<uint64_t, 4> childSk = derive_child_sk_unhardened(sk, 42);
-        g1 childPk = derive_shild_g1_unhardened(pk, 42);
+        g1 childPk = derive_child_g1_unhardened(pk, 42);
 
         array<uint64_t, 4> childSkHardened = derive_child_sk(sk, 42);
         if(!public_key(childSk).equal(childPk))

@@ -1,5 +1,7 @@
-#include "../include/bls12_381.hpp"
+#include <bls12_381.hpp>
+#ifdef __x86_64__
 #include <cpuid.h>
+#endif
 
 using namespace std;
 
@@ -2054,11 +2056,8 @@ tuple<uint64_t, uint64_t> Add64(
     const uint64_t& carry
 )
 {
-    uint64_t sum = x + y + carry;
-    // The sum will overflow if both top bits are set (x & y) or if one of them
-    // is (x | y), and a carry from the lower place happened. If such a carry
-    // happens, the top bit will be 1 + 0 + 1 = 0 (&^ sum).
-    uint64_t carryOut = ((x & y) | ((x | y) & ~sum)) >> 63;
+    uint64_t sum = (x + y) + carry;
+    uint64_t carryOut = (sum < x);
     return {sum, carryOut};
 }
 
@@ -2073,10 +2072,8 @@ tuple<uint64_t, uint64_t> Sub64(
     const uint64_t& borrow
 )
 {
-    uint64_t diff, borrowOut;
-    diff = x - y - borrow;
-    // See Sub32 for the bit logic.
-    borrowOut = ((~x & y) | (~(x ^ y) & diff)) >> 63;
+    uint64_t diff = x - y - borrow;
+    uint64_t borrowOut = (diff > x);
     return {diff, borrowOut};
 }
 

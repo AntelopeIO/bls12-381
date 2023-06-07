@@ -54,6 +54,7 @@ public:
     g1 sub(const g1& e) const;
     template<size_t N> g1 mulScalar(const std::array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
+    g1 glvEndomorphism() const;
     static g1 multiExp(const std::vector<g1>& points, const std::vector<std::array<uint64_t, 4>>& scalars);
     static g1 mapToCurve(const fp& e);
     static std::tuple<fp, fp> swuMapG1(const fp& e);
@@ -104,12 +105,12 @@ public:
     g2 dbl() const;
     g2 neg() const;
     g2 sub(const g2& e) const;
+    g2 psi() const;
     template<size_t N> g2 mulScalar(const std::array<uint64_t, N>& s) const;
     g2 clearCofactor() const;
     g2 frobeniusMap(int64_t power) const;
     static g2 multiExp(const std::vector<g2>& points, const std::vector<std::array<uint64_t, 4>>& scalars);
     static g2 mapToCurve(const fp2& e);
-    static g2 fromMessage(const std::vector<uint8_t>& msg, const std::string& dst);
     static std::tuple<fp2, fp2> swuMapG2(const fp2& e);
     //static void isogenyMapG2(fp2& x, fp2& y);
     g2 isogenyMap() const;

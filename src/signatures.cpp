@@ -1,4 +1,4 @@
-#include "../include/bls12_381.hpp"
+#include <bls12_381.hpp>
 #include "sha256.hpp"
 #include <set>
 
@@ -173,7 +173,8 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
     }
 
     // "BLS-SIG-KEYGEN-SALT-" in ascii
-    const uint8_t saltHkdf[20] = {66, 76, 83, 45, 83, 73, 71, 45, 75, 69, 89, 71, 69, 78, 45, 83, 65, 76, 84, 45};
+    uint8_t saltHkdf[32] = {66, 76, 83, 45, 83, 73, 71, 45, 75, 69, 89, 71, 69, 78, 45, 83, 65, 76, 84, 45};
+    uint8_t saltLen = 20;
 
     uint8_t *ikmHkdf = reinterpret_cast<uint8_t*>(malloc(seed.size() + 1));
     memcpy(ikmHkdf, &seed[0], seed.size());
@@ -188,30 +189,44 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
     keyInfoHkdf[infoLen] = 0;  // Two bytes for L, 0 and 48
     keyInfoHkdf[infoLen + 1] = L;
 
-    hkdf256_extract_expand(
-        okmHkdf.data(),
-        L,
-        ikmHkdf,
-        seed.size() + 1,
-        saltHkdf,
-        20,
-        keyInfoHkdf,
-        infoLen + 2
-    );
+    array<uint64_t, 4> sk;
+    while(true)
+    {
+        hkdf256_extract_expand(
+            okmHkdf.data(),
+            L,
+            ikmHkdf,
+            seed.size() + 1,
+            saltHkdf,
+            saltLen,
+            keyInfoHkdf,
+            infoLen + 2
+        );
 
-    // Make sure private key is less than the curve order
-    array<uint64_t, 6> skBn = scalar::fromBytesBE<6>(span<uint8_t, 48>(okmHkdf.begin(), okmHkdf.end()));
-    array<uint64_t, 6> quotient = {0, 0, 0, 0, 0, 0};
-    array<uint64_t, 6> remainder = {0, 0, 0, 0, 0, 0};
-    // be conservative with scratch memory (https://github.com/relic-toolkit/relic/blob/ddd1984a76aa9c96a12ebdf5c6786b0ee6a26ef8/src/bn/relic_bn_div.c#L79)
-    // with gcc array<uint64_t, 4> q = fp::Q works fine but clang needs the two extra words
-    array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
-    bn_divn_low(quotient.data(), remainder.data(), skBn.data(), 6, q.data(), 4);
-    array<uint64_t, 4> k = {remainder[0], remainder[1], remainder[2], remainder[3]};
+        // Make sure private key is less than the curve order
+        array<uint64_t, 6> skBn = scalar::fromBytesBE<6>(span<uint8_t, 48>(okmHkdf.begin(), okmHkdf.end()));
+        array<uint64_t, 6> quotient = {0, 0, 0, 0, 0, 0};
+        array<uint64_t, 6> remainder = {0, 0, 0, 0, 0, 0};
+        // be conservative with scratch memory (https://github.com/relic-toolkit/relic/blob/ddd1984a76aa9c96a12ebdf5c6786b0ee6a26ef8/src/bn/relic_bn_div.c#L79)
+        // with gcc array<uint64_t, 4> q = fp::Q works fine but clang needs the two extra words
+        array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
+        bn_divn_low(quotient.data(), remainder.data(), skBn.data(), 6, q.data(), 4);
+        sk = {remainder[0], remainder[1], remainder[2], remainder[3]};
+
+        if(!scalar::equal<4>(sk, {0, 0, 0, 0}))
+        {
+            break;
+        }
+
+        sha256 sha;
+        sha.update(saltHkdf, saltLen);
+        sha.digest(saltHkdf);
+        saltLen = sizeof(saltHkdf);
+    }
 
     free(ikmHkdf);
 
-    return k;
+    return sk;
 }
 
 void ikm_to_lamport_sk(
@@ -307,7 +322,7 @@ array<uint64_t, 4> derive_child_sk_unhardened(
     return ret;
 }
 
-g1 derive_shild_g1_unhardened(
+g1 derive_child_g1_unhardened(
     const g1& pk,
     uint32_t index
 )
@@ -470,12 +485,45 @@ void xmd_sh256(
     }
 }
 
+
+g2 fromMessage(
+    const vector<uint8_t>& msg,
+    const string& dst
+)
+{
+    uint8_t buf[4 * 64];
+    xmd_sh256(buf, 4 * 64, msg.data(), msg.size(), reinterpret_cast<const uint8_t*>(dst.c_str()), dst.length());
+
+    array<uint64_t, 8> k = {0};
+    fp2 t = fp2::zero();
+    fp2 x, y, z = fp2::one();
+    g2 p, q;
+
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf, buf + 64));
+    t.c0 = fp::modPrime(k);
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 64, buf + 2*64));
+    t.c1 = fp::modPrime(k);
+
+    tie(x, y) = g2::swuMapG2(t);
+    p = g2({x, y, z}).isogenyMap();
+
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 2*64, buf + 3*64));
+    t.c0 = fp::modPrime(k);
+    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 3*64, buf + 4*64));
+    t.c1 = fp::modPrime(k);
+
+    tie(x, y) = g2::swuMapG2(t);
+    q = g2({x, y, z}).isogenyMap();
+
+    return p.add(q).clearCofactor();
+}
+
 g2 sign(
     const array<uint64_t, 4>& sk,
     const vector<uint8_t>& msg
 )
 {
-    g2 p = g2::fromMessage(msg, CIPHERSUITE_ID);
+    g2 p = fromMessage(msg, CIPHERSUITE_ID);
     return p.mulScalar(sk);
 }
 
@@ -487,7 +535,7 @@ bool verify(
 {
     vector<tuple<g1, g2>> v;
     pairing::add_pair(v, g1::one().neg(), signature);
-    const g2 hashedPoint = g2::fromMessage(message, CIPHERSUITE_ID);
+    const g2 hashedPoint = fromMessage(message, CIPHERSUITE_ID);
     pairing::add_pair(v, pubkey, hashedPoint);
 
     if(!pubkey.isOnCurve() || !pubkey.inCorrectSubgroup())
@@ -564,7 +612,7 @@ bool aggregate_verify(
         {
             return false;
         }
-        pairing::add_pair(v, pubkeys[i], g2::fromMessage(messages[i], CIPHERSUITE_ID));
+        pairing::add_pair(v, pubkeys[i], fromMessage(messages[i], CIPHERSUITE_ID));
     }
 
     // 1 =? prod e(pubkey[i], hash[i]) * e(-g1, aggSig)
@@ -575,7 +623,7 @@ g2 pop_prove(const array<uint64_t, 4>& sk)
 {
     g1 pk = public_key(sk);
     array<uint8_t, 48> msg = pk.toCompressedBytesBE();
-    g2 hashed_key = g2::fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
+    g2 hashed_key = fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
     return hashed_key.mulScalar(sk);
 }
 
@@ -585,7 +633,7 @@ bool pop_verify(
 )
 {
     array<uint8_t, 48> msg = pubkey.toCompressedBytesBE();
-    const g2 hashedPoint = g2::fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
+    const g2 hashedPoint = fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
 
     if(!pubkey.isOnCurve() || !pubkey.inCorrectSubgroup())
     {

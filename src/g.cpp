@@ -1,4 +1,4 @@
-#include "../include/bls12_381.hpp"
+#include <bls12_381.hpp>
 
 using namespace std;
 
@@ -245,7 +245,7 @@ bool g1::equal(const g1& e) const
     {
         return isZero();
     }
-    fp t[9];
+    fp t[4];
     _square(&t[0], &z);
     _square(&t[1], &b.z);
     _mul(&t[2], &t[0], &b.x);
@@ -259,7 +259,18 @@ bool g1::equal(const g1& e) const
 
 bool g1::inCorrectSubgroup() const
 {
-    return mulScalar(fp::Q).isZero();
+    // Faster Subgroup Checks for BLS12-381
+    // S. Bowe (https://eprint.iacr.org/2019/814.pdf)
+    // [(x^2 − 1)/3](2σ(P) − P − σ^2(P)) − σ^2(P) ?= O
+    g1 t0 = this->glvEndomorphism();
+    g1 t1 = t0;
+    t0 = t0.glvEndomorphism();
+    t1 = t1.dbl();
+    t1 = t1.sub(*this);
+    t1 = t1.sub(t0);
+    t1 = t1.mulScalar<2>({0x0000000055555555, 0x396c8c005555e156});
+    t1 = t1.sub(t0);
+    return t1.isZero();
 }
 
 bool g1::isOnCurve() const
@@ -268,7 +279,7 @@ bool g1::isOnCurve() const
     {
         return true;
     }
-    fp t[9], _b = fp::B;
+    fp t[4], _b = fp::B;
     _square(&t[0], &y);
     _square(&t[1], &x);
     _mul(&t[1], &t[1], &x);
@@ -292,7 +303,7 @@ g1 g1::affine() const
         return *this;
     }
     g1 r = *this;
-    fp t[9];
+    fp t[2];
     t[0] = r.z.inverse();
     _square(&t[1], &t[0]);
     _mul(&r.x, &r.x, &t[1]);
@@ -362,7 +373,7 @@ g1 g1::dbl() const
     {
         return *this;
     }
-    fp t[9];
+    fp t[5];
     g1 r;
     _square(&t[0], &x);
     _square(&t[1], &y);
@@ -409,6 +420,17 @@ g1 g1::sub(const g1& e) const
 g1 g1::clearCofactor() const
 {
     return this->mulScalar(cofactorEFF);
+}
+
+g1 g1::glvEndomorphism() const
+{
+    if(this->isZero())
+    {
+        return zero();
+    }
+    g1 t = this->affine();
+    t.x = t.x.phi();
+    return t;
 }
 
 // MultiExp calculates multi exponentiation. Given pairs of G1 point and scalar values
@@ -911,7 +933,21 @@ bool g2::equal(const g2& e) const
 
 bool g2::inCorrectSubgroup() const
 {
-    return mulScalar(fp::Q).isZero();
+    // Faster Subgroup Checks for BLS12-381
+    // S. Bowe (https://eprint.iacr.org/2019/814.pdf)
+    // [z]ψ^3(P) − ψ^2(P) + P = O
+    g2 t0, t1;
+    t0 = this->psi();
+    t0 = t0.psi();
+    t1 = t0.neg();                  // - ψ^2(P)
+    t0 = t0.psi();                  // ψ^3(P)
+    t0 = t0.mulScalar(cofactorEFF); // - x ψ^3(P)
+    t0 = t0.neg();
+
+    t0 = t0.add(t1);
+    t0 = t0.add(*this);
+
+    return t0.isZero();
 }
 
 bool g2::isOnCurve() const
@@ -1058,6 +1094,17 @@ g2 g2::sub(const g2& e) const
     return c;
 }
 
+g2 g2::psi() const
+{
+    g2 p;
+    p.x = this->x.conj();
+    p.y = this->y.conj();
+    p.z = this->z.conj();
+    p.x = p.x.mul(fp2::psiX);
+    p.y = p.y.mul(fp2::psiY);
+    return p;
+}
+
 g2 g2::clearCofactor() const
 {
     g2 t0, t1, t2, t3;
@@ -1175,35 +1222,6 @@ g2 g2::mapToCurve(const fp2& e)
     p = p.isogenyMap();
     p = p.clearCofactor();
     return p;
-}
-
-g2 g2::fromMessage(const vector<uint8_t>& msg, const string& dst)
-{
-    uint8_t buf[4 * 64];
-    xmd_sh256(buf, 4 * 64, msg.data(), msg.size(), reinterpret_cast<const uint8_t*>(dst.c_str()), dst.length());
-    
-    array<uint64_t, 8> k = {0};
-    fp2 t = fp2::zero();
-    fp2 x, y, z = fp2::one();
-    g2 p, q;
-
-    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf, buf + 64));
-    t.c0 = fp::modPrime(k);
-    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 64, buf + 2*64));
-    t.c1 = fp::modPrime(k);
-
-    tie(x, y) = swuMapG2(t);
-    p = g2({x, y, z}).isogenyMap();
-
-    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 2*64, buf + 3*64));
-    t.c0 = fp::modPrime(k);
-    k = scalar::fromBytesBE<8>(span<uint8_t, 64>(buf + 3*64, buf + 4*64));
-    t.c1 = fp::modPrime(k);
-
-    tie(x, y) = swuMapG2(t);
-    q = g2({x, y, z}).isogenyMap();
-
-    return p.add(q).clearCofactor();
 }
 
 tuple<fp2, fp2> g2::swuMapG2(const fp2& e)

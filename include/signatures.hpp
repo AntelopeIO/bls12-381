@@ -89,7 +89,7 @@ std::array<uint64_t, 4> derive_child_sk_unhardened(
     uint32_t index
 );
 
-g1 derive_shild_g1_unhardened(
+g1 derive_child_g1_unhardened(
     const g1& pk,
     uint32_t index
 );
@@ -104,6 +104,11 @@ std::array<uint64_t, 4> secret_key(const std::vector<uint8_t>& seed);
 
 // Derive public key from a BLS private key
 g1 public_key(const std::array<uint64_t, 4>& sk);
+
+g2 fromMessage(
+    const std::vector<uint8_t>& msg,
+    const std::string& dst
+);
 
 // Sign message with a private key
 g2 sign(

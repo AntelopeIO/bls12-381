@@ -162,6 +162,20 @@ int64_t cmp(const std::array<uint64_t, N>& a, const std::array<uint64_t, N>& b)
     return 0;
 }
 
+// checks two std::arrays for equality: returns true if a == b, false otherwise.
+template<size_t N>
+bool equal(const std::array<uint64_t, N>& a, const std::array<uint64_t, N>& b)
+{
+    for(uint64_t i = 0; i < N; i++)
+    {
+        if(a[i] != b[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 // returns the length of the absolute value of s in bits. The bit length of 0 is 0.
 template<size_t N>
 uint64_t bitLength(const std::array<uint64_t, N>& s)

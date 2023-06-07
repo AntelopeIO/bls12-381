@@ -1,4 +1,4 @@
-#include "../include/bls12_381.hpp"
+#include <bls12_381.hpp>
 
 using namespace std;
 
@@ -140,6 +140,13 @@ fp fp::fromMont() const
 {
     fp c, b = fp({1, 0, 0, 0, 0, 0});
     _mul(&c, this, &b);
+    return c;
+}
+
+fp fp::phi() const
+{
+    fp c;
+    _mul(&c, this, &glvPhi1);
     return c;
 }
 
@@ -302,6 +309,15 @@ const fp fp::twoInv = fp({
     0x6e22'd1ec'31eb'b502,
     0xd391'6126'f2d1'4ca2,
     0x17fb'b857'1a00'6596
+});
+
+const fp fp::glvPhi1 = fp({
+    0xcd03'c9e4'8671'f071,
+    0x5dab'2246'1fcd'a5d2,
+    0x5870'42af'd385'1b95,
+    0x8eb6'0ebe'01ba'cb9e,
+    0x03f9'7d6e'83d0'50d2,
+    0x18f0'2065'5463'8741
 });
 
 const array<uint64_t, 4> fp::Q = {
@@ -491,6 +507,14 @@ fp2 fp2::neg() const
     return c;
 }
 
+fp2 fp2::conj() const
+{
+    fp2 c;
+    c.c0 = c0;
+    _neg(&c.c1, &c1);
+    return c;
+}
+
 fp2 fp2::mul(const fp2& e) const
 {
     fp t[4];
@@ -521,7 +545,7 @@ void fp2::mulAssign(const fp2& e)
 
 fp2 fp2::square() const
 {
-    fp t[4];
+    fp t[3];
     fp2 c;
     _ladd(&t[0], &c0, &c1);
     _sub(&t[1], &c0, &c1);
@@ -533,7 +557,7 @@ fp2 fp2::square() const
 
 void fp2::squareAssign()
 {
-    fp t[4];
+    fp t[3];
     _ladd(&t[0], &c0, &c1);
     _sub(&t[1], &c0, &c1);
     _ldouble(&t[2], &c0);
@@ -543,17 +567,17 @@ void fp2::squareAssign()
 
 fp2 fp2::mulByNonResidue() const
 {
-    fp t[4];
+    fp t;
     fp2 c;
-    _sub(&t[0], &c0, &c1);
+    _sub(&t, &c0, &c1);
     _add(&c.c1, &c0, &c1);
-    c.c0 = t[0];
+    c.c0 = t;
     return c;
 }
 
 fp2 fp2::mulByB() const
 {
-    fp t[4];
+    fp t[2];
     fp2 c;
     _double(&t[0], &c0);
     _double(&t[1], &c1);
@@ -566,7 +590,7 @@ fp2 fp2::mulByB() const
 
 fp2 fp2::inverse() const
 {
-    fp t[4];
+    fp t[2];
     fp2 c;
     _square(&t[0], &c0);
     _square(&t[1], &c1);
@@ -679,6 +703,44 @@ const fp2 fp2::B = fp2({
         0xb1d3'7ebe'e6ba'24d7,
         0x8ec9'733b'bf78'ab2f,
         0x09d6'4551'3d83'de7e,
+    }),
+});
+
+const fp2 fp2::psiX = fp2({
+    fp({
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+        0x0000'0000'0000'0000,
+    }),
+    fp({
+        0x890d'c9e4'8675'45c3,
+        0x2af3'2253'3285'a5d5,
+        0x5088'0866'309b'7e2c,
+        0xa20d'1b8c'7e88'1024,
+        0x14e4'f04f'e2db'9068,
+        0x14e5'6d3f'1564'853a,
+    }),
+});
+
+const fp2 fp2::psiY = fp2({
+    fp({
+        0x3e2f'585d'a55c'9ad1,
+        0x4294'213d'86c1'8183,
+        0x3828'44c8'8b62'3732,
+        0x92ad'2afd'1910'3e18,
+        0x1d79'4e4f'ac7c'f0b9,
+        0x0bd5'92fc'7d82'5ec8,
+    }),
+    fp({
+        0x7bcf'a7a2'5aa3'0fda,
+        0xdc17'dec1'2a92'7e7c,
+        0x2f08'8dd8'6b4e'bef1,
+        0xd1ca'2087'da74'd4a7,
+        0x2da2'5966'96ce'bc1d,
+        0x0e2b'7eed'bbfd'87d2,
     }),
 });
 
@@ -927,7 +989,7 @@ void fp6::mulBy01Assign(const fp2& e0, const fp2& e1)
 
 fp6 fp6::mulBy01(const fp2& e0, const fp2& e1) const
 {
-    fp2 t[6];
+    fp2 t[5];
     fp6 c;
     t[0] = c0.mul(e0);
     t[1] = c1.mul(e1);
@@ -950,23 +1012,21 @@ fp6 fp6::mulBy01(const fp2& e0, const fp2& e1) const
 
 fp6 fp6::mulBy1(const fp2& e1) const
 {
-    fp2 t[6];
+    fp2 t;
     fp6 c;
-    t[0] = c2.mul(e1);
+    t = c2.mul(e1);
     c.c2 = c1.mul(e1);
     c.c1 = c0.mul(e1);
-    c.c0 = t[0].mulByNonResidue();
+    c.c0 = t.mulByNonResidue();
     return c;
 }
 
 fp6 fp6::mulByNonResidue() const
 {
-    fp2 t[6];
     fp6 c;
-    t[0] = c0;
     c.c0 = c2.mulByNonResidue();
     c.c2 = c1;
-    c.c1 = t[0];
+    c.c1 = c0;
     return c;
 }
 
@@ -981,7 +1041,7 @@ fp6 fp6::mulByBaseField(const fp2& e) const
 
 fp6 fp6::inverse() const
 {
-    fp2 t[6];
+    fp2 t[5];
     fp6 c;
     t[0] = c0.square();
     t[1] = c1.mul(c2);
@@ -1041,7 +1101,7 @@ void fp6::frobeniusMapAssign(const uint64_t& power)
     c0.frobeniusMapAssign(power);
     c1.frobeniusMapAssign(power);
     c2.frobeniusMapAssign(power);
-    fp2 t[6];
+    fp2 t;
     switch(power % 6)
     {
         case 0:
@@ -1050,9 +1110,9 @@ void fp6::frobeniusMapAssign(const uint64_t& power)
         }
         case 3:
         {
-            _neg(&t[0].c0, &c1.c1);
+            _neg(&t.c0, &c1.c1);
             c1.c1 = c1.c0;
-            c1.c0 = t[0].c0;
+            c1.c0 = t.c0;
             c2 = c2.neg();
             break;
         }
@@ -1244,7 +1304,7 @@ fp12 fp12::conjugate() const
 
 fp12 fp12::square() const
 {
-    fp6 t[5];
+    fp6 t[4];
     fp12 c;
     t[0] = c0.add(c1);
     t[2] = c0.mul(c1);
@@ -1260,7 +1320,7 @@ fp12 fp12::square() const
 
 fp12 fp12::cyclotomicSquare() const
 {
-    fp2 t[9];
+    fp2 t[7];
     fp12 c;
     tie(t[3], t[4]) = fp4Square(c0.c0, c1.c1);
     t[2] = t[3].sub(c0.c0);
@@ -1289,7 +1349,7 @@ fp12 fp12::cyclotomicSquare() const
 
 fp12 fp12::mul(const fp12& e) const
 {
-    fp6 t[5];
+    fp6 t[4];
     fp12 c;
     t[1] = c0.mul(e.c0);
     t[2] = c1.mul(e.c1);
@@ -1306,7 +1366,7 @@ fp12 fp12::mul(const fp12& e) const
 
 void fp12::mulAssign(const fp12& e)
 {
-    fp6 t[5];
+    fp6 t[4];
     t[1] = c0.mul(e.c0);
     t[2] = c1.mul(e.c1);
     t[0] = t[1].add(t[2]);
@@ -1321,7 +1381,7 @@ void fp12::mulAssign(const fp12& e)
 
 tuple<fp2, fp2> fp12::fp4Square(const fp2& e0, const fp2& e1)
 {
-    fp2 t[9];
+    fp2 t[3];
     fp2 c0, c1;
     t[0] = e0.square();
     t[1] = e1.square();
@@ -1336,7 +1396,7 @@ tuple<fp2, fp2> fp12::fp4Square(const fp2& e0, const fp2& e1)
 
 fp12 fp12::inverse() const
 {
-    fp6 t[5];
+    fp6 t[2];
     fp12 c;
     t[0] = c0.square();
     t[1] = c1.square();
@@ -1351,7 +1411,7 @@ fp12 fp12::inverse() const
 
 void fp12::mulBy014Assign(const fp2& e0, const fp2& e1, const fp2& e4)
 {
-    fp6 t[5];
+    fp6 t[3];
     fp2 t2;
     t[0] = c0.mulBy01(e0, e1);
     t[1] = c1.mulBy1(e4);
