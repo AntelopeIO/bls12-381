@@ -7,4 +7,3 @@
 #include "g.hpp"
 #include "pairing.hpp"
 #include "signatures.hpp"
-#include "groth16.hpp"

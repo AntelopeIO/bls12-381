@@ -1692,32 +1692,6 @@ void TestPopScheme()
     }
 }
 
-void TestGroth16()
-{
-    groth16::Proof proof = groth16::Proof::fromCompressedBytesBE(hexToBytes("b40e641de2a8aa566b7f2a1af381b1b6fba08b889670bef9f35524313a78e97e8d486599f26f54c3a60ed51b0b1813438252e8cd0ca73ea818559ee52734cf9bce40d5a3cd0bd9b7083749028781a4006601237e175b8b1d278624e213b687b715ffb2fa7a5c19cf980c50fcc9b7dfa1f4af9b0f306cd3597fbbd234b0e8b14728401782589ee645fd9fe1d7d57cde1e93a1aeca3e8986b15e8a5ae3401162cd4a74ec1ce9d4182db71009d46e85fb98c008333efc2dcc6d4e2faa0eb3e09bd6"));
-    if(!groth16::Proof::fromJacobianBytesBE(proof.toJacobianBytesBE()).equal(proof)) throw invalid_argument("Groth16, proof: JacobianBytesBE error");
-    if(!groth16::Proof::fromJacobianBytesLE(proof.toJacobianBytesLE()).equal(proof)) throw invalid_argument("Groth16, proof: JacobianBytesLE error");
-    if(!groth16::Proof::fromAffineBytesBE(proof.toAffineBytesBE()).equal(proof)) throw invalid_argument("Groth16, proof: AffineBytesBE error");
-    if(!groth16::Proof::fromAffineBytesLE(proof.toAffineBytesLE()).equal(proof)) throw invalid_argument("Groth16, proof: AffineBytesLE error");
-    if(!groth16::Proof::fromCompressedBytesBE(proof.toCompressedBytesBE()).equal(proof)) throw invalid_argument("Groth16, proof: CompressedBytesBE error");
-
-    groth16::VerifyingKey vk = groth16::VerifyingKey::fromAffineBytesBE(hexToBytes("10e65e9814f49f7599b2692388d1cc4bb29c098e5c7e919cb5d317f361f95d9cec07feb20b27184fbb8e13c9d8e77e3a0feda78e0677ea6c325b7fc2c0ac68bea76e6c27b8bff7566d96ea16e7921aad7b8fcde4819c5b315c488def7a26d04d024d24ac14fe81b88bb1252cf5ad0f3507cf09007fa1b60402655d0303065181abd8c455214501b4def323a411fede8410de1adddbeefd2e999ba03abd75af427e9835dc4b47e4a9d18dcfea65c88c3a84bee8a23addf17d7aa061a4f90affed0d8f4f671c74a7fe3c467daf00ef146e34c63cd44d286c8b71244290d4bc2debbd23be8118912ec7768791b9358d33ce12e77c0e31f51f2322c99f5f8380ebbb7debbd6781dd2de34ce357be5412d1a6d527b74d4ca6af4350b2e6887869c3130a0d839af957e444a239ff51cf7c2cee334c2b634bc3321d6edb855d77d8fb937c526c774e4a5f3c31d32974d1ea9dee050a81aea7c4b09f7cf7cd10892925d6958aa91c3e7e4308bc0c4efd5c283e82c4f2a57712fa4e6dac69990e02004c070a6856040e29a307d81dfc7693eb2810fa2e2266f5595d3fc7abd6492615a920a7739b2c888fd94923b6d761c6ac47740839c8d10ff1b3b598423d35b95ac79ddc83bf1ddbae3bce6bcfed754d6795bef60da31a825ec161defbc960ecf4be4d07cc984083c4dec8311731c3db36ebdaac06b3091866ad30f981f37b74e9e2f91d3e3a9281f46265601df5fa13ee47d90c4faa3255db100ed8fe5d503bc18b1cb79b094f0824be0dedc1c01ccde497f59258ef33b2058730bc87439acbbaec4e05f471a86c81924f6beeeafaa7f83308a078d3bccc7c42e4d2a367b928ac3e1b3504a9d7439b8efbb34d87ddfb20a59901c44cb45f6667a509039812fe528ec1135003dbcc356aa0153e5bdaddcf110c900f1c9109b3d9f493827c999d1041b109d1ceaf0426718e26d0940b0ed49dd167ab2febd877a697f20ce0b5744917b200183e48a73ea8b48543db3e1dc617f904a959e814d082f12d42568f4c34dc07977c46f7b3e59434c77774a95ffa2d5a4fb8e94a34669e147b7842efc61e828301310bc2dc8ae36ad1d2448ceda877a227eef0d792d8899a72c863b3a70b711fa0aa7a725785fc7163f4eaec694e9a7b0b9e2bd659eccfe1251c944668b6cb96af03f7e99a893b3eb196ac88d0ea08a932f913c2ef17a7893870dc7178d44cef000000021353c21e35d92c8c9abba4b4f99ec96dcfad1fdc09a47a5eca8fefe05915fdc61bce3e61359c398a9b56cb33bb353e5a13d3690c9296a4460e8444a7c09166fc49adceee3688fa2b4c6117625f6f2fd3c8222ec3a1832b319aff71ea0802f72b0bdd4d9fa0780d9de05a7276d4704c8cdf510aa12aae506d5d1cfe7481df2d7317ab9fd2184489c3eb9001f3c33779710192098aeb701efe8e8c17d767c2f00e9a4b5877ba8687dd4a44c21544b42938a6dd7f6421370e92e97cd8cb31050174").data());
-    if(!groth16::VerifyingKey::fromJacobianBytesBE(vk.toJacobianBytesBE().data()).equal(vk)) throw invalid_argument("Groth16, vk: JacobianBytesBE error");
-    if(!groth16::VerifyingKey::fromJacobianBytesLE(vk.toJacobianBytesLE().data()).equal(vk)) throw invalid_argument("Groth16, vk: JacobianBytesLE error");
-    if(!groth16::VerifyingKey::fromAffineBytesBE(vk.toAffineBytesBE().data()).equal(vk)) throw invalid_argument("Groth16, vk: AffineBytesBE error");
-    if(!groth16::VerifyingKey::fromAffineBytesLE(vk.toAffineBytesLE().data()).equal(vk)) throw invalid_argument("Groth16, vk: AffineBytesLE error");
-    if(!groth16::VerifyingKey::fromCompressedBytesBE(vk.toCompressedBytesBE().data()).equal(vk)) throw invalid_argument("Groth16, vk: CompressedBytesBE error");
-
-    groth16::PreparedVerifyingKey pvk = groth16::prepare_verifying_key(vk);
-    if(!groth16::PreparedVerifyingKey::fromJacobianBytesBE(pvk.toJacobianBytesBE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: JacobianBytesBE error");
-    if(!groth16::PreparedVerifyingKey::fromJacobianBytesLE(pvk.toJacobianBytesLE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: JacobianBytesLE error");
-    if(!groth16::PreparedVerifyingKey::fromAffineBytesBE(pvk.toAffineBytesBE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: AffineBytesBE error");
-    if(!groth16::PreparedVerifyingKey::fromAffineBytesLE(pvk.toAffineBytesLE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: AffineBytesLE error");
-
-    vector<array<uint64_t, 4>> public_inputs = {scalar::fromBytesLE<4>(hexToBytes("2912224b7353476a255f2aeeb0c57b39d5a8e721225bba6620cc2b2011c42245"))};
-    if(!groth16::verify_proof(pvk, proof, public_inputs)) throw invalid_argument("Groth16: proof invalid");
-}
-
 int main()
 {
     init();
@@ -1763,7 +1737,5 @@ int main()
     TestAggregateSKs();
     TestPopScheme();
 
-    TestGroth16();
-    
     return 0;
 }
