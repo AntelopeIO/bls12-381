@@ -9,7 +9,7 @@ namespace bls12_381
 
 class fp;
 
-void init();
+void init(bool cpu_features = true);
 
 void _add(fp* z, const fp* x, const fp* y);
 void _addAssign(fp* x, const fp* y);
