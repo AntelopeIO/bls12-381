@@ -12,31 +12,37 @@ namespace bls12_381
 void (*_mul)(fp*, const fp*, const fp*) { &__mul };
 #endif
 
-void init()
+void init(bool cpu_features)
 {
-#if defined(__x86_64__) && (!defined(__ADX__) || !defined(__BMI2__))
+    #if defined(__x86_64__) && (!defined(__ADX__) || !defined(__BMI2__))
+    // set default mul() function (without cpu features)
     _mul = &__mul;
-    #if defined(__GNUC__) && __GNUC__ >= 11
-    __builtin_cpu_init();
-    if(__builtin_cpu_supports("bmi2") && __builtin_cpu_supports("adx"))
+
+    if(cpu_features)
     {
-        _mul = &__mul_ex;
-    }
-    #else
-    // borrowed from: https://github.com/Mysticial/FeatureDetector/blob/master/src/x86/cpu_x86.cpp
-    int32_t info[4];
-    __cpuid_count(0, 0, info[0], info[1], info[2], info[3]);
-    int nIds = info[0];
-    if(nIds >= 0x00000007)
-    {
-        __cpuid_count(0x00000007, 0, info[0], info[1], info[2], info[3]);
-        if((info[1] & (1 <<  8)) && (info[1] & (1 << 19))) // BMI2 && ADX
+        // detect cpu features on this machine and set mul_ex() if ADX/BMI2 available
+        #if defined(__GNUC__) && __GNUC__ >= 11
+        __builtin_cpu_init();
+        if(__builtin_cpu_supports("bmi2") && __builtin_cpu_supports("adx"))
         {
             _mul = &__mul_ex;
         }
+        #else
+        // borrowed from: https://github.com/Mysticial/FeatureDetector/blob/master/src/x86/cpu_x86.cpp
+        int32_t info[4];
+        __cpuid_count(0, 0, info[0], info[1], info[2], info[3]);
+        int nIds = info[0];
+        if(nIds >= 0x00000007)
+        {
+            __cpuid_count(0x00000007, 0, info[0], info[1], info[2], info[3]);
+            if((info[1] & (1 <<  8)) && (info[1] & (1 << 19))) // BMI2 && ADX
+            {
+                _mul = &__mul_ex;
+            }
+        }
+        #endif
     }
     #endif
-#endif
 }
 
 #ifdef __x86_64__
