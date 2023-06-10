@@ -1156,7 +1156,7 @@ g2 g2::frobeniusMap(int64_t power) const
 // MultiExp calculates multi exponentiation. Given pairs of G2 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise an error is thrown.
-g2 g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars)
+g2 g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
 {
     if(points.size() != scalars.size())
     {
@@ -1197,6 +1197,10 @@ g2 g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scal
             acc = acc.add(sum);
         }
         windows.push_back(acc);
+    }
+    if(scalars.size() >= 32 && yield)
+    {
+        yield();
     }
     g2 acc = zero();
     for(int64_t i = windows.size()-1; i >= 0; i--)
