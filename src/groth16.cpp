@@ -689,7 +689,7 @@ PreparedVerifyingKey prepare_verifying_key(const VerifyingKey& vk)
 bool verify_proof(
     const PreparedVerifyingKey& pvk,
     const Proof& proof,
-    vector<array<uint64_t, 4>>& public_inputs
+    const vector<array<uint64_t, 4>>& public_inputs
 )
 {
     if(public_inputs.size() + 1 != pvk.ic.size())

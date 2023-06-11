@@ -129,7 +129,7 @@ namespace groth16
     bool verify_proof(
         const PreparedVerifyingKey& pvk,
         const Proof& proof,
-        std::vector<std::array<uint64_t, 4>>& public_inputs
+        const std::vector<std::array<uint64_t, 4>>& public_inputs
     );
 
 } // namespace groth16
