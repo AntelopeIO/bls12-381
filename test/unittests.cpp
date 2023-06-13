@@ -1718,6 +1718,68 @@ void TestGroth16()
     if(!groth16::verify_proof(pvk, proof, public_inputs)) throw invalid_argument("Groth16: proof invalid");
 }
 
+// Test Vectors from FileCoin
+#include "test_vectors.inc"
+
+void TestExtraVectors()
+{
+    const int num_case = sizeof(tv_msg) / sizeof(char *);
+    for (int i = 0; i < num_case; i++)
+    {
+        try
+        {
+            auto msg_vec = std::vector<uint8_t>(tv_msg[i], tv_msg[i] + strlen(tv_msg[i]));
+
+            g2 hash = fromMessage(msg_vec, CIPHERSUITE_ID);
+            g2 hash_tv = g2::fromCompressedBytesBE(hexToBytes<96>(tv_g2[i]));
+
+            if (!hash.affine().equal(hash_tv))
+            {
+                throw invalid_argument("hash as g2 must be equal");
+            }
+            if (bytesToHex<96>(hash.toCompressedBytesBE()) != string("0x") + tv_g2[i])
+            {
+                throw invalid_argument("hash strings must be equal");
+            }
+
+            array<uint64_t, 4UL> skobj = sk_from_bytes(hexToBytes<32>(tv_priv[i]), false);
+            g2 sig = sign(skobj, msg_vec).affine();
+            g2 sig_tv = g2::fromCompressedBytesBE(hexToBytes<96>(tv_sig[i]));
+
+            if (!sig.affine().equal(sig_tv))
+            {
+                throw invalid_argument("signatures must be equal");
+            }
+            if (bytesToHex<96>(sig.toCompressedBytesBE()) != (string("0x") + tv_sig[i]))
+            {
+                throw invalid_argument("signature strings must be equal");
+            }
+
+            g1 pk = public_key(skobj);
+            g1 pk_tv = g1::fromCompressedBytesBE(hexToBytes<48>(tv_pub[i]));
+
+            if (!pk.affine().equal(pk_tv))
+            {
+                throw invalid_argument("public key must be equal");
+            }
+            if (bytesToHex<96>(sig.toCompressedBytesBE()) != (string("0x") + tv_sig[i]))
+            {
+                throw invalid_argument("public key strings must be equal");
+            }
+
+            if (!verify(pk, msg_vec, sig))
+            {
+                throw invalid_argument("failed to verify with pk");
+            }
+        }
+        catch (std::exception &e)
+        {
+            printf("test %d failed: %s \n", i, e.what());
+            continue;
+        }
+    }
+}
+
 int main()
 {
     init();
@@ -1764,6 +1826,8 @@ int main()
     TestPopScheme();
 
     TestGroth16();
+
+    TestExtraVectors();
     
     return 0;
 }
