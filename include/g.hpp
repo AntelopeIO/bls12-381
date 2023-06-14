@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <vector>
+#include <functional>
 #include "span.h"
 
 namespace bls12_381

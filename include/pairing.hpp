@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <vector>
+#include <functional>
 
 namespace bls12_381
 {
