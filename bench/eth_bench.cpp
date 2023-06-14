@@ -241,68 +241,12 @@ void benchPairing() {
     endStopwatch(testName, start, numIters);
 }
 
-void measureMarshalling()
-{
-    string testName = "measureMarshalling";
-    const int numIters = 96;
-    g1 g1One = g1::one();
-    g2 g2One = g2::one();
-    array<uint64_t, 4> s = random_scalar();
-    vector<tuple<g1, g2>> v;
-    vector<bls12_381::g1> pv1;
-    vector<bls12_381::g2> pv2;
-    vector<array<uint64_t, 4>> sv;
-    v.reserve(numIters);
-    pv1.reserve(numIters);
-    pv2.reserve(numIters);
-    sv.reserve(numIters);
-
-    std::array<uint8_t, 144> r1 = g1One.toJacobianBytesLE(true);
-    std::array<uint8_t, 288> r2 = g2One.toJacobianBytesLE(true);
-
-    //auto start = startStopwatch();
-    for (int i = 0; i < numIters; i++) {
-        scalar::fromBytesLE<4>(scalar::toBytesLE<4>(s));
-        g1::fromJacobianBytesLE(r1, false, true);
-        g2::fromJacobianBytesLE(r2, false, true);
-        //pairing::add_pair(v, g1One, g2One);
-        sv.push_back(s);
-        pv1.push_back(g1One);
-        pv2.push_back(g2One);
-    }
-    auto start = startStopwatch();
-    //pairing::calculate(v);
-    g1 r = g1::multiExp(pv1, sv);
-    endStopwatch(testName, start, numIters);
-    if(r.isZero()) benchPairing();
-}
-
-void benchPairing2() {
-    string testName = "Pairing";
-    const int numIters = 50000;
-    g1 g1One = rand_g1();
-    g2 g2One = rand_g2();
-    vector<tuple<g1, g2>> v;
-    v.reserve(numIters);
-
-    auto start = startStopwatch();
-
-    for (int i = 0; i < numIters; i++)
-    {
-        pairing::add_pair(v, g1One, g2One);
-    }
-    pairing::calculate(v);
-    endStopwatch(testName, start, numIters);
-}
-
 int main(int argc, char* argv[])
 {
     init();
-    //benchG1Add();
-    //benchG1Mul();
-    //benchG2Add();
-    //benchG2Mul();
-    //benchPairing();
-    measureMarshalling();
-    //benchPairing2();
+    benchG1Add();
+    benchG1Mul();
+    benchG2Add();
+    benchG2Mul();
+    benchPairing();
 }
