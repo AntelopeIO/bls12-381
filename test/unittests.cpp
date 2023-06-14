@@ -3,7 +3,7 @@
 #include <random>
 #include <iostream>
 
-#include <bls12_381.hpp>
+#include <bls12-381.hpp>
 
 using namespace std;
 using namespace bls12_381;

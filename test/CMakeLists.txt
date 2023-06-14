@@ -1,2 +1,2 @@
 add_executable(unittests unittests.cpp)
-target_link_libraries(unittests bls12_381)
+target_link_libraries(unittests bls12-381)
