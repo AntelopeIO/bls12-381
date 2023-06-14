@@ -1,4 +1,4 @@
-#include <bls12_381.hpp>
+#include <bls12-381.hpp>
 #ifdef __x86_64__
 #include <cpuid.h>
 #endif

@@ -1,6 +1,6 @@
 
 add_library (
-    bls12_381
+    bls12-381
     arithmetic.cpp
     fp.cpp
     g.cpp
@@ -12,7 +12,7 @@ add_library (
 )
 
 target_include_directories(
-    bls12_381
+    bls12-381
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
