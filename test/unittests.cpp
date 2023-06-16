@@ -1694,7 +1694,7 @@ void TestPopScheme()
 
 void TestGroth16()
 {
-    groth16::Proof proof = groth16::Proof::fromCompressedBytesBE(hexToBytes("b40e641de2a8aa566b7f2a1af381b1b6fba08b889670bef9f35524313a78e97e8d486599f26f54c3a60ed51b0b1813438252e8cd0ca73ea818559ee52734cf9bce40d5a3cd0bd9b7083749028781a4006601237e175b8b1d278624e213b687b715ffb2fa7a5c19cf980c50fcc9b7dfa1f4af9b0f306cd3597fbbd234b0e8b14728401782589ee645fd9fe1d7d57cde1e93a1aeca3e8986b15e8a5ae3401162cd4a74ec1ce9d4182db71009d46e85fb98c008333efc2dcc6d4e2faa0eb3e09bd6"));
+    groth16::Proof proof = groth16::Proof::fromCompressedBytesBE(span<const uint8_t, 192>{hexToBytes("b40e641de2a8aa566b7f2a1af381b1b6fba08b889670bef9f35524313a78e97e8d486599f26f54c3a60ed51b0b1813438252e8cd0ca73ea818559ee52734cf9bce40d5a3cd0bd9b7083749028781a4006601237e175b8b1d278624e213b687b715ffb2fa7a5c19cf980c50fcc9b7dfa1f4af9b0f306cd3597fbbd234b0e8b14728401782589ee645fd9fe1d7d57cde1e93a1aeca3e8986b15e8a5ae3401162cd4a74ec1ce9d4182db71009d46e85fb98c008333efc2dcc6d4e2faa0eb3e09bd6").data(), 192});
     if(!groth16::Proof::fromJacobianBytesBE(proof.toJacobianBytesBE()).equal(proof)) throw invalid_argument("Groth16, proof: JacobianBytesBE error");
     if(!groth16::Proof::fromJacobianBytesLE(proof.toJacobianBytesLE()).equal(proof)) throw invalid_argument("Groth16, proof: JacobianBytesLE error");
     if(!groth16::Proof::fromAffineBytesBE(proof.toAffineBytesBE()).equal(proof)) throw invalid_argument("Groth16, proof: AffineBytesBE error");
@@ -1714,7 +1714,7 @@ void TestGroth16()
     if(!groth16::PreparedVerifyingKey::fromAffineBytesBE(pvk.toAffineBytesBE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: AffineBytesBE error");
     if(!groth16::PreparedVerifyingKey::fromAffineBytesLE(pvk.toAffineBytesLE().data()).equal(pvk)) throw invalid_argument("Groth16, pvk: AffineBytesLE error");
 
-    vector<array<uint64_t, 4>> public_inputs = {scalar::fromBytesLE<4>(hexToBytes("2912224b7353476a255f2aeeb0c57b39d5a8e721225bba6620cc2b2011c42245"))};
+    vector<array<uint64_t, 4>> public_inputs = {scalar::fromBytesLE<4>(span<const uint8_t, 32>{hexToBytes("2912224b7353476a255f2aeeb0c57b39d5a8e721225bba6620cc2b2011c42245").data(), 32})};
     if(!groth16::verify_proof(pvk, proof, public_inputs)) throw invalid_argument("Groth16: proof invalid");
 }
 
