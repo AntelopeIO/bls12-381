@@ -11,7 +11,7 @@ namespace bls12_381
 const string CIPHERSUITE_ID = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 const string POP_CIPHERSUITE_ID = "BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
-void hkdf256_hmac(
+int hkdf256_hmac(
     uint8_t *mac,
     const uint8_t *in,
     uint64_t in_len,
@@ -27,8 +27,8 @@ void hkdf256_hmac(
 
     if(ipad == NULL)
     {
-        throw invalid_argument("hmac: could not allocate memory!");
-        return;
+        //throw invalid_argument("hmac: could not allocate memory!");
+        return -1;
     }
 
     if(key_len > block_size)
@@ -59,9 +59,10 @@ void hkdf256_hmac(
     sha_mac.digest(mac);
 
     free(ipad);
+    return 0;
 }
 
-void hkdf256_extract(
+int hkdf256_extract(
     uint8_t* prk_output,
     const uint8_t* salt,
     const size_t saltLen,
@@ -73,10 +74,10 @@ void hkdf256_extract(
     // assert(ikm_len == 32);  // Used for EIP2333 key derivation
     // Hash256 used as the hash function (sha256)
     // PRK Output is 32 bytes (HashLen)
-    hkdf256_hmac(prk_output, ikm, ikm_len, salt, saltLen);
+    return hkdf256_hmac(prk_output, ikm, ikm_len, salt, saltLen);
 }
 
-void hkdf256_expand(
+int hkdf256_expand(
     uint8_t* okm,
     size_t L,
     const uint8_t* prk,
@@ -86,11 +87,13 @@ void hkdf256_expand(
 {
     if(L > 255 * 32)
     {
-        throw invalid_argument("assert(L <= 255 * 32)");
+        //throw invalid_argument("assert(L <= 255 * 32)");
+        return -1;
     }
     if(infoLen < 0)
     {
-        throw invalid_argument("assert(infoLen >= 0)");
+        //throw invalid_argument("assert(infoLen >= 0)");
+        return -2;
     }
     size_t N = (L + 32 - 1) / 32; // Round up
     size_t bytesWritten = 0;
@@ -101,7 +104,8 @@ void hkdf256_expand(
 
     if(N < 1 || N > 255)
     {
-        throw invalid_argument("assert(N >= 1 && N <= 255)");
+        //throw invalid_argument("assert(N >= 1 && N <= 255)");
+        return -3;
     }
 
     for(size_t i = 1; i <= N; i++)
@@ -126,7 +130,8 @@ void hkdf256_expand(
         }
         if(to_write <= 0 || to_write > 32)
         {
-            throw invalid_argument("assert(to_write > 0 && to_write <= 32)");
+            //throw invalid_argument("assert(to_write > 0 && to_write <= 32)");
+            return -4;
         }
         memcpy(okm + bytesWritten, T.data(), to_write);
         bytesWritten += to_write;
@@ -135,11 +140,13 @@ void hkdf256_expand(
     free(hmacInput);
     if(bytesWritten != L)
     {
-        throw invalid_argument("assert(bytesWritten == L)");
+        //throw invalid_argument("assert(bytesWritten == L)");
+        return -5;
     }
+    return 0;
 }
 
-void hkdf256_extract_expand(
+int hkdf256_extract_expand(
     uint8_t* output,
     size_t outputLen,
     const uint8_t* key,
@@ -151,8 +158,9 @@ void hkdf256_extract_expand(
 )
 {
     array<uint8_t, 32> prk;
-    hkdf256_extract(prk.data(), salt, saltLen, key, keyLen);
-    hkdf256_expand(output, outputLen, prk.data(), info, infoLen);
+    int r = hkdf256_extract(prk.data(), salt, saltLen, key, keyLen);
+    if(0 != r) return r;
+    return hkdf256_expand(output, outputLen, prk.data(), info, infoLen);
 }
 
 array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
@@ -169,7 +177,8 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
     // Required by the ietf spec to be at least 32 bytes
     if(seed.size() < 32)
     {
-        throw invalid_argument("Seed size must be at least 32 bytes");
+        //throw invalid_argument("Seed size must be at least 32 bytes");
+        return {0, 0, 0, 0};
     }
 
     // "BLS-SIG-KEYGEN-SALT-" in ascii
@@ -378,9 +387,10 @@ g2 derive_child_g2_unhardened(
 
 array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
 {
-    if (sks.empty())
+    if(sks.empty())
     {
-        throw std::length_error("Number of private keys must be at least 1");
+        //throw std::length_error("Number of private keys must be at least 1");
+        return {0, 0, 0, 0};
     }
 
     array<uint64_t, 4> ret = {0, 0, 0, 0};
@@ -421,7 +431,8 @@ array<uint64_t, 4> sk_from_bytes(
     {
         if(scalar::cmp<4>(sk, fp::Q) >= 0)
         {
-            throw std::invalid_argument("PrivateKey byte data must be less than the group order");
+            //throw std::invalid_argument("PrivateKey byte data must be less than the group order");
+            return {0, 0, 0, 0};
         }
     }
 
@@ -434,7 +445,7 @@ g1 public_key(const array<uint64_t, 4>& sk)
 }
 
 // Construct an extensible-output function based on SHA256
-void xmd_sh256(
+int xmd_sh256(
     uint8_t *buf,
     int buf_len,
     const uint8_t *in,
@@ -448,7 +459,7 @@ void xmd_sh256(
     const unsigned ell = (buf_len + SHA256HashSize - 1) / SHA256HashSize;
     if (buf_len < 0 || ell > 255 || dst_len > 255)
     {
-        return;
+        return -1;
     }
     const uint8_t Z_pad[SHA256_Message_Block_Size] = { 0, };
     const uint8_t l_i_b_0_str[] = {
@@ -483,6 +494,7 @@ void xmd_sh256(
         const int copy_len = SHA256HashSize + (rem_after < 0 ? rem_after : 0);
         memcpy(buf + (i - 1) * SHA256HashSize, b_i, copy_len);
     }
+    return 0;
 }
 
 

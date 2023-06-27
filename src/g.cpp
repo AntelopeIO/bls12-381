@@ -17,74 +17,77 @@ g1::g1(const g1& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-g1 g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check, const bool raw)
+optional<g1> g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
-    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
-    fp z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]), check, raw);
-    g1 p = g1({x, y, z});
+    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    optional<fp> z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]), check, raw);
+    if(!x.has_value() || !y.has_value() || !z.has_value()) return {};
+    g1 p = g1({x.value(), y.value(), z.value()});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g1 g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check, const bool raw)
+optional<g1> g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
-    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
-    fp z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]), check, raw);
-    g1 p = g1({x, y, z});
+    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    optional<fp> z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]), check, raw);
+    if(!x.has_value() || !y.has_value() || !z.has_value()) return {};
+    g1 p = g1({x.value(), y.value(), z.value()});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g1 g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<g1> g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
-    fp y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    if(!x.has_value() || !y.has_value()) return {};
     // check if given input points to infinity
-    if(x.isZero() && y.isZero())
+    if(x.value().isZero() && y.value().isZero())
     {
         return zero();
     }
     fp z = fp::one();
-    g1 p = g1({x, y, z});
+    g1 p = g1({x.value(), y.value(), z});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g1 g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
 {
-    fp x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
-    fp y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
+    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
     // check if given input points to infinity
-    if(x.isZero() && y.isZero())
+    if(x.value().isZero() && y.value().isZero())
     {
         return zero();
     }
     fp z = fp::one();
-    g1 p = g1({x, y, z});
+    g1 p = g1({x.value(), y.value(), z});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g1 g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
+optional<g1> g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
 {
     // check compression bit
     if(((in[0] >> 7) & 1) != 1)
     {
-        throw invalid_argument("compression bit not set!");
+        return {};
     }
     // check if point is infinity
     if(((in[0] >> 6) & 1) == 1)
@@ -100,7 +103,7 @@ g1 g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
     p.x = p.x.toMont();
     if(!p.x.isValid())
     {
-        throw invalid_argument("invalid compressed corrdinate: not a valid field element");
+        return {};
     }
     // BLS 12-381 curve equation:
     //      y^2 = x^3 + B
@@ -111,7 +114,7 @@ g1 g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
     _add(&p.y, &p.y, &b);       // y = x^3 + B
     if(!p.y.sqrt(p.y))
     {
-        throw invalid_argument("invalid compressed coordinate: square root doesn't exist");
+        return {};
     }
     if(p.y.isLexicographicallyLargest() ^ ysign)
     {
@@ -435,12 +438,12 @@ g1 g1::glvEndomorphism() const
 
 // MultiExp calculates multi exponentiation. Given pairs of G1 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
-// Length of points and scalars are expected to be equal, otherwise an error is thrown.
-g1 g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars)
+// Length of points and scalars are expected to be equal, otherwise NONE is returned.
+optional<g1> g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars)
 {
     if(points.size() != scalars.size())
     {
-        throw invalid_argument("point and scalar vectors must have same length!");
+        return {};
     }
     uint64_t c = 3;
     if(scalars.size() >= 32)
@@ -690,74 +693,78 @@ g2::g2(const g2& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-g2 g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<g2> g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
-    fp2 z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
-    g2 p = g2({x, y, z});
+    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    optional<fp2> z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
+    if(!x.has_value() || !y.has_value() || !z.has_value()) return {};
+    g2 p = g2({x.value(), y.value(), z.value()});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g2 g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<g2> g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
-    fp2 z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
-    g2 p = g2({x, y, z});
+    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    optional<fp2> z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
+    if(!x.has_value() || !y.has_value() || !z.has_value()) return {};
+    g2 p = g2({x.value(), y.value(), z.value()});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g2 g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check, const bool raw)
+optional<g2> g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    fp2 y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    if(!x.has_value() || !y.has_value()) return {};
     // check if given input points to infinity
-    if(x.isZero() && y.isZero())
+    if(x.value().isZero() && y.value().isZero())
     {
         return zero();
     }
     fp2 z = fp2::one();
-    g2 p = g2({x, y, z});
+    g2 p = g2({x.value(), y.value(), z});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g2 g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool check, const bool raw)
+optional<g2> g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool check, const bool raw)
 {
-    fp2 x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    fp2 y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    if(!x.has_value() || !y.has_value()) return {};
     // check if given input points to infinity
-    if(x.isZero() && y.isZero())
+    if(x.value().isZero() && y.value().isZero())
     {
         return zero();
     }
     fp2 z = fp2::one();
-    g2 p = g2({x, y, z});
+    g2 p = g2({x.value(), y.value(), z});
     if(check && !p.isOnCurve())
     {
-        throw invalid_argument("point is not on curve!");
+        return {};
     }
     return p;
 }
 
-g2 g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
+optional<g2> g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
 {
     // check compression bit
     if(((in[0] >> 7) & 1) != 1)
     {
-        throw invalid_argument("compression bit not set!");
+        return {};
     }
     // check if point is infinity
     if(((in[0] >> 6) & 1) == 1)
@@ -768,13 +775,13 @@ g2 g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     bool ysign = ((in[0] >> 5) & 1) == 1;
     g2 p;
     scalar::fromBytesBE(span<const uint8_t, 48>(&in[0], &in[48]), p.x.c1.d);
-    p.x.c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]));
+    p.x.c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96])).value();
     // erase 3 msbs from given input and perform validity check
     p.x.c1.d[5] &= 0x1FFFFFFFFFFFFFFF;
     p.x.c1 = p.x.c1.toMont();
     if(!p.x.c1.isValid())
     {
-        throw invalid_argument("invalid compressed corrdinate: not a valid field element");
+        return {};
     }
     // BLS 12-381 curve equation:
     //      y^2 = x^3 + B
@@ -785,7 +792,7 @@ g2 g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     p.y = p.y.add(b);           // y = x^3 + B
     if(!p.y.sqrt(p.y))
     {
-        throw invalid_argument("invalid compressed coordinate: square root doesn't exist");
+        return {};
     }
     if(p.y.isLexicographicallyLargest() ^ ysign)
     {
@@ -1155,12 +1162,12 @@ g2 g2::frobeniusMap(int64_t power) const
 
 // MultiExp calculates multi exponentiation. Given pairs of G2 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
-// Length of points and scalars are expected to be equal, otherwise an error is thrown.
-g2 g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
+// Length of points and scalars are expected to be equal, otherwise NONE is returned.
+optional<g2> g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
 {
     if(points.size() != scalars.size())
     {
-        throw invalid_argument("point and scalar vectors must have same length!");
+        return {};
     }
     uint64_t c = 3;
     if(scalars.size() >= 32)

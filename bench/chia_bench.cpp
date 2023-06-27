@@ -113,7 +113,7 @@ void benchBatchVerification() {
 
     auto start = startStopwatch();
     for (auto const& pk : pk_bytes) {
-        pks.emplace_back(g1::fromCompressedBytesBE(pk));
+        pks.emplace_back(g1::fromCompressedBytesBE(pk).value());
     }
     endStopwatch("Public key validation", start, numIters);
 
@@ -122,7 +122,7 @@ void benchBatchVerification() {
 
     start = startStopwatch();
     for (auto const& sig : sig_bytes) {
-        sigs.emplace_back(g2::fromCompressedBytesBE(sig));
+        sigs.emplace_back(g2::fromCompressedBytesBE(sig).value());
     }
     endStopwatch("Signature validation", start, numIters);
 

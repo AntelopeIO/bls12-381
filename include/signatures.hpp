@@ -14,7 +14,7 @@ extern const std::string CIPHERSUITE_ID;
 extern const std::string POP_CIPHERSUITE_ID;
 
 // Used to generate a domain separated extended sha256 hash used in 'map to curve'
-void xmd_sh256(
+int xmd_sh256(
     uint8_t *buf,
     int buf_len,
     const uint8_t *in,
@@ -24,7 +24,7 @@ void xmd_sh256(
 );
 
 // Implements HMAC based on SHA256 as specified in RFC 2104: https://www.rfc-editor.org/rfc/rfc2104
-void hkdf256_hmac(
+int hkdf256_hmac(
     uint8_t *mac,
     const uint8_t *in,
     uint64_t in_len,
@@ -33,7 +33,7 @@ void hkdf256_hmac(
 );
 
 // Implements HKDF Extract as specified in RFC 5869: https://www.rfc-editor.org/rfc/rfc5869#section-2.2
-void hkdf256_extract(
+int hkdf256_extract(
     uint8_t* prk_output,
     const uint8_t* salt,
     const size_t saltLen,
@@ -42,7 +42,7 @@ void hkdf256_extract(
 );
 
 // Implements HKDF Expand as specified in RFC 5869: https://www.rfc-editor.org/rfc/rfc5869#section-2.3
-void hkdf256_expand(
+int hkdf256_expand(
     uint8_t* okm,
     size_t L,
     const uint8_t* prk,
@@ -51,7 +51,7 @@ void hkdf256_expand(
 );
 
 // Implements HKDF Extract + Expand as specified in RFC 5869: https://www.rfc-editor.org/rfc/rfc5869
-void hkdf256_extract_expand(
+int hkdf256_extract_expand(
     uint8_t* output,
     size_t outputLen,
     const uint8_t* key,
