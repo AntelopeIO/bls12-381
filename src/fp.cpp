@@ -17,18 +17,18 @@ fp::fp(const fp& e) : d{e.d[0], e.d[1], e.d[2], e.d[3], e.d[4], e.d[5]}
 {
 }
 
-fp fp::fromBytesBE(const span<const uint8_t, 48> in, const bool check, const bool raw)
+optional<fp> fp::fromBytesBE(const span<const uint8_t, 48> in, const bool check, const bool raw)
 {
     fp e = fp(scalar::fromBytesBE<6>(in));
-    if(check && !e.isValid()) throw invalid_argument("field element invalid!");
+    if(check && !e.isValid()) return {};
     if(raw) return e;
     else    return e.toMont();
 }
 
-fp fp::fromBytesLE(const span<const uint8_t, 48> in, const bool check, const bool raw)
+optional<fp> fp::fromBytesLE(const span<const uint8_t, 48> in, const bool check, const bool raw)
 {
     fp e = fp(scalar::fromBytesLE<6>(in));
-    if(check && !e.isValid()) throw invalid_argument("field element invalid!");
+    if(check && !e.isValid()) return {};
     if(raw) return e;
     else    return e.toMont();
 }
@@ -366,18 +366,20 @@ fp2::fp2(const fp2& e) : c0(e.c0), c1(e.c1)
 {
 }
 
-fp2 fp2::fromBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<fp2> fp2::fromBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
 {
-    fp c1 = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
-    fp c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
-    return fp2({c0, c1});
+    optional<fp> c1 = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
+    optional<fp> c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
+    if(!c1.has_value() || !c0.has_value()) return {};
+    return fp2({c0.value(), c1.value()});
 }
 
-fp2 fp2::fromBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<fp2> fp2::fromBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
 {
-    fp c0 = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
-    fp c1 = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
-    return fp2({c0, c1});
+    optional<fp> c0 = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
+    optional<fp> c1 = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
+    if(!c1.has_value() || !c0.has_value()) return {};
+    return fp2({c0.value(), c1.value()});
 }
 
 void fp2::toBytesBE(const span<uint8_t, 96> out, const bool raw) const
@@ -756,20 +758,22 @@ fp6::fp6(const fp6& e) : c0(e.c0), c1(e.c1), c2(e.c2)
 {
 }
 
-fp6 fp6::fromBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<fp6> fp6::fromBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
 {
-    fp2 c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    fp2 c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
-    fp2 c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
-    return fp6({c0, c1, c2});
+    optional<fp2> c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    optional<fp2> c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    optional<fp2> c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
+    if(!c2.has_value() || !c1.has_value() || !c0.has_value()) return {};
+    return fp6({c0.value(), c1.value(), c2.value()});
 }
 
-fp6 fp6::fromBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<fp6> fp6::fromBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
 {
-    fp2 c0 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    fp2 c1 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
-    fp2 c2 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
-    return fp6({c0, c1, c2});
+    optional<fp2> c0 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
+    optional<fp2> c1 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
+    optional<fp2> c2 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
+    if(!c2.has_value() || !c1.has_value() || !c0.has_value()) return {};
+    return fp6({c0.value(), c1.value(), c2.value()});
 }
 
 void fp6::toBytesBE(const span<uint8_t, 288> out, const bool raw) const
@@ -1191,18 +1195,20 @@ fp12::fp12(const fp12& e) : c0(e.c0), c1(e.c1)
 {
 }
 
-fp12 fp12::fromBytesBE(const span<const uint8_t, 576> in, const bool check, const bool raw)
+optional<fp12> fp12::fromBytesBE(const span<const uint8_t, 576> in, const bool check, const bool raw)
 {
-    fp6 c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
-    fp6 c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
-    return fp12({c0, c1});
+    optional<fp6> c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
+    optional<fp6> c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
+    if(!c1.has_value() || !c0.has_value()) return {};
+    return fp12({c0.value(), c1.value()});
 }
 
-fp12 fp12::fromBytesLE(const span<const uint8_t, 576> in, const bool check, const bool raw)
+optional<fp12> fp12::fromBytesLE(const span<const uint8_t, 576> in, const bool check, const bool raw)
 {
-    fp6 c0 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
-    fp6 c1 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
-    return fp12({c0, c1});
+    optional<fp6> c0 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
+    optional<fp6> c1 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
+    if(!c1.has_value() || !c0.has_value()) return {};
+    return fp12({c0.value(), c1.value()});
 }
 
 void fp12::toBytesBE(const span<uint8_t, 576> out, const bool raw) const

@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include <functional>
+#include <optional>
 #include "span.h"
 
 namespace bls12_381
@@ -26,11 +27,11 @@ public:
     g1();
     g1(const std::array<fp, 3>& e3);
     g1(const g1& e);
-    static g1 fromJacobianBytesBE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
-    static g1 fromJacobianBytesLE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
-    static g1 fromAffineBytesBE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
-    static g1 fromAffineBytesLE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
-    static g1 fromCompressedBytesBE(const std::span<const uint8_t, 48> in);
+    static std::optional<g1> fromJacobianBytesBE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
+    static std::optional<g1> fromJacobianBytesLE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
+    static std::optional<g1> fromAffineBytesBE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
+    static std::optional<g1> fromAffineBytesLE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
+    static std::optional<g1> fromCompressedBytesBE(const std::span<const uint8_t, 48> in);
     void toJacobianBytesBE(const std::span<uint8_t, 144> out, const bool raw = false) const;
     void toJacobianBytesLE(const std::span<uint8_t, 144> out, const bool raw = false) const;
     void toAffineBytesBE(const std::span<uint8_t, 96> out, const bool raw = false) const;
@@ -56,7 +57,7 @@ public:
     template<size_t N> g1 mulScalar(const std::array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
     g1 glvEndomorphism() const;
-    static g1 multiExp(const std::vector<g1>& points, const std::vector<std::array<uint64_t, 4>>& scalars);
+    static std::optional<g1> multiExp(const std::vector<g1>& points, const std::vector<std::array<uint64_t, 4>>& scalars);
     static g1 mapToCurve(const fp& e);
     static std::tuple<fp, fp> swuMapG1(const fp& e);
     static void isogenyMapG1(fp& x, fp& y);
@@ -79,11 +80,11 @@ public:
     g2();
     g2(const std::array<fp2, 3>& e3);
     g2(const g2& e);
-    static g2 fromJacobianBytesBE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
-    static g2 fromJacobianBytesLE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
-    static g2 fromAffineBytesBE(const std::span<const uint8_t, 192> in, const bool check = false, const bool raw = false);
-    static g2 fromAffineBytesLE(const std::span<const uint8_t, 192> in, const bool check = false, const bool raw = false);
-    static g2 fromCompressedBytesBE(const std::span<const uint8_t, 96> in);
+    static std::optional<g2> fromJacobianBytesBE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
+    static std::optional<g2> fromJacobianBytesLE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
+    static std::optional<g2> fromAffineBytesBE(const std::span<const uint8_t, 192> in, const bool check = false, const bool raw = false);
+    static std::optional<g2> fromAffineBytesLE(const std::span<const uint8_t, 192> in, const bool check = false, const bool raw = false);
+    static std::optional<g2> fromCompressedBytesBE(const std::span<const uint8_t, 96> in);
     void toJacobianBytesBE(const std::span<uint8_t, 288> out, const bool raw = false) const;
     void toJacobianBytesLE(const std::span<uint8_t, 288> out, const bool raw = false) const;
     void toAffineBytesBE(const std::span<uint8_t, 192> out, const bool raw = false) const;
@@ -110,7 +111,7 @@ public:
     template<size_t N> g2 mulScalar(const std::array<uint64_t, N>& s) const;
     g2 clearCofactor() const;
     g2 frobeniusMap(int64_t power) const;
-    static g2 multiExp(const std::vector<g2>& points, const std::vector<std::array<uint64_t, 4>>& scalars);
+    static std::optional<g2> multiExp(const std::vector<g2>& points, const std::vector<std::array<uint64_t, 4>>& scalars);
     static g2 mapToCurve(const fp2& e);
     static std::tuple<fp2, fp2> swuMapG2(const fp2& e);
     //static void isogenyMapG2(fp2& x, fp2& y);

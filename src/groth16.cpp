@@ -19,44 +19,49 @@ Proof::Proof(const Proof& proof) : a(proof.a), b(proof.b), c(proof.c)
 {
 }
 
-Proof Proof::fromJacobianBytesBE(const span<const uint8_t, 576> in, const bool check, const bool raw)
+optional<Proof> Proof::fromJacobianBytesBE(const span<const uint8_t, 576> in, const bool check, const bool raw)
 {
-    g1 a = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[  0], &in[144]), check, raw);
-    g2 b = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[144], &in[432]), check, raw);
-    g1 c = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[432], &in[576]), check, raw);
-    return Proof(a, b, c);
+    optional<g1> a = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[  0], &in[144]), check, raw);
+    optional<g2> b = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[144], &in[432]), check, raw);
+    optional<g1> c = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[432], &in[576]), check, raw);
+    if(!a.has_value() || !b.has_value() || !c.has_value()) return {};
+    return Proof(a.value(), b.value(), c.value());
 }
 
-Proof Proof::fromJacobianBytesLE(const span<const uint8_t, 576> in, const bool check, const bool raw)
+optional<Proof> Proof::fromJacobianBytesLE(const span<const uint8_t, 576> in, const bool check, const bool raw)
 {
-    g1 a = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[  0], &in[144]), check, raw);
-    g2 b = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[144], &in[432]), check, raw);
-    g1 c = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[432], &in[576]), check, raw);
-    return Proof(a, b, c);
+    optional<g1> a = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[  0], &in[144]), check, raw);
+    optional<g2> b = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[144], &in[432]), check, raw);
+    optional<g1> c = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[432], &in[576]), check, raw);
+    if(!a.has_value() || !b.has_value() || !c.has_value()) return {};
+    return Proof(a.value(), b.value(), c.value());
 }
 
-Proof Proof::fromAffineBytesBE(const span<const uint8_t, 384> in, const bool check, const bool raw)
+optional<Proof> Proof::fromAffineBytesBE(const span<const uint8_t, 384> in, const bool check, const bool raw)
 {
-    g1 a = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
-    g2 b = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[ 96], &in[288]), check, raw);
-    g1 c = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[288], &in[384]), check, raw);
-    return Proof(a, b, c);
+    optional<g1> a = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
+    optional<g2> b = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[ 96], &in[288]), check, raw);
+    optional<g1> c = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[288], &in[384]), check, raw);
+    if(!a.has_value() || !b.has_value() || !c.has_value()) return {};
+    return Proof(a.value(), b.value(), c.value());
 }
 
-Proof Proof::fromAffineBytesLE(const span<const uint8_t, 384> in, const bool check, const bool raw)
+optional<Proof> Proof::fromAffineBytesLE(const span<const uint8_t, 384> in, const bool check, const bool raw)
 {
-    g1 a = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
-    g2 b = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[ 96], &in[288]), check, raw);
-    g1 c = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[288], &in[384]), check, raw);
-    return Proof(a, b, c);
+    optional<g1> a = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
+    optional<g2> b = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[ 96], &in[288]), check, raw);
+    optional<g1> c = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[288], &in[384]), check, raw);
+    if(!a.has_value() || !b.has_value() || !c.has_value()) return {};
+    return Proof(a.value(), b.value(), c.value());
 }
 
-Proof Proof::fromCompressedBytesBE(const span<const uint8_t, 192> in)
+optional<Proof> Proof::fromCompressedBytesBE(const span<const uint8_t, 192> in)
 {
-    g1 a = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[  0], &in[ 48]));
-    g2 b = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[ 48], &in[144]));
-    g1 c = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[144], &in[192]));
-    return Proof(a, b, c);
+    optional<g1> a = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[  0], &in[ 48]));
+    optional<g2> b = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[ 48], &in[144]));
+    optional<g1> c = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[144], &in[192]));
+    if(!a.has_value() || !b.has_value() || !c.has_value()) return {};
+    return Proof(a.value(), b.value(), c.value());
 }
 
 void Proof::toJacobianBytesBE(const span<uint8_t, 576> out, const bool raw) const
@@ -175,132 +180,147 @@ VerifyingKey::VerifyingKey(const VerifyingKey& vk) :
 {
 }
 
-VerifyingKey VerifyingKey::fromJacobianBytesBE(const uint8_t* in, const bool check, const bool raw)
+optional<VerifyingKey> VerifyingKey::fromJacobianBytesBE(const uint8_t* in, const bool check, const bool raw)
 {
-    g1 alpha_g1 = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[   0], &in[ 144]), check, raw);
-    g1 beta_g1  = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[ 144], &in[ 288]), check, raw);
-    g2 beta_g2  = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 288], &in[ 576]), check, raw);
-    g2 gamma_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
-    g1 delta_g1 = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[ 864], &in[1008]), check, raw);
-    g2 delta_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[1008], &in[1296]), check, raw);
+    optional<g1> alpha_g1 = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[   0], &in[ 144]), check, raw);
+    optional<g1> beta_g1  = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[ 144], &in[ 288]), check, raw);
+    optional<g2> beta_g2  = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 288], &in[ 576]), check, raw);
+    optional<g2> gamma_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
+    optional<g1> delta_g1 = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[ 864], &in[1008]), check, raw);
+    optional<g2> delta_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[1008], &in[1296]), check, raw);
+    if(!alpha_g1.has_value() || !beta_g1.has_value() || !beta_g2.has_value() || !gamma_g2.has_value() || !delta_g1.has_value() || !delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[1296] << 24 | in[1297] << 16 | in[1298] << 8 | in[1299];
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[1300 + i*144], &in[1300 + (i+1)*144]), check, raw));
+        optional<g1> e = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[1300 + i*144], &in[1300 + (i+1)*144]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return VerifyingKey(
-        alpha_g1,
-        beta_g1,
-        beta_g2,
-        gamma_g2,
-        delta_g1,
-        delta_g2,
+        alpha_g1.value(),
+        beta_g1.value(),
+        beta_g2.value(),
+        gamma_g2.value(),
+        delta_g1.value(),
+        delta_g2.value(),
         ic
     );
 }
 
-VerifyingKey VerifyingKey::fromJacobianBytesLE(const uint8_t* in, const bool check, const bool raw)
+optional<VerifyingKey> VerifyingKey::fromJacobianBytesLE(const uint8_t* in, const bool check, const bool raw)
 {
-    g1 alpha_g1 = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[   0], &in[ 144]), check, raw);
-    g1 beta_g1  = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[ 144], &in[ 288]), check, raw);
-    g2 beta_g2  = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 288], &in[ 576]), check, raw);
-    g2 gamma_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
-    g1 delta_g1 = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[ 864], &in[1008]), check, raw);
-    g2 delta_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[1008], &in[1296]), check, raw);
+    optional<g1> alpha_g1 = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[   0], &in[ 144]), check, raw);
+    optional<g1> beta_g1  = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[ 144], &in[ 288]), check, raw);
+    optional<g2> beta_g2  = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 288], &in[ 576]), check, raw);
+    optional<g2> gamma_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
+    optional<g1> delta_g1 = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[ 864], &in[1008]), check, raw);
+    optional<g2> delta_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[1008], &in[1296]), check, raw);
+    if(!alpha_g1.has_value() || !beta_g1.has_value() || !beta_g2.has_value() || !gamma_g2.has_value() || !delta_g1.has_value() || !delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[1296] | in[1297] << 8 | in[1298] << 16 | in[1299] << 24;
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[1300 + i*144], &in[1300 + (i+1)*144]), check, raw));
+        optional<g1> e = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[1300 + i*144], &in[1300 + (i+1)*144]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return VerifyingKey(
-        alpha_g1,
-        beta_g1,
-        beta_g2,
-        gamma_g2,
-        delta_g1,
-        delta_g2,
+        alpha_g1.value(),
+        beta_g1.value(),
+        beta_g2.value(),
+        gamma_g2.value(),
+        delta_g1.value(),
+        delta_g2.value(),
         ic
     );
 }
 
-VerifyingKey VerifyingKey::fromAffineBytesBE(const uint8_t* in, const bool check, const bool raw)
+optional<VerifyingKey> VerifyingKey::fromAffineBytesBE(const uint8_t* in, const bool check, const bool raw)
 {
-    g1 alpha_g1 = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
-    g1 beta_g1  = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[ 96], &in[192]), check, raw);
-    g2 beta_g2  = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[192], &in[384]), check, raw);
-    g2 gamma_g2 = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[384], &in[576]), check, raw);
-    g1 delta_g1 = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[576], &in[672]), check, raw);
-    g2 delta_g2 = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[672], &in[864]), check, raw);
+    optional<g1> alpha_g1 = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
+    optional<g1> beta_g1  = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[ 96], &in[192]), check, raw);
+    optional<g2> beta_g2  = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[192], &in[384]), check, raw);
+    optional<g2> gamma_g2 = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[384], &in[576]), check, raw);
+    optional<g1> delta_g1 = g1::fromAffineBytesBE(span<const uint8_t,  96>(&in[576], &in[672]), check, raw);
+    optional<g2> delta_g2 = g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[672], &in[864]), check, raw);
+    if(!alpha_g1.has_value() || !beta_g1.has_value() || !beta_g2.has_value() || !gamma_g2.has_value() || !delta_g1.has_value() || !delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[864] << 24 | in[865] << 16 | in[866] << 8 | in[867];
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromAffineBytesBE(span<const uint8_t, 96>(&in[868 + i*96], &in[868 + (i+1)*96]), check, raw));
+        optional<g1> e = g1::fromAffineBytesBE(span<const uint8_t, 96>(&in[868 + i*96], &in[868 + (i+1)*96]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return VerifyingKey(
-        alpha_g1,
-        beta_g1,
-        beta_g2,
-        gamma_g2,
-        delta_g1,
-        delta_g2,
+        alpha_g1.value(),
+        beta_g1.value(),
+        beta_g2.value(),
+        gamma_g2.value(),
+        delta_g1.value(),
+        delta_g2.value(),
         ic
     );
 }
 
-VerifyingKey VerifyingKey::fromAffineBytesLE(const uint8_t* in, const bool check, const bool raw)
+optional<VerifyingKey> VerifyingKey::fromAffineBytesLE(const uint8_t* in, const bool check, const bool raw)
 {
-    g1 alpha_g1 = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
-    g1 beta_g1  = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[ 96], &in[192]), check, raw);
-    g2 beta_g2  = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[192], &in[384]), check, raw);
-    g2 gamma_g2 = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[384], &in[576]), check, raw);
-    g1 delta_g1 = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[576], &in[672]), check, raw);
-    g2 delta_g2 = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[672], &in[864]), check, raw);
+    optional<g1> alpha_g1 = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[  0], &in[ 96]), check, raw);
+    optional<g1> beta_g1  = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[ 96], &in[192]), check, raw);
+    optional<g2> beta_g2  = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[192], &in[384]), check, raw);
+    optional<g2> gamma_g2 = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[384], &in[576]), check, raw);
+    optional<g1> delta_g1 = g1::fromAffineBytesLE(span<const uint8_t,  96>(&in[576], &in[672]), check, raw);
+    optional<g2> delta_g2 = g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[672], &in[864]), check, raw);
+    if(!alpha_g1.has_value() || !beta_g1.has_value() || !beta_g2.has_value() || !gamma_g2.has_value() || !delta_g1.has_value() || !delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[864] | in[865] << 8 | in[866] << 16 | in[867] << 24;
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromAffineBytesLE(span<const uint8_t, 96>(&in[868 + i*96], &in[868 + (i+1)*96]), check, raw));
+        optional<g1> e = g1::fromAffineBytesLE(span<const uint8_t, 96>(&in[868 + i*96], &in[868 + (i+1)*96]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return VerifyingKey(
-        alpha_g1,
-        beta_g1,
-        beta_g2,
-        gamma_g2,
-        delta_g1,
-        delta_g2,
+        alpha_g1.value(),
+        beta_g1.value(),
+        beta_g2.value(),
+        gamma_g2.value(),
+        delta_g1.value(),
+        delta_g2.value(),
         ic
     );
 }
 
-VerifyingKey VerifyingKey::fromCompressedBytesBE(const uint8_t* in)
+optional<VerifyingKey> VerifyingKey::fromCompressedBytesBE(const uint8_t* in)
 {
-    g1 alpha_g1 = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[  0], &in[ 48]));
-    g1 beta_g1  = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[ 48], &in[ 96]));
-    g2 beta_g2  = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
-    g2 gamma_g2 = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[192], &in[288]));
-    g1 delta_g1 = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[288], &in[336]));
-    g2 delta_g2 = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[336], &in[432]));
+    optional<g1> alpha_g1 = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[  0], &in[ 48]));
+    optional<g1> beta_g1  = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[ 48], &in[ 96]));
+    optional<g2> beta_g2  = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]));
+    optional<g2> gamma_g2 = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[192], &in[288]));
+    optional<g1> delta_g1 = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[288], &in[336]));
+    optional<g2> delta_g2 = g2::fromCompressedBytesBE(span<const uint8_t, 96>(&in[336], &in[432]));
+    if(!alpha_g1.has_value() || !beta_g1.has_value() || !beta_g2.has_value() || !gamma_g2.has_value() || !delta_g1.has_value() || !delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[432] << 24 | in[433] << 16 | in[434] << 8 | in[435];
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[436 + i*48], &in[436 + (i+1)*48])));
+        optional<g1> e = g1::fromCompressedBytesBE(span<const uint8_t, 48>(&in[436 + i*48], &in[436 + (i+1)*48]));
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return VerifyingKey(
-        alpha_g1,
-        beta_g1,
-        beta_g2,
-        gamma_g2,
-        delta_g1,
-        delta_g2,
+        alpha_g1.value(),
+        beta_g1.value(),
+        beta_g2.value(),
+        gamma_g2.value(),
+        delta_g1.value(),
+        delta_g2.value(),
         ic
     );
 }
@@ -485,82 +505,94 @@ PreparedVerifyingKey::PreparedVerifyingKey(const PreparedVerifyingKey& pvk) :
 {
 }
 
-PreparedVerifyingKey PreparedVerifyingKey::fromJacobianBytesBE(const uint8_t* in, const bool check, const bool raw)
+optional<PreparedVerifyingKey> PreparedVerifyingKey::fromJacobianBytesBE(const uint8_t* in, const bool check, const bool raw)
 {
-    fp12 alpha_g1_beta_g2 = fp12::fromBytesBE(span<const uint8_t, 576>(&in[   0], &in[ 576]), check, raw);
-    g2 neg_gamma_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
-    g2 neg_delta_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 864], &in[1152]), check, raw);
+    optional<fp12> alpha_g1_beta_g2 = fp12::fromBytesBE(span<const uint8_t, 576>(&in[   0], &in[ 576]), check, raw);
+    optional<g2> neg_gamma_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
+    optional<g2> neg_delta_g2 = g2::fromJacobianBytesBE(span<const uint8_t, 288>(&in[ 864], &in[1152]), check, raw);
+    if(!alpha_g1_beta_g2.has_value() || !neg_gamma_g2.has_value() || !neg_delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[1152] << 24 | in[1153] << 16 | in[1154] << 8 | in[1155];
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[1156 + i*144], &in[1156 + (i+1)*144]), check, raw));
+        optional<g1> e = g1::fromJacobianBytesBE(span<const uint8_t, 144>(&in[1156 + i*144], &in[1156 + (i+1)*144]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return PreparedVerifyingKey(
-        alpha_g1_beta_g2,
-        neg_gamma_g2,
-        neg_delta_g2,
+        alpha_g1_beta_g2.value(),
+        neg_gamma_g2.value(),
+        neg_delta_g2.value(),
         ic
     );
 }
 
-PreparedVerifyingKey PreparedVerifyingKey::fromJacobianBytesLE(const uint8_t* in, const bool check, const bool raw)
+optional<PreparedVerifyingKey> PreparedVerifyingKey::fromJacobianBytesLE(const uint8_t* in, const bool check, const bool raw)
 {
-    fp12 alpha_g1_beta_g2 = fp12::fromBytesLE(span<const uint8_t, 576>(&in[   0], &in[ 576]), check, raw);
-    g2 neg_gamma_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
-    g2 neg_delta_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 864], &in[1152]), check, raw);
+    optional<fp12> alpha_g1_beta_g2 = fp12::fromBytesLE(span<const uint8_t, 576>(&in[   0], &in[ 576]), check, raw);
+    optional<g2> neg_gamma_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 576], &in[ 864]), check, raw);
+    optional<g2> neg_delta_g2 = g2::fromJacobianBytesLE(span<const uint8_t, 288>(&in[ 864], &in[1152]), check, raw);
+    if(!alpha_g1_beta_g2.has_value() || !neg_gamma_g2.has_value() || !neg_delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[1152] | in[1153] << 8 | in[1154] << 16 | in[1155] << 24;
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[1156 + i*144], &in[1156 + (i+1)*144]), check, raw));
+        optional<g1> e = g1::fromJacobianBytesLE(span<const uint8_t, 144>(&in[1156 + i*144], &in[1156 + (i+1)*144]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return PreparedVerifyingKey(
-        alpha_g1_beta_g2,
-        neg_gamma_g2,
-        neg_delta_g2,
+        alpha_g1_beta_g2.value(),
+        neg_gamma_g2.value(),
+        neg_delta_g2.value(),
         ic
     );
 }
 
-PreparedVerifyingKey PreparedVerifyingKey::fromAffineBytesBE(const uint8_t* in, const bool check, const bool raw)
+optional<PreparedVerifyingKey> PreparedVerifyingKey::fromAffineBytesBE(const uint8_t* in, const bool check, const bool raw)
 {
-    fp12 alpha_g1_beta_g2 = fp12::fromBytesBE(span<const uint8_t, 576>(&in[  0], &in[576]), check, raw);
-    g2 neg_gamma_g2 =   g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[576], &in[768]), check, raw);
-    g2 neg_delta_g2 =   g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[768], &in[960]), check, raw);
+    optional<fp12> alpha_g1_beta_g2 = fp12::fromBytesBE(span<const uint8_t, 576>(&in[  0], &in[576]), check, raw);
+    optional<g2> neg_gamma_g2 =   g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[576], &in[768]), check, raw);
+    optional<g2> neg_delta_g2 =   g2::fromAffineBytesBE(span<const uint8_t, 192>(&in[768], &in[960]), check, raw);
+    if(!alpha_g1_beta_g2.has_value() || !neg_gamma_g2.has_value() || !neg_delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[960] << 24 | in[961] << 16 | in[962] << 8 | in[963];
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromAffineBytesBE(span<const uint8_t, 96>(&in[964 + i*96], &in[964 + (i+1)*96]), check, raw));
+        optional<g1> e = g1::fromAffineBytesBE(span<const uint8_t, 96>(&in[964 + i*96], &in[964 + (i+1)*96]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return PreparedVerifyingKey(
-        alpha_g1_beta_g2,
-        neg_gamma_g2,
-        neg_delta_g2,
+        alpha_g1_beta_g2.value(),
+        neg_gamma_g2.value(),
+        neg_delta_g2.value(),
         ic
     );
 }
 
-PreparedVerifyingKey PreparedVerifyingKey::fromAffineBytesLE(const uint8_t* in, const bool check, const bool raw)
+optional<PreparedVerifyingKey> PreparedVerifyingKey::fromAffineBytesLE(const uint8_t* in, const bool check, const bool raw)
 {
-    fp12 alpha_g1_beta_g2 = fp12::fromBytesLE(span<const uint8_t, 576>(&in[  0], &in[576]), check, raw);
-    g2 neg_gamma_g2 =   g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[576], &in[768]), check, raw);
-    g2 neg_delta_g2 =   g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[768], &in[960]), check, raw);
+    optional<fp12> alpha_g1_beta_g2 = fp12::fromBytesLE(span<const uint8_t, 576>(&in[  0], &in[576]), check, raw);
+    optional<g2> neg_gamma_g2 =   g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[576], &in[768]), check, raw);
+    optional<g2> neg_delta_g2 =   g2::fromAffineBytesLE(span<const uint8_t, 192>(&in[768], &in[960]), check, raw);
+    if(!alpha_g1_beta_g2.has_value() || !neg_gamma_g2.has_value() || !neg_delta_g2.has_value()) return {};
     vector<g1> ic;
     uint32_t n_ic = in[960] | in[961] << 8 | in[962] << 16 | in[963] << 24;
     ic.reserve(n_ic);
     for(uint32_t i = 0; i < n_ic; i++)
     {
-        ic.push_back(g1::fromAffineBytesLE(span<const uint8_t, 96>(&in[964 + i*96], &in[964 + (i+1)*96]), check, raw));
+        optional<g1> e = g1::fromAffineBytesLE(span<const uint8_t, 96>(&in[964 + i*96], &in[964 + (i+1)*96]), check, raw);
+        if(!e.has_value()) return {};
+        ic.push_back(e.value());
     }
     return PreparedVerifyingKey(
-        alpha_g1_beta_g2,
-        neg_gamma_g2,
-        neg_delta_g2,
+        alpha_g1_beta_g2.value(),
+        neg_gamma_g2.value(),
+        neg_delta_g2.value(),
         ic
     );
 }

@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <cstdint>
 #include <array>
-#include <stdexcept>
 #include <cstring>
 #include "span.h"
 

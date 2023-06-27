@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <vector>
+#include <optional>
 
 namespace bls12_381
 {
@@ -23,11 +24,11 @@ namespace groth16
         Proof();
         Proof(const g1& a, const g2& b, const g1& c);
         Proof(const Proof& proof);
-        static Proof fromJacobianBytesBE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
-        static Proof fromJacobianBytesLE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
-        static Proof fromAffineBytesBE(const std::span<const uint8_t, 384> in, const bool check = false, const bool raw = false);
-        static Proof fromAffineBytesLE(const std::span<const uint8_t, 384> in, const bool check = false, const bool raw = false);
-        static Proof fromCompressedBytesBE(const std::span<const uint8_t, 192> in);
+        static std::optional<Proof> fromJacobianBytesBE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
+        static std::optional<Proof> fromJacobianBytesLE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
+        static std::optional<Proof> fromAffineBytesBE(const std::span<const uint8_t, 384> in, const bool check = false, const bool raw = false);
+        static std::optional<Proof> fromAffineBytesLE(const std::span<const uint8_t, 384> in, const bool check = false, const bool raw = false);
+        static std::optional<Proof> fromCompressedBytesBE(const std::span<const uint8_t, 192> in);
         void toJacobianBytesBE(const std::span<uint8_t, 576> out, const bool raw = false) const;
         void toJacobianBytesLE(const std::span<uint8_t, 576> out, const bool raw = false) const;
         void toAffineBytesBE(const std::span<uint8_t, 384> out, const bool raw = false) const;
@@ -71,11 +72,11 @@ namespace groth16
             const std::vector<g1>& ic
         );
         VerifyingKey(const VerifyingKey& vk);
-        static VerifyingKey fromJacobianBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static VerifyingKey fromJacobianBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static VerifyingKey fromAffineBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static VerifyingKey fromAffineBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static VerifyingKey fromCompressedBytesBE(const uint8_t* in);
+        static std::optional<VerifyingKey> fromJacobianBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<VerifyingKey> fromJacobianBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<VerifyingKey> fromAffineBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<VerifyingKey> fromAffineBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<VerifyingKey> fromCompressedBytesBE(const uint8_t* in);
         void toJacobianBytesBE(uint8_t* out, const bool raw = false) const;
         void toJacobianBytesLE(uint8_t* out, const bool raw = false) const;
         void toAffineBytesBE(uint8_t* out, const bool raw = false) const;
@@ -109,10 +110,10 @@ namespace groth16
             const std::vector<g1>& ic
         );
         PreparedVerifyingKey(const PreparedVerifyingKey& pvk);
-        static PreparedVerifyingKey fromJacobianBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static PreparedVerifyingKey fromJacobianBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static PreparedVerifyingKey fromAffineBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
-        static PreparedVerifyingKey fromAffineBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<PreparedVerifyingKey> fromJacobianBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<PreparedVerifyingKey> fromJacobianBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<PreparedVerifyingKey> fromAffineBytesBE(const uint8_t* in, const bool check = false, const bool raw = false);
+        static std::optional<PreparedVerifyingKey> fromAffineBytesLE(const uint8_t* in, const bool check = false, const bool raw = false);
         void toJacobianBytesBE(uint8_t* out, const bool raw = false) const;
         void toJacobianBytesLE(uint8_t* out, const bool raw = false) const;
         void toAffineBytesBE(uint8_t* out, const bool raw = false) const;

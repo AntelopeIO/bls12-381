@@ -15,7 +15,8 @@ vector<uint8_t> hexToBytes(const string& s)
 
     if(s.length() % 2 != 0)
     {
-        throw invalid_argument("string length invalid!");
+        // string length invalid!
+        return vector<uint8_t>();
     }
 
     vector<uint8_t> bytes;
