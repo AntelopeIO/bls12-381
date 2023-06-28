@@ -496,7 +496,7 @@ optional<g1> g1::multiExp(const vector<g1>& points, const vector<array<uint64_t,
 // MapToCurve given a byte slice returns a valid G1 point.
 // This mapping function implements the Simplified Shallue-van de Woestijne-Ulas method.
 // https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-06
-// Input byte slice should be a valid field element, otherwise an error is returned.
+// Input byte slice should be a valid field element.
 g1 g1::mapToCurve(const fp& e)
 {
     fp x, y, z = fp::one();
@@ -1224,7 +1224,7 @@ optional<g2> g2::multiExp(const vector<g2>& points, const vector<array<uint64_t,
 // MapToCurve given a byte slice returns a valid G2 point.
 // This mapping function implements the Simplified Shallue-van de Woestijne-Ulas method.
 // https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-05#section-6.6.2
-// Input byte slice should be a valid field element, otherwise an error is returned.
+// Input byte slice should be a valid field element.
 g2 g2::mapToCurve(const fp2& e)
 {
     fp2 x, y, z = fp2::one();
