@@ -439,7 +439,7 @@ g1 g1::glvEndomorphism() const
 // MultiExp calculates multi exponentiation. Given pairs of G1 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise NONE is returned.
-optional<g1> g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars)
+optional<g1> g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
 {
     if(points.size() != scalars.size())
     {
@@ -480,6 +480,10 @@ optional<g1> g1::multiExp(const vector<g1>& points, const vector<array<uint64_t,
             acc = acc.add(sum);
         }
         windows.push_back(acc);
+    }
+    if(scalars.size() >= 32 && yield)
+    {
+        yield();
     }
     g1 acc = zero();
     for(int64_t i = windows.size()-1; i >= 0; i--)
