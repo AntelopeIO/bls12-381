@@ -29,7 +29,7 @@ make -j
 
 ## Run unit tests
 ```
-./test/unittests
+ctest
 ```
 
 ## Run benchmarks
