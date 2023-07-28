@@ -1,6 +1,5 @@
 #pragma once
 
-#include "span.h"
 #include "arithmetic.hpp"
 #include "scalar.hpp"
 #include "fp.hpp"

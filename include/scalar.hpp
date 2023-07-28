@@ -3,7 +3,8 @@
 #include <cstdint>
 #include <array>
 #include <cstring>
-#include "span.h"
+#include <span>
+#include <stdexcept>
 
 #include "fp.hpp"
 #include "g.hpp"
