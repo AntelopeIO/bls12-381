@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(bls12-381 VERSION 1.0.0)
 
-# compile with "-march" or enable cpu features explicitly for best performance:
-#set(CMAKE_CXX_FLAGS "-madx -mbmi2")
-set(CMAKE_CXX_FLAGS "-fstack-protector-strong")
-
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release"
     CACHE STRING "Possible values are empty, Debug, Release, RelWithDebInfo, MinSizeRel, ..."
