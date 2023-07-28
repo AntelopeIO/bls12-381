@@ -1,4 +1,4 @@
-#include <bls12-381.hpp>
+#include <bls12-381/bls12-381.hpp>
 
 using namespace std;
 
