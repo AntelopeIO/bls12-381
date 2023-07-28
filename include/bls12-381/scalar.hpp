@@ -229,7 +229,11 @@ fp fp::modPrime(std::array<uint64_t, N> k)
     modulus[3] = fp::MODULUS.d[3];
     modulus[4] = fp::MODULUS.d[4];
     modulus[5] = fp::MODULUS.d[5];
-    bn_divn_low(quotient.data(), remainder.data(), k.data(), N, modulus.data(), 6);
+    std::array<uint64_t, N+2> k2 = {0};
+    for (int i=0; i < N; ++i) {
+        k2[i] = k[i];
+    }
+    bn_divn_low(quotient.data(), remainder.data(), k2.data(), N, modulus.data(), 6);
     std::array<uint64_t, 6> _r = {remainder[0], remainder[1], remainder[2], remainder[3], remainder[4], remainder[5]};
     return fp(_r).toMont();
 }

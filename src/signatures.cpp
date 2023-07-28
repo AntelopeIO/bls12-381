@@ -219,7 +219,8 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
         // be conservative with scratch memory (https://github.com/relic-toolkit/relic/blob/ddd1984a76aa9c96a12ebdf5c6786b0ee6a26ef8/src/bn/relic_bn_div.c#L79)
         // with gcc array<uint64_t, 4> q = fp::Q works fine but clang needs the two extra words
         array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
-        bn_divn_low(quotient.data(), remainder.data(), skBn.data(), 6, q.data(), 4);
+        array<uint64_t, 8> skBn2 = {skBn[0], skBn[1], skBn[2], skBn[3], skBn[4], skBn[5], 0, 0};
+        bn_divn_low(quotient.data(), remainder.data(), skBn2.data(), 6, q.data(), 4);
         sk = {remainder[0], remainder[1], remainder[2], remainder[3]};
 
         if(!scalar::equal<4>(sk, {0, 0, 0, 0}))
@@ -351,8 +352,9 @@ g1 derive_child_g1_unhardened(
     array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
     array<uint64_t, 4> quotient = {0, 0, 0, 0};
     array<uint64_t, 4> remainder = {0, 0, 0, 0};
-    array<uint64_t, 4> q = fp::Q;
-    bn_divn_low(quotient.data(), remainder.data(), nonce.data(), 4, q.data(), 4);
+    array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
+    array<uint64_t, 6> nonce2 = {nonce[0], nonce[1], nonce[2], nonce[3], 0, 0};
+    bn_divn_low(quotient.data(), remainder.data(), nonce2.data(), 4, q.data(), 4);
     nonce = {remainder[0], remainder[1], remainder[2], remainder[3]};
 
     return pk.add(g1::one().mulScalar(nonce));
@@ -378,8 +380,9 @@ g2 derive_child_g2_unhardened(
     array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
     array<uint64_t, 4> quotient = {0, 0, 0, 0};
     array<uint64_t, 4> remainder = {0, 0, 0, 0};
-    array<uint64_t, 4> q = fp::Q;
-    bn_divn_low(quotient.data(), remainder.data(), nonce.data(), 4, q.data(), 4);
+    array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
+    array<uint64_t, 6> nonce2 = {nonce[0], nonce[1], nonce[2], nonce[3], 0, 0};
+    bn_divn_low(quotient.data(), remainder.data(), nonce2.data(), 4, q.data(), 4);
     nonce = {remainder[0], remainder[1], remainder[2], remainder[3]};
 
     return pk.add(g2::one().mulScalar(nonce));
@@ -399,8 +402,9 @@ array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
         ret = scalar::add<4, 4, 4>(ret, sks[i]);
         array<uint64_t, 4> quotient = {0, 0, 0, 0};
         array<uint64_t, 4> remainder = {0, 0, 0, 0};
-        array<uint64_t, 4> q = fp::Q;
-        bn_divn_low(quotient.data(), remainder.data(), ret.data(), 4, q.data(), 4);
+        array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
+        array<uint64_t, 6> ret2 = {ret[0], ret[1], ret[2], ret[3], 0, 0};
+        bn_divn_low(quotient.data(), remainder.data(), ret2.data(), 4, q.data(), 4);
         ret = {remainder[0], remainder[1], remainder[2], remainder[3]};
     }
 
@@ -423,8 +427,9 @@ array<uint64_t, 4> sk_from_bytes(
     {
         array<uint64_t, 4> quotient = {0, 0, 0, 0};
         array<uint64_t, 4> remainder = {0, 0, 0, 0};
-        array<uint64_t, 4> q = fp::Q;
-        bn_divn_low(quotient.data(), remainder.data(), sk.data(), 4, q.data(), 4);
+        array<uint64_t, 6> q = {fp::Q[0], fp::Q[1], fp::Q[2], fp::Q[3], 0, 0};
+        array<uint64_t, 6> sk2 = {sk[0], sk[1], sk[2], sk[3], 0, 0};
+        bn_divn_low(quotient.data(), remainder.data(), sk2.data(), 4, q.data(), 4);
         sk = {remainder[0], remainder[1], remainder[2], remainder[3]};
     }
     else
