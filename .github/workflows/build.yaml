@@ -1,0 +1,43 @@
+name: Build & Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  doit:
+    name: 'Build & Test: ${{matrix.cfg.name}}'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cfg: {name: 'macos',             runson: 'macos-latest'}
+          - cfg: {name: 'gcc10',             runson: 'ubuntu-latest', container: 'debian:bullseye'}
+          - cfg: {name: 'gcc11',             runson: 'ubuntu-latest', container: 'ubuntu:jammy'}
+          - cfg: {name: 'gcc12',             runson: 'ubuntu-latest', container: 'debian:bookworm'}
+          - cfg: {name: 'gcc-arch',          runson: 'ubuntu-latest', container: 'archlinux'}
+          - cfg: {name: 'clang-arch',        runson: 'ubuntu-latest', container: 'archlinux',
+                  cmake: '-DCMAKE_CXX_COMPILER=clang++'}
+          - cfg: {name: 'clang-libc++-arch', runson: 'ubuntu-latest', container: 'archlinux',
+                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-stdlib=libc++'}
+          - cfg: {name: 'clang-UBSAN-arch',  runson: 'ubuntu-latest', container: 'archlinux',
+                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo -fsanitize=undefined -fno-sanitize-recover=all"'}
+          - cfg: {name: 'clang-ASAN-arch',   runson: 'ubuntu-latest', container: 'archlinux',
+                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo -fsanitize=address"'}
+    runs-on: ${{matrix.cfg.runson}}
+    container: ${{matrix.cfg.container}}
+    steps:
+      - name: Arch packages
+        if: matrix.cfg.container == 'archlinux'
+        run: pacman --noconfirm -Syu && pacman --noconfirm -S base-devel cmake git clang llvm libc++
+      - name: Debian/Ubuntu packages
+        if: startsWith(matrix.cfg.container, 'debian') || startsWith(matrix.cfg.container, 'ubuntu')
+        run: apt-get update && apt-get -y upgrade && apt-get -y install build-essential cmake
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cmake -B build ${{matrix.cfg.cmake}} && cmake --build build -- -j
+      - name: Test
+        run: cd build && ctest --output-on-failure
