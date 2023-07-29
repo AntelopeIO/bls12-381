@@ -204,7 +204,10 @@ void rsh(std::array<uint64_t, N>& out, const std::array<uint64_t, N>& in, uint64
         uint64_t v_from = i_from >= N ? 0 : in[i_from];
         uint64_t v_from_p1 = i_from_p1 >= N ? 0 : in[i_from_p1];
          
-        out[i] = v_from >> num_bits | v_from_p1 << (64 - num_bits);
+        if(num_bits)
+            out[i] = v_from >> num_bits | v_from_p1 << (64 - num_bits);
+        else
+            out[i] = v_from;
     }
 }
 
