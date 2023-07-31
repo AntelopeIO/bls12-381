@@ -1756,8 +1756,6 @@ void TestExtraVectors()
 
 int main()
 {
-    init();
-
     TestScalar();
 
     TestFieldElementValidation();
