@@ -1782,8 +1782,7 @@ static bool cpu_has_bmi2_and_adx() {
 #ifdef __ELF__
 extern "C" char** _dl_argv;
 
-__attribute__((no_sanitize_address))
-extern "C" blsmul_func_t resolve_blsmul() {
+extern "C" blsmul_func_t __attribute__((no_sanitize_address)) resolve_blsmul() {
     int argc = *(int*)(_dl_argv - 1);
     char** my_environ = (char**)(_dl_argv + argc + 1);
     while(*my_environ != nullptr) {
