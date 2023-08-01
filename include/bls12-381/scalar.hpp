@@ -218,8 +218,8 @@ void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int
 template<size_t N>
 fp fp::modPrime(std::array<uint64_t, N> k)
 {
-    std::array<uint64_t, N> quotient = {0};
-    std::array<uint64_t, N> remainder = {0};
+    std::array<uint64_t, N+2> quotient = {0};
+    std::array<uint64_t, N+2> remainder = {0};
     // be conservative with scratch memory (https://github.com/relic-toolkit/relic/blob/ddd1984a76aa9c96a12ebdf5c6786b0ee6a26ef8/src/bn/relic_bn_div.c#L79)
     // with gcc std::array<uint64_t, 6> modulus = fp::MODULUS.d works fine but clang needs the extra words
     std::array<uint64_t, N> modulus = {0};
