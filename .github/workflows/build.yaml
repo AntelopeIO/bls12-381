@@ -24,9 +24,9 @@ jobs:
           - cfg: {name: 'clang-libc++-arch', runson: 'ubuntu-latest', container: 'archlinux',
                   cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-stdlib=libc++'}
           - cfg: {name: 'clang-UBSAN-arch',  runson: 'ubuntu-latest', container: 'archlinux',
-                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo -fsanitize=undefined -fno-sanitize-recover=all"'}
+                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fno-sanitize-recover=all"'}
           - cfg: {name: 'clang-ASAN-arch',   runson: 'ubuntu-latest', container: 'archlinux',
-                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo -fsanitize=address"'}
+                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS=-fsanitize=address'}
     runs-on: ${{matrix.cfg.runson}}
     container: ${{matrix.cfg.container}}
     steps:
