@@ -89,20 +89,15 @@ void dv_lshd(uint64_t *c, const uint64_t *a, int size, int digits)
 
 int dv_cmp(const uint64_t *a, const uint64_t *b, int size)
 {
-    int i, r;
-
-    a += (size - 1);
-    b += (size - 1);
-
-    r = 0;
-    for(i = 0; i < size; i++, --a, --b)
+    while(size > 0)
     {
-        if(*a != *b && r == 0)
+        --size;
+        if(*(a+size) != *(b+size))
         {
-            r = (*a > *b ? 1 : -1);
+            return (*(a+size) > *(b+size) ? 1 : -1);
         }
     }
-    return r;
+    return 0;
 }
 
 uint64_t bn_subn_low(uint64_t *c, const uint64_t *a, const uint64_t *b, int size)
