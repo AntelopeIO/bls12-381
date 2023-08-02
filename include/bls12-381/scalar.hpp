@@ -217,21 +217,23 @@ void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int
 
 template<size_t N, size_t M>
 void bn_divn_safe(std::array<uint64_t, N>& c, std::array<uint64_t, M>& d, const std::array<uint64_t, N>& a, const std::array<uint64_t, M>& b) {
-#ifdef __USE_GMP
-    // GMP version is safe
-    bn_divn_low(c.data(), d.data(), a.data(), N, b.data(), M);
-#else
-    // Relic version is unsafe
+    
     static_assert(N >= M, "dividend must be at least same word size as modulus");
 
-    std::array<uint64_t, N+2> quotient = {0};
-    std::array<uint64_t, N+2> remainder = {0};
     std::array<uint64_t, N+2> modulus = {0};
     std::array<uint64_t, N+2> dividend = {0};
 
     memcpy(dividend.data(), a.data(), N * sizeof(uint64_t));
     memcpy(modulus.data(), b.data(), M * sizeof(uint64_t));
     
+#ifdef __USE_GMP
+    // GMP version is safe
+    bn_divn_low(c.data(), d.data(), dividend.data(), N, modulus.data(), M);
+#else
+    // Relic version is unsafe
+    std::array<uint64_t, N+2> quotient = {0};
+    std::array<uint64_t, N+2> remainder = {0};
+
     bn_divn_low(quotient.data(), remainder.data(), dividend.data(), N, modulus.data(), M);
 
     memcpy(c.data(), quotient.data(), N * sizeof(uint64_t));
