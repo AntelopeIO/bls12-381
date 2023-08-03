@@ -3,10 +3,11 @@
 #include <cstdint>
 #include <array>
 #include <cstring>
-#include "span.h"
+#include <span>
+#include <stdexcept>
 
-#include "fp.hpp"
-#include "g.hpp"
+#include <bls12-381/fp.hpp>
+#include <bls12-381/g.hpp>
 
 namespace bls12_381
 {

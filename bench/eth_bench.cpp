@@ -1,5 +1,5 @@
 #include <chrono>
-#include <bls12-381.hpp>
+#include <bls12-381/bls12-381.hpp>
 #include <iostream>
 #include <random>
 

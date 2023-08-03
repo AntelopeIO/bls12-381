@@ -5,7 +5,7 @@
 #include <string>
 #include <tuple>
 #include <optional>
-#include "span.h"
+#include <span>
 
 namespace bls12_381
 {
