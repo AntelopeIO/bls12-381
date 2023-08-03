@@ -171,7 +171,7 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
     // 3. SK = OS2IP(OKM) mod r
     // 4. return SK
 
-    const uint8_t info[1] = {};
+    const uint8_t info[1] = {0};
     const size_t infoLen = 0;
 
     // Required by the ietf spec to be at least 32 bytes
@@ -214,17 +214,16 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
 
         // Make sure private key is less than the curve order
         array<uint64_t, 6> skBn = scalar::fromBytesBE<6>(span<uint8_t, 48>(okmHkdf.begin(), okmHkdf.end()));
-        array<uint64_t, 6> quotient = {};
-        array<uint64_t, 4> remainder = {};
+        array<uint64_t, 6> quotient = {0};
 
-        bn_divn_safe(quotient, remainder, skBn, fp::Q);
-
-        sk = {remainder[0], remainder[1], remainder[2], remainder[3]};
+        bn_divn_safe(quotient, sk, skBn, fp::Q);
 
         if(!scalar::equal<4>(sk, {0, 0, 0, 0}))
         {
             break;
         }
+
+        sk.fill(0);
 
         sha256 sha;
         sha.update(saltHkdf, saltLen);
@@ -246,7 +245,7 @@ void ikm_to_lamport_sk(
 )
 {
     // Expands the ikm to 255*HASH_LEN bytes for the lamport sk
-    const uint8_t info[1] = {};
+    const uint8_t info[1] = {0};
     hkdf256_extract_expand(outputLamportSk, 32 * 255, ikm, ikmLen, salt, saltLen, info, 0);
 }
 
@@ -348,14 +347,12 @@ g1 derive_child_g1_unhardened(
     sha.digest(digest.data());
 
     array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
-    array<uint64_t, 4> quotient = {};
-    array<uint64_t, 4> remainder = {};
+    array<uint64_t, 4> quotient = {0};
+    array<uint64_t, 4> remainder = {0};
 
     bn_divn_safe(quotient, remainder, nonce, fp::Q);
 
-    nonce = {remainder[0], remainder[1], remainder[2], remainder[3]};
-
-    return pk.add(g1::one().mulScalar(nonce));
+    return pk.add(g1::one().mulScalar(remainder));
 }
 
 g2 derive_child_g2_unhardened(
@@ -376,13 +373,12 @@ g2 derive_child_g2_unhardened(
     sha.digest(digest.data());
 
     array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
-    array<uint64_t, 4> quotient = {};
-    array<uint64_t, 4> remainder = {};
+    array<uint64_t, 4> quotient = {0};
+    array<uint64_t, 4> remainder = {0};
 
     bn_divn_safe(quotient, remainder, nonce, fp::Q);
-    nonce = {remainder[0], remainder[1], remainder[2], remainder[3]};
 
-    return pk.add(g2::one().mulScalar(nonce));
+    return pk.add(g2::one().mulScalar(remainder));
 }
 
 array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
@@ -393,15 +389,15 @@ array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
         return {0, 0, 0, 0};
     }
 
-    array<uint64_t, 4> ret = {0, 0, 0, 0};
+    array<uint64_t, 4> state = {0, 0, 0, 0};
+    array<uint64_t, 4> ret = {0};
     for(uint64_t i = 0; i < sks.size(); i++)
     {
-        ret = scalar::add<4, 4, 4>(ret, sks[i]);
-        array<uint64_t, 4> quotient = {};
-        array<uint64_t, 4> remainder = {};
+        state = scalar::add<4, 4, 4>(ret, sks[i]);
+        ret.fill(0);
+        array<uint64_t, 4> quotient = {0};
 
-        bn_divn_safe(quotient, remainder, ret, fp::Q);
-        ret = {remainder[0], remainder[1], remainder[2], remainder[3]};
+        bn_divn_safe(quotient, ret, state, fp::Q);
     }
 
     return ret;
@@ -421,11 +417,11 @@ array<uint64_t, 4> sk_from_bytes(
 
     if(modOrder)
     {
-        array<uint64_t, 4> quotient = {};
-        array<uint64_t, 4> remainder = {};
+        array<uint64_t, 4> quotient = {0};
+        array<uint64_t, 4> remainder = {0};
 
         bn_divn_safe(quotient, remainder, sk, fp::Q);
-        sk = {remainder[0], remainder[1], remainder[2], remainder[3]};
+        return remainder;
     }
     else
     {
@@ -506,7 +502,7 @@ g2 fromMessage(
     uint8_t buf[4 * 64];
     xmd_sh256(buf, 4 * 64, msg.data(), msg.size(), reinterpret_cast<const uint8_t*>(dst.c_str()), dst.length());
 
-    array<uint64_t, 8> k = {};
+    array<uint64_t, 8> k = {0};
     fp2 t = fp2::zero();
     fp2 x, y, z = fp2::one();
     g2 p, q;
