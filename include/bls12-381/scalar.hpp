@@ -237,7 +237,7 @@ void bn_divn_safe(std::array<uint64_t, N>& c, std::array<uint64_t, M>& d, const 
 }
 
 template<size_t N>
-fp fp::modPrime(std::array<uint64_t, N> k)
+fp fp::modPrime(const std::array<uint64_t, N>& k)
 {
     std::array<uint64_t, N> quotient = {0};
     std::array<uint64_t, 6> remainder = {0};
