@@ -172,7 +172,6 @@ void benchFastAggregateVerification() {
 
 int main(int argc, char* argv[])
 {
-    init();
     benchSigs();
     benchVerification();
     benchBatchVerification();

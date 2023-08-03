@@ -24,16 +24,12 @@ void _lsubAssign(fp* z, const fp* x);
 void _neg(fp* z, const fp* x);
 void _square(fp* z, const fp* x);
 
-#if defined(__x86_64__)
-void __mul(fp* z, const fp* x, const fp* y);
-void __mul_ex(fp* z, const fp* x, const fp* y);
-    #if defined(__ADX__) && defined(__BMI2__)
-    void _mul(fp* z, const fp* x, const fp* y);
-    #else
-    extern void (*_mul)(fp*, const fp*, const fp*);
-    #endif
+#if defined(__x86_64__) && defined(__ELF__)
+extern void _mul(fp*, const fp*, const fp*);
+#elif defined(__x86_64__)
+extern void (*_mul)(fp*, const fp*, const fp*);
 #else
-void _mul(fp* z, const fp* x, const fp* y);
+void _mul(fp*, const fp*, const fp*);
 #endif
 
 // Add64 returns the sum with carry of x, y and carry: sum = x + y + carry.
