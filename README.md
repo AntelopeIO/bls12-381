@@ -9,8 +9,6 @@ A high performance C++ BLS library. This library features:
 - Zero dependencies
 - WASM build
 
-This repository is a fork of [mschoenebeck/bls12-381](https://github.com/mschoenebeck/bls12-381) with changes tuned for AntelopeIO usage.
-
 Reference Libraries:
 - [zkcrypto/bls12_381](https://github.com/zkcrypto/bls12_381) (Rust)
 - [zkcrypto/bellman](https://github.com/zkcrypto/bellman) (Rust)
