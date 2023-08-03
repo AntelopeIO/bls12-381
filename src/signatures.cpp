@@ -389,8 +389,8 @@ array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
         return {0, 0, 0, 0};
     }
 
-    array<uint64_t, 4> state = {0, 0, 0, 0};
-    array<uint64_t, 4> ret = {0};
+    array<uint64_t, 4> state = {};
+    array<uint64_t, 4> ret = {};
     for(uint64_t i = 0; i < sks.size(); i++)
     {
         state = scalar::add<4, 4, 4>(ret, sks[i]);
