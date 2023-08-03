@@ -171,7 +171,7 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
     // 3. SK = OS2IP(OKM) mod r
     // 4. return SK
 
-    const uint8_t info[1] = {0};
+    const uint8_t info[1] = {};
     const size_t infoLen = 0;
 
     // Required by the ietf spec to be at least 32 bytes
@@ -214,7 +214,7 @@ array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
 
         // Make sure private key is less than the curve order
         array<uint64_t, 6> skBn = scalar::fromBytesBE<6>(span<uint8_t, 48>(okmHkdf.begin(), okmHkdf.end()));
-        array<uint64_t, 6> quotient = {0};
+        array<uint64_t, 6> quotient = {};
 
         bn_divn_safe(quotient, sk, skBn, fp::Q);
 
@@ -245,7 +245,7 @@ void ikm_to_lamport_sk(
 )
 {
     // Expands the ikm to 255*HASH_LEN bytes for the lamport sk
-    const uint8_t info[1] = {0};
+    const uint8_t info[1] = {};
     hkdf256_extract_expand(outputLamportSk, 32 * 255, ikm, ikmLen, salt, saltLen, info, 0);
 }
 
@@ -347,8 +347,8 @@ g1 derive_child_g1_unhardened(
     sha.digest(digest.data());
 
     array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
-    array<uint64_t, 4> quotient = {0};
-    array<uint64_t, 4> remainder = {0};
+    array<uint64_t, 4> quotient = {};
+    array<uint64_t, 4> remainder = {};
 
     bn_divn_safe(quotient, remainder, nonce, fp::Q);
 
@@ -373,8 +373,8 @@ g2 derive_child_g2_unhardened(
     sha.digest(digest.data());
 
     array<uint64_t, 4> nonce = scalar::fromBytesBE<4>(span<uint8_t, 32>(digest.begin(), digest.end()));
-    array<uint64_t, 4> quotient = {0};
-    array<uint64_t, 4> remainder = {0};
+    array<uint64_t, 4> quotient = {};
+    array<uint64_t, 4> remainder = {};
 
     bn_divn_safe(quotient, remainder, nonce, fp::Q);
 
@@ -395,7 +395,7 @@ array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
     {
         state = scalar::add<4, 4, 4>(ret, sks[i]);
         ret.fill(0);
-        array<uint64_t, 4> quotient = {0};
+        array<uint64_t, 4> quotient = {};
 
         bn_divn_safe(quotient, ret, state, fp::Q);
     }
@@ -417,8 +417,8 @@ array<uint64_t, 4> sk_from_bytes(
 
     if(modOrder)
     {
-        array<uint64_t, 4> quotient = {0};
-        array<uint64_t, 4> remainder = {0};
+        array<uint64_t, 4> quotient = {};
+        array<uint64_t, 4> remainder = {};
 
         bn_divn_safe(quotient, remainder, sk, fp::Q);
         return remainder;
@@ -502,7 +502,7 @@ g2 fromMessage(
     uint8_t buf[4 * 64];
     xmd_sh256(buf, 4 * 64, msg.data(), msg.size(), reinterpret_cast<const uint8_t*>(dst.c_str()), dst.length());
 
-    array<uint64_t, 8> k = {0};
+    array<uint64_t, 8> k = {};
     fp2 t = fp2::zero();
     fp2 x, y, z = fp2::one();
     g2 p, q;

@@ -243,8 +243,7 @@ fp fp::modPrime(const std::array<uint64_t, N>& k)
     std::array<uint64_t, 6> remainder = {};
   
     bn_divn_safe(quotient, remainder, k, fp::MODULUS.d);
-    std::array<uint64_t, 6> _r = {remainder[0], remainder[1], remainder[2], remainder[3], remainder[4], remainder[5]};
-    return fp(_r).toMont();
+    return fp(remainder).toMont();
 }
 
 template<size_t N>
