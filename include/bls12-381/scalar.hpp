@@ -226,11 +226,7 @@ void bn_divn_safe(std::array<uint64_t, N>& c, std::array<uint64_t, M>& d, const 
     memcpy(dividend.data(), a.data(), N * sizeof(uint64_t));
     memcpy(modulus.data(), b.data(), M * sizeof(uint64_t));
     
-#ifdef __USE_GMP
-    // GMP version is safe
-    bn_divn_low(c.data(), d.data(), dividend.data(), N, modulus.data(), M);
-#else
-    // Relic version is unsafe
+    // Relic implementation needs extra buffer space
     std::array<uint64_t, N+2> quotient = {0};
     std::array<uint64_t, N+2> remainder = {0};
 
@@ -238,7 +234,6 @@ void bn_divn_safe(std::array<uint64_t, N>& c, std::array<uint64_t, M>& d, const 
 
     memcpy(c.data(), quotient.data(), N * sizeof(uint64_t));
     memcpy(d.data(), remainder.data(), M * sizeof(uint64_t));
-#endif
 }
 
 template<size_t N>
