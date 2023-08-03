@@ -220,15 +220,15 @@ void bn_divn_safe(std::array<uint64_t, N>& c, std::array<uint64_t, M>& d, const 
     
     static_assert(N >= M, "dividend must be at least same word size as modulus");
 
-    std::array<uint64_t, N+2> modulus = {0};
-    std::array<uint64_t, N+2> dividend = {0};
+    std::array<uint64_t, N+2> modulus = {};
+    std::array<uint64_t, N+2> dividend = {};
 
     memcpy(dividend.data(), a.data(), N * sizeof(uint64_t));
     memcpy(modulus.data(), b.data(), M * sizeof(uint64_t));
     
     // Relic implementation needs extra buffer space
-    std::array<uint64_t, N+2> quotient = {0};
-    std::array<uint64_t, N+2> remainder = {0};
+    std::array<uint64_t, N+2> quotient = {};
+    std::array<uint64_t, N+2> remainder = {};
 
     bn_divn_low(quotient.data(), remainder.data(), dividend.data(), N, modulus.data(), M);
 
@@ -239,8 +239,8 @@ void bn_divn_safe(std::array<uint64_t, N>& c, std::array<uint64_t, M>& d, const 
 template<size_t N>
 fp fp::modPrime(const std::array<uint64_t, N>& k)
 {
-    std::array<uint64_t, N> quotient = {0};
-    std::array<uint64_t, 6> remainder = {0};
+    std::array<uint64_t, N> quotient = {};
+    std::array<uint64_t, 6> remainder = {};
   
     bn_divn_safe(quotient, remainder, k, fp::MODULUS.d);
     std::array<uint64_t, 6> _r = {remainder[0], remainder[1], remainder[2], remainder[3], remainder[4], remainder[5]};
