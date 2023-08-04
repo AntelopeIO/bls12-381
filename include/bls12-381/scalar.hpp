@@ -5,6 +5,7 @@
 #include <cstring>
 #include <span>
 #include <stdexcept>
+#include <bit>
 
 #include <bls12-381/fp.hpp>
 #include <bls12-381/g.hpp>
@@ -184,7 +185,7 @@ uint64_t bitLength(const std::array<uint64_t, N>& s)
     {
         if(s[i] != 0)
         {
-            return (i+1)*64 - __builtin_clzll(s[i]);
+            return (i+1)*64 - std::countl_zero(s[i]);
         }
     }
     return 0;

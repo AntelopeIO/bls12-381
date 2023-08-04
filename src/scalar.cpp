@@ -239,7 +239,9 @@ void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int
     uint64_t carry, t1[3], t2[3];
 
     // Normalize x and y so that the leading digit of y is bigger than 2^(RLC_DIG-1).
-    norm = (64 - __builtin_clzll(b[sb - 1])) % 64;
+    // std::countl_zero will return 64 if uint64_t(0) is passed in. 
+    // The %64 operation will handle this case.
+    norm = (64 - std::countl_zero(b[sb - 1])) % 64;
 
     if(norm < 64 - 1)
     {
