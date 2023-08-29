@@ -147,20 +147,20 @@ std::array<uint64_t, NC> mul(const std::array<uint64_t, NA>& a, const std::array
 
 // compares two std::arrays: returns -1 if a < b, 0 if a == b and 1 if a > b.
 template<size_t N>
-int64_t cmp(const std::array<uint64_t, N>& a, const std::array<uint64_t, N>& b)
+std::strong_ordering cmp(const std::array<uint64_t, N>& a, const std::array<uint64_t, N>& b)
 {
     for(int64_t i = N-1; i >= 0; i--)
     {
         if(a[i] < b[i])
         {
-            return -1;
+            return std::strong_ordering::less;
         }
         if(a[i] > b[i])
         {
-            return 1;
+            return std::strong_ordering::greater;
         }
     }
-    return 0;
+    return std::strong_ordering::equal;
 }
 
 // checks two std::arrays for equality: returns true if a == b, false otherwise.

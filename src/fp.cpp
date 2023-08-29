@@ -92,7 +92,7 @@ bool fp::isOne() const
     return equal(R1);
 }
 
-int64_t fp::cmp(const fp& e) const
+std::strong_ordering fp::cmp(const fp& e) const
 {
     return scalar::cmp<6>(d, e.d);
 }
@@ -181,7 +181,7 @@ fp fp::inverse() const
             v.div2(0);
             z += r.mul2();
         }
-        else if(u.cmp(v) == 1)
+        else if(u.cmp(v) > 0)
         {
             _lsubAssign(&u, &v);
             u.div2(0);
@@ -208,7 +208,7 @@ fp fp::inverse() const
         return zero();
     }
 
-    if(r.cmp(MODULUS) != -1 || z > 0)
+    if(r.cmp(MODULUS) >= 0 || z > 0)
     {
         _lsubAssign(&r, &MODULUS);
     }
