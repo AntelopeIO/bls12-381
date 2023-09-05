@@ -630,7 +630,7 @@ bool aggregate_verify(
 g2 pop_prove(const array<uint64_t, 4>& sk)
 {
     g1 pk = public_key(sk);
-    array<uint8_t, 48> msg = pk.toCompressedBytesBE();
+    array<uint8_t, 96> msg = pk.toAffineBytesLE(true);
     g2 hashed_key = fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
     return hashed_key.mulScalar(sk);
 }
@@ -640,7 +640,7 @@ bool pop_verify(
     const g2& signature_proof
 )
 {
-    array<uint8_t, 48> msg = pubkey.toCompressedBytesBE();
+    array<uint8_t, 96> msg = pubkey.toAffineBytesLE(true);
     const g2 hashedPoint = fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
 
     if(!pubkey.isOnCurve() || !pubkey.inCorrectSubgroup())
