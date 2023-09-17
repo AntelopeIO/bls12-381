@@ -581,7 +581,7 @@ g2 aggregate_signatures(std::span<const g2> sigs)
 
 bool aggregate_verify(
     std::span<const g1> pubkeys,
-    const vector<vector<uint8_t>> &messages,
+    std::span<const std::vector<uint8_t>> messages,
     const g2& signature,
     const bool checkForDuplicateMessages
 )

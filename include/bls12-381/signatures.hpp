@@ -134,12 +134,12 @@ g1 aggregate_public_keys(std::span<const g1> pks);
 g2 aggregate_signatures(std::span<const g2> sigs);
 
 // Aggregate verify using a set of public keys, a set of messages and an aggregated signature
-// the boolean parameter enables an additional check for dublicate messages (possible attack
-// std::vector: see page 6 of https://crypto.stanford.edu/~dabo/pubs/papers/aggreg.pdf, "A potential
+// the boolean parameter enables an additional check for duplicate messages (possible attack
+// vector: see page 6 of https://crypto.stanford.edu/~dabo/pubs/papers/aggreg.pdf, "A potential
 // attack on aggregate signatures.")
 bool aggregate_verify(
     std::span<const g1> pubkeys,
-    const std::vector<std::vector<uint8_t>> &messages,
+    std::span<const std::vector<uint8_t>> messages,
     const g2& signature,
     const bool checkForDuplicateMessages = false
 );

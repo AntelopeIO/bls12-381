@@ -1369,7 +1369,7 @@ void TestChiaVectors()
     }
 
     g2 aggSig1 = aggregate_signatures(std::array{sig1, sig2});
-    if(!aggregate_verify(std::array{pk1, pk2}, {message1, message2}, aggSig1))
+    if(!aggregate_verify(std::array{pk1, pk2}, std::array{message1, message2}, aggSig1))
     {
         throw invalid_argument("aggSig1 verification failed");
     }
