@@ -52,8 +52,7 @@ void IntToFourBytes(uint8_t* result,
 void benchSigs() {
     string testName = "Signing";
     const int numIters = 5000;
-    auto seed = getRandomSeed();
-    array<uint64_t, 4> sk = secret_key(seed);
+    array<uint64_t, 4> sk = secret_key(getRandomSeed());
     array<uint8_t, 48UL> pk = public_key(sk).toCompressedBytesBE();
     vector<uint8_t> message1(pk.begin(), pk.end());
 
@@ -68,8 +67,7 @@ void benchSigs() {
 void benchVerification() {
     string testName = "Verification";
     const int numIters = 10000;
-    auto seed = getRandomSeed();
-    array<uint64_t, 4> sk = secret_key(seed);
+    array<uint64_t, 4> sk = secret_key(getRandomSeed());
     g1 pk = public_key(sk);
 
     std::vector<g2> sigs;
@@ -103,8 +101,7 @@ void benchBatchVerification() {
         uint8_t message[4];
         IntToFourBytes(message, i);
         vector<uint8_t> messageBytes(message, message + 4);
-        auto seed = getRandomSeed();
-        array<uint64_t, 4> sk = secret_key(seed);
+        array<uint64_t, 4> sk = secret_key(getRandomSeed());
         g1 pk = public_key(sk);
         sig_bytes.push_back(sign(sk, messageBytes).toCompressedBytesBE());
         pk_bytes.push_back(pk.toCompressedBytesBE());
