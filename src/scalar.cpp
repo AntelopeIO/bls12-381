@@ -5,7 +5,7 @@ using namespace std;
 namespace bls12_381
 {
 
-   vector<uint8_t> hexToBytes(std::string_view s)
+vector<uint8_t> hexToBytes(std::string_view s)
 {
     uint64_t start_idx = 0;
     if(s[0] == '0' && s[1] == 'x')
@@ -16,7 +16,7 @@ namespace bls12_381
     if(s.length() % 2 != 0)
     {
         // string length invalid!
-        return vector<uint8_t>();
+        return {};
     }
 
     vector<uint8_t> bytes;
