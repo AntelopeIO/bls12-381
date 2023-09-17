@@ -163,7 +163,7 @@ int hkdf256_extract_expand(
     return hkdf256_expand(output, outputLen, prk.data(), info, infoLen);
 }
 
-array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
+array<uint64_t, 4> secret_key(std::span<const uint8_t> seed)
 {
     // KeyGen
     // 1. PRK = HKDF-Extract("BLS-SIG-KEYGEN-SALT-", IKM || I2OSP(0, 1))

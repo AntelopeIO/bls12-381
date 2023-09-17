@@ -22,15 +22,16 @@ void endStopwatch(string testName,
     auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
             end - start);
 
-    cout << endl << testName << endl;
+    cout << '\n' << testName << '\n';
     cout << "Total: " << numIters << " runs in " << now_ms.count()
-         << " ms" << endl;
+         << " ms" << '\n';
     cout << "Avg: " << now_ms.count() / static_cast<double>(numIters)
-         << " ms" << endl;
+         << " ms" << '\n';
 }
 
-std::vector<uint8_t> getRandomSeed() {
-    uint64_t buf[4];
+std::array<uint8_t, 32> getRandomSeed() {
+    std::array<uint8_t, 32> res;
+    uint64_t *buf = reinterpret_cast<uint64_t *>(res.data());
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<uint64_t> dis;
@@ -38,8 +39,7 @@ std::vector<uint8_t> getRandomSeed() {
     buf[1] = dis(gen);
     buf[2] = dis(gen);
     buf[3] = dis(gen);
-    vector<uint8_t> ret(buf, buf + 32);
-    return ret;
+    return res;
 }
 
 void IntToFourBytes(uint8_t* result,
@@ -52,7 +52,8 @@ void IntToFourBytes(uint8_t* result,
 void benchSigs() {
     string testName = "Signing";
     const int numIters = 5000;
-    array<uint64_t, 4> sk = secret_key(getRandomSeed());
+    auto seed = getRandomSeed();
+    array<uint64_t, 4> sk = secret_key(seed);
     array<uint8_t, 48UL> pk = public_key(sk).toCompressedBytesBE();
     vector<uint8_t> message1(pk.begin(), pk.end());
 
@@ -67,7 +68,8 @@ void benchSigs() {
 void benchVerification() {
     string testName = "Verification";
     const int numIters = 10000;
-    array<uint64_t, 4> sk = secret_key(getRandomSeed());
+    auto seed = getRandomSeed();
+    array<uint64_t, 4> sk = secret_key(seed);
     g1 pk = public_key(sk);
 
     std::vector<g2> sigs;
@@ -101,7 +103,8 @@ void benchBatchVerification() {
         uint8_t message[4];
         IntToFourBytes(message, i);
         vector<uint8_t> messageBytes(message, message + 4);
-        array<uint64_t, 4> sk = secret_key(getRandomSeed());
+        auto seed = getRandomSeed();
+        array<uint64_t, 4> sk = secret_key(seed);
         g1 pk = public_key(sk);
         sig_bytes.push_back(sign(sk, messageBytes).toCompressedBytesBE());
         pk_bytes.push_back(pk.toCompressedBytesBE());

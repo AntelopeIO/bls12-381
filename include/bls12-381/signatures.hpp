@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <array>
+#include <span>
 #include <vector>
 #include <string>
 
@@ -100,7 +101,7 @@ g2 derive_child_g2_unhardened(
 );
 
 // Implements secret key derivation based on HKDF Mod R as specified in EIP 2333: https://eips.ethereum.org/EIPS/eip-2333#hkdf_mod_r
-std::array<uint64_t, 4> secret_key(const std::vector<uint8_t>& seed);
+std::array<uint64_t, 4> secret_key(std::span<const uint8_t> seed);
 
 // Derive public key from a BLS private key
 g1 public_key(const std::array<uint64_t, 4>& sk);
