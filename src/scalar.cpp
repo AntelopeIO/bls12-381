@@ -1,4 +1,4 @@
-#include <bls12-381.hpp>
+#include <bls12-381/bls12-381.hpp>
 
 using namespace std;
 
@@ -228,22 +228,15 @@ uint64_t bn_rshb_low(uint64_t *c, const uint64_t *a, int size, int bits)
     return carry;
 }
 
-#ifdef __USE_GMP
-// This is how GMP could be used under the hood for modular reduction. However, benchmarks show zero difference
-// to the cpp implementation used in this library (borrowed from relic-toolkit). See #else case below.
-#include <gmp.h>
-void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb)
-{
-	mpn_tdiv_qr(c, d, 0, a, sa, b, sb);
-}
-#else
 void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb)
 {
     int norm, i, n, t, sd;
     uint64_t carry, t1[3], t2[3];
 
     // Normalize x and y so that the leading digit of y is bigger than 2^(RLC_DIG-1).
-    norm = (64 - __builtin_clzll(b[sb - 1])) % 64;
+    // std::countl_zero will return 64 if uint64_t(0) is passed in. 
+    // The %64 operation will handle this case.
+    norm = (64 - std::countl_zero(b[sb - 1])) % 64;
 
     if(norm < 64 - 1)
     {
@@ -339,6 +332,5 @@ void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int
     // Remainder should be not be longer than the divisor.
     bn_rshb_low(d, a, sb, norm);
 }
-#endif
 
 } // namespace bls12_381

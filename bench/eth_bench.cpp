@@ -1,5 +1,5 @@
 #include <chrono>
-#include <bls12-381.hpp>
+#include <bls12-381/bls12-381.hpp>
 #include <iostream>
 #include <random>
 
@@ -163,7 +163,6 @@ void benchPairing() {
 
 int main(int argc, char* argv[])
 {
-    init();
     benchG1Add();
     benchG1Mul();
     benchG2Add();

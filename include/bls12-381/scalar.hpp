@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <array>
 #include <cstring>
-#include "span.h"
+#include <span>
+#include <stdexcept>
+#include <bit>
 
-#include "fp.hpp"
-#include "g.hpp"
+#include <bls12-381/fp.hpp>
+#include <bls12-381/g.hpp>
 
 namespace bls12_381
 {
@@ -145,20 +147,20 @@ std::array<uint64_t, NC> mul(const std::array<uint64_t, NA>& a, const std::array
 
 // compares two std::arrays: returns -1 if a < b, 0 if a == b and 1 if a > b.
 template<size_t N>
-int64_t cmp(const std::array<uint64_t, N>& a, const std::array<uint64_t, N>& b)
+std::strong_ordering cmp(const std::array<uint64_t, N>& a, const std::array<uint64_t, N>& b)
 {
     for(int64_t i = N-1; i >= 0; i--)
     {
         if(a[i] < b[i])
         {
-            return -1;
+            return std::strong_ordering::less;
         }
         if(a[i] > b[i])
         {
-            return 1;
+            return std::strong_ordering::greater;
         }
     }
-    return 0;
+    return std::strong_ordering::equal;
 }
 
 // checks two std::arrays for equality: returns true if a == b, false otherwise.
@@ -183,7 +185,7 @@ uint64_t bitLength(const std::array<uint64_t, N>& s)
     {
         if(s[i] != 0)
         {
-            return (i+1)*64 - __builtin_clzll(s[i]);
+            return (i+1)*64 - std::countl_zero(s[i]);
         }
     }
     return 0;
@@ -203,7 +205,10 @@ void rsh(std::array<uint64_t, N>& out, const std::array<uint64_t, N>& in, uint64
         uint64_t v_from = i_from >= N ? 0 : in[i_from];
         uint64_t v_from_p1 = i_from_p1 >= N ? 0 : in[i_from_p1];
          
-        out[i] = v_from >> num_bits | v_from_p1 << (64 - num_bits);
+        if(num_bits)
+            out[i] = v_from >> num_bits | v_from_p1 << (64 - num_bits);
+        else
+            out[i] = v_from;
     }
 }
 
@@ -211,23 +216,35 @@ void rsh(std::array<uint64_t, N>& out, const std::array<uint64_t, N>& in, uint64
 
 void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb);
 
+template<size_t N, size_t M>
+void bn_divn_safe(std::array<uint64_t, N>& c, std::array<uint64_t, M>& d, const std::array<uint64_t, N>& a, const std::array<uint64_t, M>& b) {
+    
+    static_assert(N >= M, "dividend must be at least same word size as modulus");
+
+    std::array<uint64_t, N+2> modulus = {};
+    std::array<uint64_t, N+2> dividend = {};
+
+    memcpy(dividend.data(), a.data(), N * sizeof(uint64_t));
+    memcpy(modulus.data(), b.data(), M * sizeof(uint64_t));
+    
+    // Relic implementation needs extra buffer space
+    std::array<uint64_t, N+2> quotient = {};
+    std::array<uint64_t, N+2> remainder = {};
+
+    bn_divn_low(quotient.data(), remainder.data(), dividend.data(), N, modulus.data(), M);
+
+    memcpy(c.data(), quotient.data(), N * sizeof(uint64_t));
+    memcpy(d.data(), remainder.data(), M * sizeof(uint64_t));
+}
+
 template<size_t N>
-fp fp::modPrime(std::array<uint64_t, N> k)
+fp fp::modPrime(const std::array<uint64_t, N>& k)
 {
-    std::array<uint64_t, N> quotient = {0};
-    std::array<uint64_t, N> remainder = {0};
-    // be conservative with scratch memory (https://github.com/relic-toolkit/relic/blob/ddd1984a76aa9c96a12ebdf5c6786b0ee6a26ef8/src/bn/relic_bn_div.c#L79)
-    // with gcc std::array<uint64_t, 6> modulus = fp::MODULUS.d works fine but clang needs the extra words
-    std::array<uint64_t, N> modulus = {0};
-    modulus[0] = fp::MODULUS.d[0];
-    modulus[1] = fp::MODULUS.d[1];
-    modulus[2] = fp::MODULUS.d[2];
-    modulus[3] = fp::MODULUS.d[3];
-    modulus[4] = fp::MODULUS.d[4];
-    modulus[5] = fp::MODULUS.d[5];
-    bn_divn_low(quotient.data(), remainder.data(), k.data(), N, modulus.data(), 6);
-    std::array<uint64_t, 6> _r = {remainder[0], remainder[1], remainder[2], remainder[3], remainder[4], remainder[5]};
-    return fp(_r).toMont();
+    std::array<uint64_t, N> quotient = {};
+    std::array<uint64_t, 6> remainder = {};
+  
+    bn_divn_safe(quotient, remainder, k, fp::MODULUS.d);
+    return fp(remainder).toMont();
 }
 
 template<size_t N>

@@ -3,7 +3,7 @@
 #include <random>
 #include <iostream>
 
-#include <bls12-381.hpp>
+#include <bls12-381/bls12-381.hpp>
 
 using namespace std;
 using namespace bls12_381;
@@ -1756,8 +1756,6 @@ void TestExtraVectors()
 
 int main()
 {
-    init();
-
     TestScalar();
 
     TestFieldElementValidation();

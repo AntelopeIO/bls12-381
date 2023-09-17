@@ -1,24 +1,19 @@
-cmake_minimum_required(VERSION 3.8)
-project(bls12-381 VERSION 1.0.0)
+cmake_minimum_required(VERSION 3.12)
 
-#set(CMAKE_CXX_STANDARD 17)
-#set(CMAKE_CXX_EXTENSIONS ON)
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#add_compile_options(-Wall)
-
-# compile with "-march" or enable cpu features explicitly for best performance:
-#set(CMAKE_CXX_FLAGS "-madx -mbmi2")
-set(CMAKE_CXX_FLAGS "-fstack-protector-strong")
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release"
-    CACHE STRING "Possible values are empty, Debug, Release, RelWithDebInfo, MinSizeRel, ..."
-    FORCE
-  )
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# the library
-add_subdirectory(src)
+project(bls12-381 VERSION 1.0.0)
+
+file(GLOB BLS12-381_SOURCES CONFIGURE_DEPENDS src/*.cpp)
+file(GLOB BLS12-381_HEADERS CONFIGURE_DEPENDS include/bls12-381/*.hpp)
+
+add_library(bls12-381 ${BLS12-381_SOURCES})
+target_include_directories(bls12-381 PUBLIC include)
+set_target_properties(bls12-381 PROPERTIES PUBLIC_HEADER "${BLS12-381_HEADERS}")
+target_compile_features(bls12-381 PUBLIC cxx_std_20)
 
 # the tests
 enable_testing()

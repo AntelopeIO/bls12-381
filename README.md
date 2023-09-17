@@ -1,10 +1,9 @@
 # BLS12-381
-All things BLS! This library features:
+A high performance C++ BLS library. This library features:
 
 - High speed assembly implementation for x86_64
 - G1/G2 Arithmetic & Pairing
 - Aggregate Signatures
-- Groth16
 - [EIP-2537](https://eips.ethereum.org/EIPS/eip-2537)
 - [EIP-2333](https://eips.ethereum.org/EIPS/eip-2333)
 - Zero dependencies
@@ -28,7 +27,7 @@ make -j
 
 ## Run unit tests
 ```
-./test/unittests
+ctest
 ```
 
 ## Run benchmarks

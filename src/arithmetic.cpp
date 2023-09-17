@@ -1,4 +1,4 @@
-#include <bls12-381.hpp>
+#include <bls12-381/bls12-381.hpp>
 #ifdef __x86_64__
 #include <cpuid.h>
 #endif
@@ -7,43 +7,6 @@ using namespace std;
 
 namespace bls12_381
 {
-
-#if defined(__x86_64__) && (!defined(__ADX__) || !defined(__BMI2__))
-void (*_mul)(fp*, const fp*, const fp*) { &__mul };
-#endif
-
-void init(bool cpu_features)
-{
-    #if defined(__x86_64__) && (!defined(__ADX__) || !defined(__BMI2__))
-    // set default mul() function (without cpu features)
-    _mul = &__mul;
-
-    if(cpu_features)
-    {
-        // detect cpu features on this machine and set mul_ex() if ADX/BMI2 available
-        #if defined(__GNUC__) && __GNUC__ >= 11
-        __builtin_cpu_init();
-        if(__builtin_cpu_supports("bmi2") && __builtin_cpu_supports("adx"))
-        {
-            _mul = &__mul_ex;
-        }
-        #else
-        // borrowed from: https://github.com/Mysticial/FeatureDetector/blob/master/src/x86/cpu_x86.cpp
-        int32_t info[4];
-        __cpuid_count(0, 0, info[0], info[1], info[2], info[3]);
-        int nIds = info[0];
-        if(nIds >= 0x00000007)
-        {
-            __cpuid_count(0x00000007, 0, info[0], info[1], info[2], info[3]);
-            if((info[1] & (1 <<  8)) && (info[1] & (1 << 19))) // BMI2 && ADX
-            {
-                _mul = &__mul_ex;
-            }
-        }
-        #endif
-    }
-    #endif
-}
 
 #ifdef __x86_64__
 void _add(fp* z, const fp* x, const fp* y)
@@ -763,12 +726,6 @@ void _neg(fp* z, const fp* x)
 #endif
 
 #ifdef __x86_64__
-#if defined(__ADX__) && defined(__BMI2__)
-void _mul(fp* z, const fp* x, const fp* y)
-{
-    __mul_ex(z, x, y);
-}
-#endif
 void __mul(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
@@ -1806,6 +1763,52 @@ void __mul_ex(fp* z, const fp* x, const fp* y)
     asm("pop %r15;");
     asm("pop %rbp;");
 }
+
+typedef void (*blsmul_func_t)(fp*, const fp*, const fp*);
+
+static bool cpu_has_bmi2_and_adx() {
+    // borrowed from: https://github.com/Mysticial/FeatureDetector/blob/master/src/x86/cpu_x86.cpp
+    int32_t info[4];
+    __cpuid_count(0, 0, info[0], info[1], info[2], info[3]);
+    int nIds = info[0];
+    if(nIds >= 0x00000007) {
+        __cpuid_count(0x00000007, 0, info[0], info[1], info[2], info[3]);
+        if((info[1] & (1 <<  8)) && (info[1] & (1 << 19))) // BMI2 && ADX
+            return true;
+    }
+    return false;
+}
+
+#ifdef __ELF__
+extern "C" char** _dl_argv;
+
+extern "C" blsmul_func_t __attribute__((no_sanitize_address)) resolve_blsmul() {
+    int argc = *(int*)(_dl_argv - 1);
+    char** my_environ = (char**)(_dl_argv + argc + 1);
+    while(*my_environ != nullptr) {
+       const char disable_str[] = "BLS_DISABLE_BMI2";
+        if(strncmp(*my_environ++, disable_str, strlen(disable_str)) == 0)
+           return __mul;
+    }
+
+    if(cpu_has_bmi2_and_adx())
+       return __mul_ex;
+    return __mul;
+}
+
+void _mul(fp*, const fp*, const fp*) __attribute__((ifunc("resolve_blsmul")));
+#else
+blsmul_func_t _mul = __mul;
+
+struct bls_mul_init {
+   bls_mul_init() {
+      if(cpu_has_bmi2_and_adx())
+         _mul = __mul_ex;
+   }
+};
+static bls_mul_init the_bls_mul_init;
+
+#endif //__ELF__
 #else
 void _mul(fp* z, const fp* x, const fp* y)
 {
