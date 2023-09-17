@@ -54,12 +54,11 @@ void benchSigs() {
     const int numIters = 5000;
     array<uint64_t, 4> sk = secret_key(getRandomSeed());
     array<uint8_t, 48UL> pk = public_key(sk).toCompressedBytesBE();
-    vector<uint8_t> message1(pk.begin(), pk.end());
 
     auto start = startStopwatch();
 
     for (int i = 0; i < numIters; i++) {
-        sign(sk, message1);
+        sign(sk, pk);
     }
     endStopwatch(testName, start, numIters);
 }
@@ -75,16 +74,14 @@ void benchVerification() {
     for (int i = 0; i < numIters; i++) {
         uint8_t message[4];
         IntToFourBytes(message, i);
-        vector<uint8_t> messageBytes(message, message + 4);
-        sigs.push_back(sign(sk, messageBytes));
+        sigs.push_back(sign(sk, message));
     }
 
     auto start = startStopwatch();
     for (int i = 0; i < numIters; i++) {
         uint8_t message[4];
         IntToFourBytes(message, i);
-        vector<uint8_t> messageBytes(message, message + 4);
-        bool ok = verify(pk, messageBytes, sigs[i]);
+        bool ok = verify(pk, message, sigs[i]);
         if(!ok) throw std::invalid_argument("benchVerification: !ok");
     }
     endStopwatch(testName, start, numIters);
