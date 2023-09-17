@@ -107,38 +107,38 @@ std::array<uint64_t, 4> secret_key(std::span<const uint8_t> seed);
 g1 public_key(const std::array<uint64_t, 4>& sk);
 
 g2 fromMessage(
-    const std::vector<uint8_t>& msg,
+    std::span<const uint8_t> msg,
     const std::string& dst
 );
 
 // Sign message with a private key
 g2 sign(
     const std::array<uint64_t, 4>& sk,
-    const std::vector<uint8_t>& msg
+    std::span<const uint8_t> msg
 );
 
 // Verify signature of a message using a public key
 bool verify(
     const g1& pubkey,
-    const std::vector<uint8_t>& message,
+    std::span<const uint8_t> message,
     const g2& signature
 );
 
 // Aggregate private keys
-std::array<uint64_t, 4> aggregate_secret_keys(const std::vector<std::array<uint64_t, 4>>& sks);
+std::array<uint64_t, 4> aggregate_secret_keys(std::span<const std::array<uint64_t, 4>> sks);
 
 // Aggregate public keys
-g1 aggregate_public_keys(const std::vector<g1>& pks);
+g1 aggregate_public_keys(std::span<const g1> pks);
 
 // Aggregate signatures
-g2 aggregate_signatures(const std::vector<g2>& sigs);
+g2 aggregate_signatures(std::span<const g2> sigs);
 
 // Aggregate verify using a set of public keys, a set of messages and an aggregated signature
 // the boolean parameter enables an additional check for dublicate messages (possible attack
 // std::vector: see page 6 of https://crypto.stanford.edu/~dabo/pubs/papers/aggreg.pdf, "A potential
 // attack on aggregate signatures.")
 bool aggregate_verify(
-    const std::vector<g1>& pubkeys,
+    std::span<const g1> pubkeys,
     const std::vector<std::vector<uint8_t>> &messages,
     const g2& signature,
     const bool checkForDuplicateMessages = false
@@ -162,8 +162,8 @@ bool pop_verify(
 );
 
 bool pop_fast_aggregate_verify(
-    const std::vector<g1>& pubkeys,
-    const std::vector<uint8_t>& message,
+    std::span<const g1> pubkeys,
+    std::span<const uint8_t> message,
     const g2& signature
 );
 
