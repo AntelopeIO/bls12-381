@@ -180,7 +180,7 @@ void final_exponentiation(fp12& f)
 fp12 calculate(std::span<const std::tuple<g1, g2>> pairs, std::function<void()> yield)
 {
     fp12 f = fp12::one();
-    if(pairs.size() == 0)
+    if(pairs.empty())
     {
         return f;
     }
