@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath>
-#include <vector>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <span>

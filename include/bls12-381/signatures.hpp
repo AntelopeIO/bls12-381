@@ -4,9 +4,10 @@
 #include <span>
 #include <vector>
 #include <string>
+#include <bls12-381/g.hpp>
+#include <bls12-381/fp.hpp>
 
-namespace bls12_381
-{
+namespace bls12_381 {
 
 class g1;
 class g2;
@@ -143,6 +144,22 @@ bool aggregate_verify(
     const g2& signature,
     const bool checkForDuplicateMessages = false
 );
+
+template<class T, class F>
+g1 aggregate_public_keys(std::span<const T> pks, F &&f) {
+    g1 agg_pk = g1({fp::zero(), fp::zero(), fp::zero()});
+    for(const auto& t : pks)
+        agg_pk = agg_pk.add(std::forward<F>(f)(t));
+    return agg_pk;
+}
+
+template<class T, class F>
+g2 aggregate_signatures(std::span<const T> sigs, F &&f) {
+    g2 agg_sig = g2({fp2::zero(), fp2::zero(), fp2::zero()});
+    for(const auto& t : sigs)
+        agg_sig = agg_sig.add(std::forward<F>(f)(t));
+    return agg_sig;
+}
 
 // Create new BLS private key from bytes. Enable modulo division to ensure scalar is element of the field
 std::array<uint64_t, 4> sk_from_bytes(
