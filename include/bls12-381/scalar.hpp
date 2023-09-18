@@ -77,6 +77,10 @@ std::array<uint64_t, N> fromBytesLE(const std::span<const uint8_t, N*8>& in)
 template<size_t N>
 void fromBytesBE(const std::span<const uint8_t, N*8>& in, std::array<uint64_t, N>& out)
 {
+#if defined(__GNUC__)
+    // accessing memory backwards is not cache friendly
+    __builtin_prefetch(static_cast<const void*>(&in[0]));
+#endif
     for(uint64_t i = 0; i < N; i++)
     {
         int64_t a = N*8 - i*8;
