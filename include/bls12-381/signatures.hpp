@@ -145,7 +145,7 @@ bool aggregate_verify(
     const bool checkForDuplicateMessages = false
 );
 
-// f is an accessor function in case we have a vector of object containing public keys
+// f is an accessor function in case we have a span of objects of type T containing public keys
 // pred can be use to aggregate public keys specified in a bit mask for example
 template<class T, class F, class PRED>
 g1 aggregate_public_keys(std::span<const T> pks, F &&f, PRED &&pred) {
@@ -156,7 +156,7 @@ g1 aggregate_public_keys(std::span<const T> pks, F &&f, PRED &&pred) {
     return agg_pk;
 }
 
-// f is an accessor function in case we have a vector of object containing signatures
+// f is an accessor function in case we have a span of objects of type T containing signatures
 // pred can be use to aggregate signatures specified in a bit mask for example
 template<class T, class F, class PRED>
 g2 aggregate_signatures(std::span<const T> sigs, F &&f, PRED &&pred) {

@@ -30,8 +30,7 @@ void endStopwatch(string testName,
 }
 
 std::array<uint8_t, 32> getRandomSeed() {
-    std::array<uint8_t, 32> res;
-    uint64_t *buf = reinterpret_cast<uint64_t *>(res.data());
+    std::array<uint64_t, 4> buf;
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<uint64_t> dis;
@@ -39,6 +38,8 @@ std::array<uint8_t, 32> getRandomSeed() {
     buf[1] = dis(gen);
     buf[2] = dis(gen);
     buf[3] = dis(gen);
+    std::array<uint8_t, 32> res;
+    memcpy(res.data(), buf.data(), sizeof(res));
     return res;
 }
 
