@@ -145,19 +145,25 @@ bool aggregate_verify(
     const bool checkForDuplicateMessages = false
 );
 
-template<class T, class F>
-g1 aggregate_public_keys(std::span<const T> pks, F &&f) {
+// f is an accessor function in case we have a vector of object containing public keys
+// pred can be use to aggregate public keys specified in a bit mask for example
+template<class T, class F, class PRED>
+g1 aggregate_public_keys(std::span<const T> pks, F &&f, PRED &&pred) {
     g1 agg_pk = g1({fp::zero(), fp::zero(), fp::zero()});
-    for(const auto& t : pks)
-        agg_pk = agg_pk.add(std::forward<F>(f)(t));
+    for (size_t i=0; i<pks.size(); ++i)
+        if (std::forward<PRED>(pred)(pks[i], i))
+            agg_pk = agg_pk.add(std::forward<F>(f)(pks[i]));
     return agg_pk;
 }
 
-template<class T, class F>
-g2 aggregate_signatures(std::span<const T> sigs, F &&f) {
+// f is an accessor function in case we have a vector of object containing signatures
+// pred can be use to aggregate signatures specified in a bit mask for example
+template<class T, class F, class PRED>
+g2 aggregate_signatures(std::span<const T> sigs, F &&f, PRED &&pred) {
     g2 agg_sig = g2({fp2::zero(), fp2::zero(), fp2::zero()});
-    for(const auto& t : sigs)
-        agg_sig = agg_sig.add(std::forward<F>(f)(t));
+    for (size_t i=0; i<sigs.size(); ++i)
+        if (std::forward<PRED>(pred)(sigs[i], i))
+            agg_sig = agg_sig.add(std::forward<F>(f)(sigs[i]));
     return agg_sig;
 }
 
