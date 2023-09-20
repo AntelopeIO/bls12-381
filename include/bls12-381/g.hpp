@@ -60,7 +60,7 @@ public:
 
     auto operator<=>(const g1&) const = default;
    
-   static std::optional<g1> multiExp(std::span<const g1> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield = std::function<void()>());
+    static std::optional<g1> multiExp(std::span<const g1> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield = std::function<void()>());
     static g1 mapToCurve(const fp& e);
     static std::tuple<fp, fp> swuMapG1(const fp& e);
     static void isogenyMapG1(fp& x, fp& y);

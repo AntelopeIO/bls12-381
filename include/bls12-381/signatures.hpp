@@ -145,10 +145,11 @@ bool aggregate_verify(
     const bool checkForDuplicateMessages = false
 );
 
-// f is an accessor function in case we have a span of objects of type T containing public keys
-// pred can be use to aggregate public keys specified in a bit mask for example
-template<class T, class F, class PRED>
-g1 aggregate_public_keys(std::span<const T> pks, F &&f, PRED &&pred) {
+// `f` is an accessor function in case we have a span of objects of type T containing public keys: `g1 f(const T&)`
+// `pred` can be used to aggregate public keys specified in a bit mask for example: `bool pred(const T&, size_t)`
+template<class T, class F, class PRED = decltype([](const T&, size_t){return true;})>
+inline auto aggregate_public_keys(std::span<T> pks, F&& f, PRED&& pred = PRED())
+    -> decltype(f(*pks.data()), pred(*pks.data(), 0), g1()) {
     g1 agg_pk = g1({fp::zero(), fp::zero(), fp::zero()});
     for (size_t i=0; i<pks.size(); ++i)
         if (std::forward<PRED>(pred)(pks[i], i))
@@ -156,10 +157,11 @@ g1 aggregate_public_keys(std::span<const T> pks, F &&f, PRED &&pred) {
     return agg_pk;
 }
 
-// f is an accessor function in case we have a span of objects of type T containing signatures
-// pred can be use to aggregate signatures specified in a bit mask for example
-template<class T, class F, class PRED>
-g2 aggregate_signatures(std::span<const T> sigs, F &&f, PRED &&pred) {
+// f is an accessor function in case we have a span of objects of type T containing signatures: `g2 f(const T&)`
+// pred can be used to aggregate signatures specified in a bit mask for example: `bool pred(const T&, size_t)`
+template<class T, class F, class PRED = decltype([](const T&, size_t){return true;})>
+inline auto aggregate_signatures(std::span<T> sigs, F&& f, PRED&& pred = PRED()) 
+    -> decltype(f(*sigs.data()), pred(*sigs.data(), 0), g2()) {
     g2 agg_sig = g2({fp2::zero(), fp2::zero(), fp2::zero()});
     for (size_t i=0; i<sigs.size(); ++i)
         if (std::forward<PRED>(pred)(sigs[i], i))

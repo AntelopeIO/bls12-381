@@ -1652,6 +1652,38 @@ void TestPopScheme()
         if(!pop_fast_aggregate_verify(std::array{pk1, pk2}, msg1, aggsig_same)) throw invalid_argument("pop_fast_aggregate_verify failed");
     }
     {
+        // test template versions of aggregate_signatures
+        struct enh_pk { std::string name; g1 pk; };
+        struct enh_sig { std::string name; g2 sig; };
+
+        vector<uint8_t> seed1(32, 0x06);
+        vector<uint8_t> seed2(32, 0x07);
+        vector<uint8_t> msg1 = {7, 8, 9};
+        vector<uint8_t> msg2 = {10, 11, 12};
+        vector<vector<uint8_t>> msgs = {msg1, msg2};
+
+        array<uint64_t, 4> sk1 = secret_key(seed1);
+        enh_pk pk1 { "pk1", public_key(sk1) };
+        enh_sig sig1 { "sig1",  sign(sk1, msg1) };
+
+        array<uint64_t, 4> sk2 = secret_key(seed2);
+        enh_pk pk2 { "pk2", public_key(sk2) };
+        enh_sig sig2 { "sig2",  sign(sk2, msg1) };
+
+        std::array pks { pk1, pk2 };
+        std::array sigs { sig1, sig2 };
+
+        g1 agg_pk = aggregate_public_keys(std::span{pks.begin(), pks.size()},
+                                          [](const enh_pk& epk) { return epk.pk; });
+        
+        g2 agg_sig = aggregate_signatures(std::span{sigs.begin(), sigs.size()},
+                                          [](const enh_sig& esig) { return esig.sig; });
+        
+        
+        if (!verify(agg_pk, msg1, agg_sig))
+            throw invalid_argument("verify failed");
+    }
+    {
         // from README:
         vector<uint8_t> seed = {0,  50, 6,  244, 24,  199, 1,  25,  52,  88,  192,
                                 19, 18, 12, 89,  6,   220, 18, 102, 58,  209, 82,
