@@ -1368,8 +1368,8 @@ void TestChiaVectors()
         throw invalid_argument("sig2 verification failed");
     }
 
-    g2 aggSig1 = aggregate_signatures({sig1, sig2});
-    if(!aggregate_verify({pk1, pk2}, {message1, message2}, aggSig1))
+    g2 aggSig1 = aggregate_signatures(std::array{sig1, sig2});
+    if(!aggregate_verify(std::array{pk1, pk2}, std::array{message1, message2}, aggSig1))
     {
         throw invalid_argument("aggSig1 verification failed");
     }
@@ -1382,9 +1382,9 @@ void TestChiaVectors()
     g2 sig4 = sign(sk1, message4);
     g2 sig5 = sign(sk2, message5);
 
-    g2 aggSig2 = aggregate_signatures({sig3, sig4, sig5});
-
-    if(!aggregate_verify({pk1, pk1, pk2}, vector<vector<uint8_t>>{message3, message4, message5}, aggSig2))
+    g2 aggSig2 = aggregate_signatures(std::array{sig3, sig4, sig5});
+    
+    if(!aggregate_verify(std::array{pk1, pk1, pk2}, vector<vector<uint8_t>>{message3, message4, message5}, aggSig2))
     {
         throw invalid_argument("aggSig2 verification failed");
     }
@@ -1414,11 +1414,12 @@ void TestChiaVectors2()
     g2 sig6 = sign(sk1, message4);
 
 
-    g2 aggSigL = aggregate_signatures({sig1, sig2});
-    g2 aggSigR = aggregate_signatures({sig3, sig4, sig5});
-    g2 aggSig = aggregate_signatures({aggSigL, aggSigR, sig6});
+    g2 aggSigL = aggregate_signatures(std::array{sig1, sig2});
+    g2 aggSigR = aggregate_signatures(std::array{sig3, sig4, sig5});
+    g2 aggSig  = aggregate_signatures(std::array{aggSigL, aggSigR, sig6});
 
-    if(!aggregate_verify({pk1, pk2, pk2, pk1, pk1, pk1}, vector<vector<uint8_t>>{message1, message2, message1, message3, message1, message4}, aggSig))
+    if(!aggregate_verify(std::array{pk1, pk2, pk2, pk1, pk1, pk1},
+                         vector<vector<uint8_t>>{message1, message2, message1, message3, message1, message4}, aggSig))
     {
         throw invalid_argument("aggregate verify error");
     }
@@ -1515,8 +1516,8 @@ void TestSignatures()
         g2 sig1 = sign(sk1, message);
         g2 sig2 = sign(sk2, message);
 
-        g2 aggSig = aggregate_signatures({sig1, sig2});
-        if(aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig, true))
+        g2 aggSig = aggregate_signatures(std::array{sig1, sig2});
+        if(aggregate_verify(std::array{pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig, true))
         {
             throw invalid_argument("Should not verify aggregate with same message under BasicScheme");
         }
@@ -1545,8 +1546,8 @@ void TestAugScheme()
     augMsg2.insert(augMsg2.end(), pk2_bytes.begin(), pk2_bytes.end());
     g2 sig1Aug = sign(sk1, augMsg1);
     g2 sig2Aug = sign(sk2, augMsg2);
-    g2 aggSigAug = aggregate_signatures({sig1Aug, sig2Aug});
-    if(!aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{augMsg1, augMsg2}, aggSigAug, true))
+    g2 aggSigAug = aggregate_signatures(std::array{sig1Aug, sig2Aug});
+    if(!aggregate_verify(std::array{pk1, pk2}, vector<vector<uint8_t>>{augMsg1, augMsg2}, aggSigAug, true))
     {
         throw invalid_argument("Should verify aggregate with same message under AugScheme");
     }
@@ -1564,8 +1565,8 @@ void TestAggregateSKs()
     const array<uint64_t, 4> sk2 = secret_key(seed2);
     const g1 pk2 = public_key(sk2);
 
-    const array<uint64_t, 4> aggSk = aggregate_secret_keys({sk1, sk2});
-    const array<uint64_t, 4> aggSkAlt = aggregate_secret_keys({sk2, sk1});
+    const array<uint64_t, 4> aggSk = aggregate_secret_keys(std::array{sk1, sk2});
+    const array<uint64_t, 4> aggSkAlt = aggregate_secret_keys(std::array{sk2, sk1});
     if(aggSk != aggSkAlt) throw invalid_argument("aggSk != aggSkAlt");
 
     const g1 aggPubKey = pk1.add(pk2);
@@ -1577,7 +1578,7 @@ void TestAggregateSKs()
     const g2 aggSig2 = sign(aggSk, message);
 
 
-    const g2 aggSig = aggregate_signatures({sig1, sig2});
+    const g2 aggSig = aggregate_signatures(std::array{sig1, sig2});
     if(!aggSig.equal(aggSig2)) throw invalid_argument("aggSig != aggSig2");
 
     // Verify as a single G2Element
@@ -1585,20 +1586,20 @@ void TestAggregateSKs()
     if(!verify(aggPubKey, message, aggSig2)) throw invalid_argument("aggSig2 verify failed");
 
     // Verify aggregate with both keys (Fails since not distinct)
-    if(aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig, true)) throw invalid_argument("aggregate verify of aggSig must fail");
-    if(aggregate_verify({pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig2, true)) throw invalid_argument("aggregate verify of aggSig2 must fail");
+    if(aggregate_verify(std::array{pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig, true)) throw invalid_argument("aggregate verify of aggSig must fail");
+    if(aggregate_verify(std::array{pk1, pk2}, vector<vector<uint8_t>>{message, message}, aggSig2, true)) throw invalid_argument("aggregate verify of aggSig2 must fail");
 
     // Try the same with distinct message, and same sk
     vector<uint8_t> message2 = {200, 29, 54, 8, 9, 29, 155, 55};
     g2 sig3 = sign(sk2, message2);
-    g2 aggSigFinal = aggregate_signatures({aggSig, sig3});
-    g2 aggSigAlt = aggregate_signatures({sig1, sig2, sig3});
-    g2 aggSigAlt2 = aggregate_signatures({sig1, sig3, sig2});
+    g2 aggSigFinal = aggregate_signatures(std::array{aggSig, sig3});
+    g2 aggSigAlt = aggregate_signatures(std::array{sig1, sig2, sig3});
+    g2 aggSigAlt2 = aggregate_signatures(std::array{sig1, sig3, sig2});
     if(!aggSigFinal.equal(aggSigAlt)) throw invalid_argument("aggSigFinal != aggSigAlt");
     if(!aggSigFinal.equal(aggSigAlt2)) throw invalid_argument("aggSigFinal != aggSigAlt2");
 
-    array<uint64_t, 4> skFinal = aggregate_secret_keys({aggSk, sk2});
-    array<uint64_t, 4> skFinalAlt = aggregate_secret_keys({sk2, sk1, sk2});
+    array<uint64_t, 4> skFinal = aggregate_secret_keys(std::array{aggSk, sk2});
+    array<uint64_t, 4> skFinalAlt = aggregate_secret_keys(std::array{sk2, sk1, sk2});
     if(skFinal != skFinalAlt) throw invalid_argument("skFinal != skFinalAlt");
     if(skFinal == aggSk) throw invalid_argument("skFinal == aggSk");
 
@@ -1608,7 +1609,7 @@ void TestAggregateSKs()
     if(pkFinal.equal(aggPubKey)) throw invalid_argument("pkFinal == aggPubKey");
 
     // Verify with aggPubKey (since we have multiple messages)
-    if(!aggregate_verify({aggPubKey, pk2}, vector<vector<uint8_t>>{message, message2}, aggSigFinal, true)) throw invalid_argument("verify with aggPubKey failed");
+    if(!aggregate_verify(std::array{aggPubKey, pk2}, vector<vector<uint8_t>>{message, message2}, aggSigFinal, true)) throw invalid_argument("verify with aggPubKey failed");
 }
 
 void TestPopScheme()
@@ -1637,8 +1638,8 @@ void TestPopScheme()
         // Wrong pk
         if(verify(pk2, msg1, sig1)) throw invalid_argument("must fail: wrong pk");
 
-        g2 aggsig = aggregate_signatures({sig1, sig2});
-        if(!aggregate_verify({pk1, pk2}, msgs, aggsig)) throw invalid_argument("aggregate_verify failed");
+        g2 aggsig = aggregate_signatures(std::array{sig1, sig2});
+        if(!aggregate_verify(std::array{pk1, pk2}, msgs, aggsig)) throw invalid_argument("aggregate_verify failed");
 
         // PopVerify
         g2 proof1 = pop_prove(sk1);
@@ -1647,8 +1648,40 @@ void TestPopScheme()
         // FastAggregateVerify
         // We want sk2 to sign the same message
         g2 sig2_same = sign(sk2, msg1);
-        g2 aggsig_same = aggregate_signatures({sig1, sig2_same});
-        if(!pop_fast_aggregate_verify({pk1, pk2}, msg1, aggsig_same)) throw invalid_argument("pop_fast_aggregate_verify failed");
+        g2 aggsig_same = aggregate_signatures(std::array{sig1, sig2_same});
+        if(!pop_fast_aggregate_verify(std::array{pk1, pk2}, msg1, aggsig_same)) throw invalid_argument("pop_fast_aggregate_verify failed");
+    }
+    {
+        // test template versions of aggregate_signatures
+        struct enh_pk { std::string name; g1 pk; };
+        struct enh_sig { std::string name; g2 sig; };
+
+        vector<uint8_t> seed1(32, 0x06);
+        vector<uint8_t> seed2(32, 0x07);
+        vector<uint8_t> msg1 = {7, 8, 9};
+        vector<uint8_t> msg2 = {10, 11, 12};
+        vector<vector<uint8_t>> msgs = {msg1, msg2};
+
+        array<uint64_t, 4> sk1 = secret_key(seed1);
+        enh_pk pk1 { "pk1", public_key(sk1) };
+        enh_sig sig1 { "sig1",  sign(sk1, msg1) };
+
+        array<uint64_t, 4> sk2 = secret_key(seed2);
+        enh_pk pk2 { "pk2", public_key(sk2) };
+        enh_sig sig2 { "sig2",  sign(sk2, msg1) };
+
+        std::array pks { pk1, pk2 };
+        std::array sigs { sig1, sig2 };
+
+        g1 agg_pk = aggregate_public_keys(std::span{pks.begin(), pks.size()},
+                                          [](const enh_pk& epk) { return epk.pk; });
+        
+        g2 agg_sig = aggregate_signatures(std::span{sigs.begin(), sigs.size()},
+                                          [](const enh_sig& esig) { return esig.sig; });
+        
+        
+        if (!verify(agg_pk, msg1, agg_sig))
+            throw invalid_argument("verify failed");
     }
     {
         // from README:
@@ -1678,16 +1711,16 @@ void TestPopScheme()
         if(!pop_verify(pk1, pop1)) throw invalid_argument("pop_verify 1 failed");
         if(!pop_verify(pk2, pop2)) throw invalid_argument("pop_verify 2 failed");
         if(!pop_verify(pk3, pop3)) throw invalid_argument("pop_verify 3 failed");
-        g2 popSigAgg = aggregate_signatures({popSig1, popSig2, popSig3});
+        g2 popSigAgg = aggregate_signatures(std::array{popSig1, popSig2, popSig3});
 
-        if(!pop_fast_aggregate_verify({pk1, pk2, pk3}, message, popSigAgg)) throw invalid_argument("pop_fast_aggregate_verify failed");
+        if(!pop_fast_aggregate_verify(std::array{pk1, pk2, pk3}, message, popSigAgg)) throw invalid_argument("pop_fast_aggregate_verify failed");
 
         // Aggregate public key, indistinguishable from a single public key
         g1 popAggPk = pk1.add(pk2).add(pk3);
         if(!verify(popAggPk, message, popSigAgg)) throw invalid_argument("verify popSigAgg failed");
 
         // Aggregate private keys
-        array<uint64_t, 4> aggSk = aggregate_secret_keys({sk1, sk2, sk3});
+        array<uint64_t, 4> aggSk = aggregate_secret_keys(std::array{sk1, sk2, sk3});
         if(!sign(aggSk, message).equal(popSigAgg)) throw invalid_argument("sign(aggSk, message) != popSigAgg");
     }
 }
