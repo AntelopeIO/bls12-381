@@ -1782,7 +1782,7 @@ void TestExtraVectors()
         catch (std::exception &e)
         {
             printf("test %d failed: %s \n", i, e.what());
-            continue;
+            throw;
         }
     }
 }
