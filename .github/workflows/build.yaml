@@ -14,7 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - cfg: {name: 'macos',             runson: 'macos-latest'}
+          - cfg: {name: 'macos-x86',         runson: 'macos-latest'}
+          - cfg: {name: 'macos-arm',         runson: 'macos-latest-xlarge'}
           - cfg: {name: 'gcc10',             runson: 'ubuntu-latest', container: 'debian:bullseye'}
           - cfg: {name: 'gcc11',             runson: 'ubuntu-latest', container: 'ubuntu:jammy'}
           - cfg: {name: 'gcc12',             runson: 'ubuntu-latest', container: 'debian:bookworm'}
