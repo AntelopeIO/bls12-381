@@ -36,7 +36,7 @@ jobs:
       - name: Debian/Ubuntu packages
         if: startsWith(matrix.cfg.container, 'debian') || startsWith(matrix.cfg.container, 'ubuntu')
         run: apt-get update && apt-get -y upgrade && apt-get -y install build-essential cmake
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         run: cmake -B build ${{matrix.cfg.cmake}} && cmake --build build -- -j
       - name: Test
