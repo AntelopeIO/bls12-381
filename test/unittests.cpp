@@ -204,6 +204,70 @@ void TestFieldElementEquality()
     }
 }
 
+void TestFieldElementArithmeticCornerCases() {
+    const char* testVectorInput[] = {
+        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA", // p-1
+        "1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB", // p
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    };
+
+    const char* testVectorExpectedSquare[] = {
+        "19adf63210c8e7b878a258c2f7031601413d6f0c9a02fab49db5bbff9268f1a76fe6e68be46104ec7ccb1f341c2d6ca3",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    };
+
+    const char* testVectorExpectedAdd[] = {
+        "11ebab9dbb81e28c6cf28d7901622c038b256521ed1f9bcb57605e0db0ddbb51b93c0018d6c40005321300000006554d",
+        "1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaa9",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    };
+
+    auto testSqureMul = [](const char* in, const char* expectedSquare, const char* expectedAdd) {
+        // Input should be convert to Montgomery form, so "raw" = false
+        auto input = fp::fromBytesBE(hexToBytes<48>(in), false, false);
+        // Expected result will be compared against numbers converted back from Montgomery form, so "raw" = true
+        auto fpExpectedSquare = fp::fromBytesBE(hexToBytes<48>(expectedSquare), false, true);
+        auto fpExpectedAdd = fp::fromBytesBE(hexToBytes<48>(expectedAdd), false, true);
+
+        fp s,m,a;
+
+        _square(&s, &*input);
+        _mul(&m, &*input, &*input);
+        _add(&a, &*input, &*input);
+
+        s = s.fromMont();
+        m = m.fromMont();
+        a = a.fromMont();
+
+        if(!s.equal(m))
+        {
+            throw invalid_argument("square != mul self");
+        }
+
+        if(!s.equal(*fpExpectedSquare))
+        {
+            throw invalid_argument("square != expected");
+        }
+
+        if(!a.equal(*fpExpectedAdd))
+        {
+            throw invalid_argument("add != expected");
+        }
+
+    };
+
+    for (int i = 0; i < sizeof(testVectorInput) / sizeof(const char*); ++i) {
+        testSqureMul(testVectorInput[i], testVectorExpectedSquare[i], testVectorExpectedAdd[i]);
+    }
+}
+
 void TestFieldElementHelpers()
 {
     // fe
@@ -1760,6 +1824,7 @@ int main()
 
     TestFieldElementValidation();
     TestFieldElementEquality();
+    TestFieldElementArithmeticCornerCases();
     TestFieldElementHelpers();
     TestFieldElementSerialization();
     TestFieldElementByteInputs();
