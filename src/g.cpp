@@ -780,7 +780,11 @@ optional<g2> g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     bool ysign = ((in[0] >> 5) & 1) == 1;
     g2 p;
     scalar::fromBytesBE(span<const uint8_t, 48>(&in[0], &in[48]), p.x.c1.d);
-    p.x.c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96])).value();
+    auto c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]));
+    if (!c0) {
+        return {};
+    }
+    p.x.c0 = c0.value();
     // erase 3 msbs from given input and perform validity check
     p.x.c1.d[5] &= 0x1FFFFFFFFFFFFFFF;
     p.x.c1 = p.x.c1.toMont();
