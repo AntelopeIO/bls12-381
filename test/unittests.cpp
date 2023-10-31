@@ -239,7 +239,7 @@ void TestFieldElementArithmeticCornerCases() {
             }
             return;
         }
-        
+
         // Expected result will be compared against numbers converted back from Montgomery form, so "raw" = true
         auto fpExpectedSquare = fp::fromBytesBE(hexToBytes<48>(expectedSquare), false, true);
         auto fpExpectedAdd = fp::fromBytesBE(hexToBytes<48>(expectedAdd), false, true);
@@ -460,6 +460,41 @@ void TestG1Serialization()
         {
             throw invalid_argument("g1, affine, LE: bad serialization from/to");
         }
+    }
+}
+
+void TestG1SerializationGarbage() {
+    array<uint8_t, 144> buf;
+    buf.fill(0xff);
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g1::fromJacobianBytesBE(buf, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g1, jacobianBE: serialization not catching invalid input");
+        }
+        auto b = g1::fromJacobianBytesLE(buf, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g1, jacobianLE: serialization not catching invalid input");
+        }
+    }
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g1::fromAffineBytesBE(std::span<const uint8_t, 96>{buf.begin(),96}, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g1, affineBE: serialization not catching invalid input");
+        }
+        auto b = g1::fromAffineBytesLE(std::span<const uint8_t, 96>{buf.begin(),96}, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g1, affineLE: serialization not catching invalid input");
+        }
+    }
+
+    auto a = g1::fromCompressedBytesBE(std::span<const uint8_t, 48>{buf.begin(),48});
+    if(a)
+    {
+        throw invalid_argument("g1, compressedBE: serialization not catching invalid input");
     }
 }
 
@@ -807,6 +842,41 @@ void TestG2Serialization()
         {
             throw invalid_argument("g1, affine, LE: bad serialization from/to");
         }
+    }
+}
+
+void TestG2SerializationGarbage() {
+    array<uint8_t, 288> buf;
+    buf.fill(0xff);
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g2::fromJacobianBytesBE(buf, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g2, jacobianBE: serialization not catching invalid input");
+        }
+        auto b = g2::fromJacobianBytesLE(buf, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g2, jacobianLE: serialization not catching invalid input");
+        }
+    }
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g2::fromAffineBytesBE(std::span<const uint8_t, 192>{buf.begin(),192}, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g2, affineBE: serialization not catching invalid input");
+        }
+        auto b = g2::fromAffineBytesLE(std::span<const uint8_t, 192>{buf.begin(),192}, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g2, affineLE: serialization not catching invalid input");
+        }
+    }
+
+    auto a = g2::fromCompressedBytesBE(std::span<const uint8_t, 96>{buf.begin(),96});
+    if(a)
+    {
+        throw invalid_argument("g2, compressedBE: serialization not catching invalid input");
     }
 }
 
