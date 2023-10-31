@@ -478,6 +478,7 @@ void TestG1SerializationGarbage() {
             throw invalid_argument("g1, jacobianLE: serialization not catching invalid input");
         }
     }
+       
     for (int i = 0 ; i < 4; ++i ) {
         auto a = g1::fromAffineBytesBE(std::span<const uint8_t, 96>{buf.begin(),96}, i < 2, i%2);
         if(a)
@@ -489,12 +490,6 @@ void TestG1SerializationGarbage() {
         {
             throw invalid_argument("g1, affineLE: serialization not catching invalid input");
         }
-    }
-
-    auto a = g1::fromCompressedBytesBE(std::span<const uint8_t, 48>{buf.begin(),48});
-    if(a)
-    {
-        throw invalid_argument("g1, compressedBE: serialization not catching invalid input");
     }
 }
 
@@ -871,12 +866,6 @@ void TestG2SerializationGarbage() {
         {
             throw invalid_argument("g2, affineLE: serialization not catching invalid input");
         }
-    }
-
-    auto a = g2::fromCompressedBytesBE(std::span<const uint8_t, 96>{buf.begin(),96});
-    if(a)
-    {
-        throw invalid_argument("g2, compressedBE: serialization not catching invalid input");
     }
 }
 
@@ -1908,6 +1897,7 @@ int main()
     TestFieldElementByteInputs();
 
     TestG1Serialization();
+    TestG1SerializationGarbage();
     TestG1IsOnCurve();
     TestG1AdditiveProperties();
     TestG1MultiplicativePropertiesExpected();
@@ -1917,6 +1907,7 @@ int main()
     TestG1MapToCurve();
 
     TestG2Serialization();
+    TestG2SerializationGarbage();
     TestG2IsOnCurve();
     TestG2AdditiveProperties();
     TestG2MultiplicativeProperties();

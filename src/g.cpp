@@ -68,6 +68,7 @@ optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool 
 {
     optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), check, raw);
     optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), check, raw);
+    if(!x.has_value() || !y.has_value()) return {};
     // check if given input points to infinity
     if(x.value().isZero() && y.value().isZero())
     {
