@@ -118,6 +118,28 @@ void benchG1Mul() {
     endStopwatch(testName, start, numIters);
 }
 
+void benchG1MultiExp() {
+    string testName = "G2 MultiExp";
+    const int numIters = 10000;
+    g1 p = random_g1();
+    vector<g1> bases = {p,p,p,p,p,p,p,p};
+    vector<array<uint64_t, 4>> scalars = {
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff}
+    };
+    auto start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        g1::multiExp(bases, scalars);
+    }
+    endStopwatch(testName, start, numIters);
+}
+
 void benchG2Add() {
     string testName = "G2 Addition";
     const int numIters = 1000000;
@@ -145,6 +167,28 @@ void benchG2Mul() {
     endStopwatch(testName, start, numIters);
 }
 
+void benchG2MultiExp() {
+    string testName = "G2 MultiExp";
+    const int numIters = 10000;
+    g2 p = random_g2();
+    vector<g2> bases = {p,p,p,p,p,p,p,p};
+    vector<array<uint64_t, 4>> scalars = {
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff}
+    };
+    auto start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        g2::multiExp(bases, scalars);
+    }
+    endStopwatch(testName, start, numIters);
+}
+
 void benchPairing() {
     string testName = "Pairing";
     const int numIters = 10000;
@@ -165,7 +209,9 @@ int main(int argc, char* argv[])
 {
     benchG1Add();
     benchG1Mul();
+    benchG1MultiExp();
     benchG2Add();
     benchG2Mul();
+    benchG2MultiExp();
     benchPairing();
 }
