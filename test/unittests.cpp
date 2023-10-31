@@ -214,17 +214,17 @@ void TestFieldElementArithmeticCornerCases() {
     };
 
     const char* testVectorExpectedSquare[] = {
-        "19adf63210c8e7b878a258c2f7031601413d6f0c9a02fab49db5bbff9268f1a76fe6e68be46104ec7ccb1f341c2d6ca3",
+        "NA",
         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
-        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "NA",
         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     };
 
     const char* testVectorExpectedAdd[] = {
-        "11ebab9dbb81e28c6cf28d7901622c038b256521ed1f9bcb57605e0db0ddbb51b93c0018d6c40005321300000006554d",
+        "NA",
         "1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaa9",
-        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "NA",
         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     };
@@ -232,6 +232,14 @@ void TestFieldElementArithmeticCornerCases() {
     auto testSqureMul = [](const char* in, const char* expectedSquare, const char* expectedAdd) {
         // Input should be convert to Montgomery form, so "raw" = false
         auto input = fp::fromBytesBE(hexToBytes<48>(in), false, false);
+
+        if (0 == strcmp("NA", expectedSquare)) {
+            if (input) {
+                throw invalid_argument("input should be invalid but not");
+            }
+            return;
+        }
+        
         // Expected result will be compared against numbers converted back from Montgomery form, so "raw" = true
         auto fpExpectedSquare = fp::fromBytesBE(hexToBytes<48>(expectedSquare), false, true);
         auto fpExpectedAdd = fp::fromBytesBE(hexToBytes<48>(expectedAdd), false, true);

@@ -19,16 +19,18 @@ fp::fp(const fp& e) : d{e.d[0], e.d[1], e.d[2], e.d[3], e.d[4], e.d[5]}
 
 optional<fp> fp::fromBytesBE(const span<const uint8_t, 48> in, const bool check, const bool raw)
 {
+    // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesBE<6>(in));
-    if(check && !e.isValid()) return {};
+    if(!e.isValid()) return {};
     if(raw) return e;
     else    return e.toMont();
 }
 
 optional<fp> fp::fromBytesLE(const span<const uint8_t, 48> in, const bool check, const bool raw)
 {
+    // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesLE<6>(in));
-    if(check && !e.isValid()) return {};
+    if(!e.isValid()) return {};
     if(raw) return e;
     else    return e.toMont();
 }
