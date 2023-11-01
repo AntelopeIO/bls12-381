@@ -82,13 +82,13 @@ fp12 random_fe12()
 g1 random_g1()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g1::one().mulScalar(k);
+    return g1::one().scale(k);
 }
 
 g2 random_g2()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g2::one().mulScalar(k);
+    return g2::one().scale(k);
 }
 
 void benchG1Add() {
@@ -113,13 +113,13 @@ void benchG1Mul() {
     auto start = startStopwatch();
 
     for (int i = 0; i < numIters; i++) {
-        p.mulScalar(s);
+        p.scale(s);
     }
     endStopwatch(testName, start, numIters);
 }
 
-void benchG1MultiExp() {
-    string testName = "G2 MultiExp";
+void benchG1WeightedSum() {
+    string testName = "G2 WeightedSum";
     const int numIters = 10000;
     g1 p = random_g1();
     vector<g1> bases = {p,p,p,p,p,p,p,p};
@@ -135,7 +135,7 @@ void benchG1MultiExp() {
     };
     auto start = startStopwatch();
     for (int i = 0; i < numIters; i++) {
-        g1::multiExp(bases, scalars);
+        g1::weightedSum(bases, scalars);
     }
     endStopwatch(testName, start, numIters);
 }
@@ -162,13 +162,13 @@ void benchG2Mul() {
     auto start = startStopwatch();
 
     for (int i = 0; i < numIters; i++) {
-        p.mulScalar(s);
+        p.scale(s);
     }
     endStopwatch(testName, start, numIters);
 }
 
-void benchG2MultiExp() {
-    string testName = "G2 MultiExp";
+void benchG2WeightedSum() {
+    string testName = "G2 WeightedSum";
     const int numIters = 10000;
     g2 p = random_g2();
     vector<g2> bases = {p,p,p,p,p,p,p,p};
@@ -184,7 +184,7 @@ void benchG2MultiExp() {
     };
     auto start = startStopwatch();
     for (int i = 0; i < numIters; i++) {
-        g2::multiExp(bases, scalars);
+        g2::weightedSum(bases, scalars);
     }
     endStopwatch(testName, start, numIters);
 }
@@ -209,9 +209,9 @@ int main(int argc, char* argv[])
 {
     benchG1Add();
     benchG1Mul();
-    benchG1MultiExp();
+    benchG1WeightedSum();
     benchG2Add();
     benchG2Mul();
-    benchG2MultiExp();
+    benchG2WeightedSum();
     benchPairing();
 }

@@ -66,13 +66,13 @@ fp12 random_fe12()
 g1 random_g1()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g1::one().mulScalar(k);
+    return g1::one().scale(k);
 }
 
 g2 random_g2()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g2::one().mulScalar(k);
+    return g2::one().scale(k);
 }
 
 void TestScalar()
@@ -619,34 +619,34 @@ void TestG1MultiplicativePropertiesExpected()
         array<uint64_t, 4> s2 = tv[i].s2;
         array<uint64_t, 10> s3;
         array<uint64_t, 4> sone = {1, 0, 0, 0};
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == 0");
         }
-        t0 = a.mulScalar(sone);
+        t0 = a.scale(sone);
         if(!t0.equal(a))
         {
             throw invalid_argument(" a ^ 1 == a");
         }
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == a");
         }
-        t0 = a.mulScalar(s1);
-        t0 = t0.mulScalar(s2);
+        t0 = a.scale(s1);
+        t0 = t0.scale(s2);
         s3 = scalar::mul<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument("G1: (a ^ s1) ^ s2 == a ^ (s1 * s2)");
         }
-        t0 = a.mulScalar(s1);
-        t1 = a.mulScalar(s2);
+        t0 = a.scale(s1);
+        t1 = a.scale(s2);
         t0 = t0.add(t1);
         s3 = scalar::add<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument(" (a ^ s1) + (a ^ s2) == a ^ (s1 + s2)");
@@ -665,34 +665,34 @@ void TestG1MultiplicativeProperties()
         array<uint64_t, 4> s2 = random_scalar(); 
         array<uint64_t, 10> s3;
         array<uint64_t, 4> sone = {1, 0, 0, 0};
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == 0");
         }
-        t0 = a.mulScalar(sone);
+        t0 = a.scale(sone);
         if(!t0.equal(a))
         {
             throw invalid_argument(" a ^ 1 == a");
         }
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == a");
         }
-        t0 = a.mulScalar(s1);
-        t0 = t0.mulScalar(s2);
+        t0 = a.scale(s1);
+        t0 = t0.scale(s2);
         s3 = scalar::mul<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument("G1: (a ^ s1) ^ s2 == a ^ (s1 * s2)");
         }
-        t0 = a.mulScalar(s1);
-        t1 = a.mulScalar(s2);
+        t0 = a.scale(s1);
+        t1 = a.scale(s2);
         t0 = t0.add(t1);
         s3 = scalar::add<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument(" (a ^ s1) + (a ^ s2) == a ^ (s1 + s2)");
@@ -700,7 +700,7 @@ void TestG1MultiplicativeProperties()
     }
 }
 
-void TestG1MultiExpExpected()
+void TestG1WeightedSumExpected()
 {
     g1 one = g1::one();
     vector<array<uint64_t, 4>> scalars = {
@@ -709,15 +709,15 @@ void TestG1MultiExpExpected()
     };
     vector<g1> bases = {one, one};
     g1 expected, result;
-    expected = one.mulScalar<1>({5});
-    result = g1::multiExp(bases, scalars).value();
+    expected = one.scale<1>({5});
+    result = g1::weightedSum(bases, scalars).value();
     if(!expected.equal(result))
     {
-        throw invalid_argument("TestG1MultiExpExpected: bad multi-exponentiation");
+        throw invalid_argument("TestG1WeightedSumExpected: bad multi-exponentiation");
     }
 }
 
-void TestG1MultiExpBatch()
+void TestG1WeightedSumBatch()
 {
     g1 one = g1::one();
     int64_t n = 1000;
@@ -729,16 +729,16 @@ void TestG1MultiExpBatch()
     {
         scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
         bases.push_back(g1::zero());
-        bases[i] = one.mulScalar(scalars[0]);
+        bases[i] = one.scale(scalars[0]);
     }
     // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
     g1 expected, tmp;
     for(int64_t i = 0; i < n; i++)
     {
-        tmp = bases[i].mulScalar(scalars[i]);
+        tmp = bases[i].scale(scalars[i]);
         expected = expected.add(tmp);
     }
-    g1 result = g1::multiExp(bases, scalars).value();
+    g1 result = g1::weightedSum(bases, scalars).value();
     if(!expected.equal(result))
     {
         throw invalid_argument("bad multi-exponentiation");
@@ -978,34 +978,34 @@ void TestG2MultiplicativeProperties()
         array<uint64_t, 4> s2 = random_scalar(); 
         array<uint64_t, 10> s3;
         array<uint64_t, 4> sone = {1, 0, 0, 0};
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == 0");
         }
-        t0 = a.mulScalar(sone);
+        t0 = a.scale(sone);
         if(!t0.equal(a))
         {
             throw invalid_argument(" a ^ 1 == a");
         }
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == a");
         }
-        t0 = a.mulScalar(s1);
-        t0 = t0.mulScalar(s2);
+        t0 = a.scale(s1);
+        t0 = t0.scale(s2);
         s3 = scalar::mul<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument("G2: (a ^ s1) ^ s2 == a ^ (s1 * s2)");
         }
-        t0 = a.mulScalar(s1);
-        t1 = a.mulScalar(s2);
+        t0 = a.scale(s1);
+        t1 = a.scale(s2);
         t0 = t0.add(t1);
         s3 = scalar::add<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument(" (a ^ s1) + (a ^ s2) == a ^ (s1 + s2)");
@@ -1013,7 +1013,7 @@ void TestG2MultiplicativeProperties()
     }
 }
 
-void TestG2MultiExpExpected()
+void TestG2WeightedSumExpected()
 {
     g2 one = g2::one();
     vector<array<uint64_t, 4>> scalars = {
@@ -1022,15 +1022,15 @@ void TestG2MultiExpExpected()
     };
     vector<g2> bases = {one, one};
     g2 expected, result;
-    expected = one.mulScalar<1>({5});
-    result = g2::multiExp(bases, scalars).value();
+    expected = one.scale<1>({5});
+    result = g2::weightedSum(bases, scalars).value();
     if(!expected.equal(result))
     {
         throw invalid_argument("bad multi-exponentiation");
     }
 }
 
-void TestG2MultiExpBatch()
+void TestG2WeightedSumBatch()
 {
     g2 one = g2::one();
     int64_t n = 1000;
@@ -1042,16 +1042,16 @@ void TestG2MultiExpBatch()
     {
         scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
         bases.push_back(g2::zero());
-        bases[i] = one.mulScalar(scalars[0]);
+        bases[i] = one.scale(scalars[0]);
     }
     // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
     g2 expected, tmp;
     for(int64_t i = 0; i < n; i++)
     {
-        tmp = bases[i].mulScalar(scalars[i]);
+        tmp = bases[i].scale(scalars[i]);
         expected = expected.add(tmp);
     }
-    g2 result = g2::multiExp(bases, scalars).value();
+    g2 result = g2::weightedSum(bases, scalars).value();
     if(!expected.equal(result))
     {
         throw invalid_argument("bad multi-exponentiation");
@@ -1224,8 +1224,8 @@ void TestPairingBilinearity()
         vector<tuple<g1, g2>> v;
         pairing::add_pair(v, G1, G2);
         fp12 e0 = pairing::calculate(v);
-        g1 P1 = G1.mulScalar(a);
-        g2 P2 = G2.mulScalar(b);
+        g1 P1 = G1.scale(a);
+        g2 P2 = G2.scale(b);
         v = {};
         pairing::add_pair(v, P1, P2);
         fp12 e1 = pairing::calculate(v);
@@ -1246,13 +1246,13 @@ void TestPairingBilinearity()
         // LHS
         g1 G1 = g1::one();
         g2 G2 = g2::one();
-        G1 = G1.mulScalar(c);
+        G1 = G1.scale(c);
         pairing::add_pair(v, G1, G2);
         // RHS
         g1 P1 = g1::one();
         g2 P2 = g2::one();
-        P1 = P1.mulScalar(a);
-        P2 = P2.mulScalar(b);
+        P1 = P1.scale(a);
+        P2 = P2.scale(b);
         P1 = P1.neg();
         pairing::add_pair(v, P1, P2);
         // should be one
@@ -1272,13 +1272,13 @@ void TestPairingBilinearity()
         // LHS
         g1 G1 = g1::one();
         g2 G2 = g2::one();
-        G2 = G2.mulScalar(c);
+        G2 = G2.scale(c);
         pairing::add_pair(v, G1, G2);
         // RHS
         g1 H1 = g1::one();
         g2 H2 = g2::one();
-        H1 = H1.mulScalar(a);
-        H2 = H2.mulScalar(b);
+        H1 = H1.scale(a);
+        H2 = H2.scale(b);
         H1 = H1.neg();
         pairing::add_pair(v, H1, H2);
         // should be one
@@ -1304,8 +1304,8 @@ void TestPairingMulti()
         array<uint64_t, 4> a2 = random_scalar();
         g1 P1 = g1::one();
         g2 P2 = g2::one();
-        P1 = P1.mulScalar(a1);
-        P2 = P2.mulScalar(a2);
+        P1 = P1.scale(a1);
+        P2 = P2.scale(a2);
         pairing::add_pair(v, P1, P2);
         // accumulate targetExp
         // t += (ai1 * ai2)
@@ -1316,7 +1316,7 @@ void TestPairingMulti()
     // e(t * G1, G2)
     g1 T1 = g1::one();
     g2 T2 = g2::one();
-    T1 = T1.mulScalar(targetExp);
+    T1 = T1.scale(targetExp);
     T1 = T1.neg();
     pairing::add_pair(v, T1, T2);
     if(!pairing::calculate(v).isOne())
@@ -1902,8 +1902,8 @@ int main()
     TestG1AdditiveProperties();
     TestG1MultiplicativePropertiesExpected();
     TestG1MultiplicativeProperties();
-    TestG1MultiExpExpected();
-    TestG1MultiExpBatch();
+    TestG1WeightedSumExpected();
+    TestG1WeightedSumBatch();
     TestG1MapToCurve();
 
     TestG2Serialization();
@@ -1911,8 +1911,8 @@ int main()
     TestG2IsOnCurve();
     TestG2AdditiveProperties();
     TestG2MultiplicativeProperties();
-    TestG2MultiExpExpected();
-    TestG2MultiExpBatch();
+    TestG2WeightedSumExpected();
+    TestG2WeightedSumBatch();
     TestG2MapToCurve();
 
     TestPairingExpected();

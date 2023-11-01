@@ -327,7 +327,7 @@ fp12 fp12::cyclotomicExp(const std::array<uint64_t, N>& s) const
 }
 
 template<size_t N>
-g1 g1::mulScalar(const std::array<uint64_t, N>& s) const
+g1 g1::scale(const std::array<uint64_t, N>& s) const
 {
     g1 q = g1({fp::zero(), fp::zero(), fp::zero()});
     g1 n = *this;
@@ -344,7 +344,7 @@ g1 g1::mulScalar(const std::array<uint64_t, N>& s) const
 }
 
 template<size_t N>
-g2 g2::mulScalar(const std::array<uint64_t, N>& s) const
+g2 g2::scale(const std::array<uint64_t, N>& s) const
 {
     g2 q = g2({fp2::zero(), fp2::zero(), fp2::zero()});
     g2 n = *this;

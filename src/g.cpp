@@ -272,7 +272,7 @@ bool g1::inCorrectSubgroup() const
     t1 = t1.dbl();
     t1 = t1.sub(*this);
     t1 = t1.sub(t0);
-    t1 = t1.mulScalar<2>({0x0000000055555555, 0x396c8c005555e156});
+    t1 = t1.scale<2>({0x0000000055555555, 0x396c8c005555e156});
     t1 = t1.sub(t0);
     return t1.isZero();
 }
@@ -423,7 +423,7 @@ g1 g1::sub(const g1& e) const
 
 g1 g1::clearCofactor() const
 {
-    return this->mulScalar(cofactorEFF);
+    return this->scale(cofactorEFF);
 }
 
 g1 g1::glvEndomorphism() const
@@ -437,10 +437,10 @@ g1 g1::glvEndomorphism() const
     return t;
 }
 
-// MultiExp calculates multi exponentiation. Given pairs of G1 point and scalar values
+// WeightedSum calculates multi exponentiation. Given pairs of G1 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise NONE is returned.
-optional<g1> g1::multiExp(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
+optional<g1> g1::weightedSum(const vector<g1>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
 {
     if(points.size() != scalars.size())
     {
@@ -957,7 +957,7 @@ bool g2::inCorrectSubgroup() const
     t0 = t0.psi();
     t1 = t0.neg();                  // - ψ^2(P)
     t0 = t0.psi();                  // ψ^3(P)
-    t0 = t0.mulScalar(cofactorEFF); // - x ψ^3(P)
+    t0 = t0.scale(cofactorEFF); // - x ψ^3(P)
     t0 = t0.neg();
 
     t0 = t0.add(t1);
@@ -1125,11 +1125,11 @@ g2 g2::clearCofactor() const
 {
     g2 t0, t1, t2, t3;
     // Compute t0 = xP
-    t0 = mulScalar(cofactorEFF);
+    t0 = scale(cofactorEFF);
     // cofactorEFF has the MSB set, so relic has the sign bit set and negates the y coordinate
     t0 = t0.neg();
     // Compute t1 = [x^2]P
-    t1 = t0.mulScalar(cofactorEFF);
+    t1 = t0.scale(cofactorEFF);
     // cofactorEFF has the MSB set, so relic has the sign bit set and negates the y coordinate
     t1 = t1.neg();
 
@@ -1169,10 +1169,10 @@ g2 g2::frobeniusMap(int64_t power) const
     return r;
 }
 
-// MultiExp calculates multi exponentiation. Given pairs of G2 point and scalar values
+// WeightedSum calculates multi exponentiation. Given pairs of G2 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise NONE is returned.
-optional<g2> g2::multiExp(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
+optional<g2> g2::weightedSum(const vector<g2>& points, const vector<array<uint64_t, 4>>& scalars, std::function<void()> yield)
 {
     if(points.size() != scalars.size())
     {
