@@ -21,7 +21,7 @@ optional<fp> fp::fromBytesBE(const span<const uint8_t, 48> in, const bool check,
 {
     // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesBE<6>(in));
-    if(!e.isValid()) return {};
+    if(check && !e.isValid()) return {};
     if(raw) return e;
     else    return e.toMont();
 }
@@ -30,7 +30,7 @@ optional<fp> fp::fromBytesLE(const span<const uint8_t, 48> in, const bool check,
 {
     // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesLE<6>(in));
-    if(!e.isValid()) return {};
+    if(check && !e.isValid()) return {};
     if(raw) return e;
     else    return e.toMont();
 }

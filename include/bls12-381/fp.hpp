@@ -20,8 +20,8 @@ public:
     fp();
     fp(const std::array<uint64_t, 6>& d);
     fp(const fp& e);
-    static std::optional<fp> fromBytesBE(const std::span<const uint8_t, 48> in, const bool check = false, const bool raw = false);
-    static std::optional<fp> fromBytesLE(const std::span<const uint8_t, 48> in, const bool check = false, const bool raw = false);
+    static std::optional<fp> fromBytesBE(const std::span<const uint8_t, 48> in, const bool check = true, const bool raw = false);
+    static std::optional<fp> fromBytesLE(const std::span<const uint8_t, 48> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 48> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 48> out, const bool raw = false) const;
     std::array<uint8_t, 48> toBytesBE(const bool raw = false) const;
@@ -73,8 +73,8 @@ public:
     fp2();
     fp2(const std::array<fp, 2>& e2);
     fp2(const fp2& e);
-    static std::optional<fp2> fromBytesBE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
-    static std::optional<fp2> fromBytesLE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
+    static std::optional<fp2> fromBytesBE(const std::span<const uint8_t, 96> in, const bool check = true, const bool raw = false);
+    static std::optional<fp2> fromBytesLE(const std::span<const uint8_t, 96> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 96> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 96> out, const bool raw = false) const;
     std::array<uint8_t, 96> toBytesBE(const bool raw = false) const;
@@ -129,8 +129,8 @@ public:
     fp6();
     fp6(const std::array<fp2, 3>& e3);
     fp6(const fp6& e);
-    static std::optional<fp6> fromBytesBE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
-    static std::optional<fp6> fromBytesLE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
+    static std::optional<fp6> fromBytesBE(const std::span<const uint8_t, 288> in, const bool check = true, const bool raw = false);
+    static std::optional<fp6> fromBytesLE(const std::span<const uint8_t, 288> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 288> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 288> out, const bool raw = false) const;
     std::array<uint8_t, 288> toBytesBE(const bool raw = false) const;
@@ -176,8 +176,8 @@ public:
     fp12();
     fp12(const std::array<fp6, 2>& e2);
     fp12(const fp12& e);
-    static std::optional<fp12> fromBytesBE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
-    static std::optional<fp12> fromBytesLE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
+    static std::optional<fp12> fromBytesBE(const std::span<const uint8_t, 576> in, const bool check = true, const bool raw = false);
+    static std::optional<fp12> fromBytesLE(const std::span<const uint8_t, 576> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 576> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 576> out, const bool raw = false) const;
     std::array<uint8_t, 576> toBytesBE(const bool raw = false) const;

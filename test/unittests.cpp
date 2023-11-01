@@ -231,7 +231,7 @@ void TestFieldElementArithmeticCornerCases() {
 
     auto testSqureMul = [](const char* in, const char* expectedSquare, const char* expectedAdd) {
         // Input should be convert to Montgomery form, so "raw" = false
-        auto input = fp::fromBytesBE(hexToBytes<48>(in), false, false);
+        auto input = fp::fromBytesBE(hexToBytes<48>(in), true, false);
 
         if (0 == strcmp("NA", expectedSquare)) {
             if (input) {
