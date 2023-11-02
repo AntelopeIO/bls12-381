@@ -25,7 +25,7 @@ public:
     fp z;
 
     g1();
-    g1(const std::array<fp, 3>& e3);
+    explicit g1(const std::array<fp, 3>& e3);
     g1(const g1& e);
     static std::optional<g1> fromJacobianBytesBE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
     static std::optional<g1> fromJacobianBytesLE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
@@ -78,7 +78,7 @@ public:
     fp2 z;
 
     g2();
-    g2(const std::array<fp2, 3>& e3);
+    explicit g2(const std::array<fp2, 3>& e3);
     g2(const g2& e);
     static std::optional<g2> fromJacobianBytesBE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
     static std::optional<g2> fromJacobianBytesLE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
