@@ -52,8 +52,8 @@ public:
     g1 affine() const;
     g1 add(const g1& e) const;
     g1 dbl() const;
-    g1 neg() const;
-    g1 sub(const g1& e) const;
+    g1 negate() const;
+    g1 subtract(const g1& e) const;
     template<size_t N> g1 scale(const std::array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
     g1 glvEndomorphism() const;
@@ -105,8 +105,8 @@ public:
     g2 affine() const;
     g2 add(const g2& e) const;
     g2 dbl() const;
-    g2 neg() const;
-    g2 sub(const g2& e) const;
+    g2 negate() const;
+    g2 subtract(const g2& e) const;
     g2 psi() const;
     template<size_t N> g2 scale(const std::array<uint64_t, N>& s) const;
     g2 clearCofactor() const;

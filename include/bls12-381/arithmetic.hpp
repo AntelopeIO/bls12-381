@@ -18,18 +18,18 @@ void _laddAssign(fp* x, const fp* y);
 void _double(fp* z, const fp* x);
 void _doubleAssign(fp* z);
 void _ldouble(fp* z, const fp* x);
-void _sub(fp* z, const fp* x, const fp* y);
-void _subAssign(fp* z, const fp* x);
-void _lsubAssign(fp* z, const fp* x);
-void _neg(fp* z, const fp* x);
+void _subtract(fp* z, const fp* x, const fp* y);
+void _subtractAssign(fp* z, const fp* x);
+void _lsubtractAssign(fp* z, const fp* x);
+void _negate(fp* z, const fp* x);
 void _square(fp* z, const fp* x);
 
 #if defined(__x86_64__) && defined(__ELF__)
-extern void _mul(fp*, const fp*, const fp*);
+extern void _multiply(fp*, const fp*, const fp*);
 #elif defined(__x86_64__)
 extern void (*_mul)(fp*, const fp*, const fp*);
 #else
-void _mul(fp*, const fp*, const fp*);
+void _multiply(fp*, const fp*, const fp*);
 #endif
 
 // Add64 returns the sum with carry of x, y and carry: sum = x + y + carry.

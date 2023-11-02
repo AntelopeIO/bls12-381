@@ -124,7 +124,7 @@ std::array<uint64_t, NC> add(const std::array<uint64_t, NA>& a, const std::array
 
 // multiplies two std::arrays: calculates c = a * b
 template<size_t NC, size_t NA, size_t NB>
-std::array<uint64_t, NC> mul(const std::array<uint64_t, NA>& a, const std::array<uint64_t, NB>& b)
+std::array<uint64_t, NC> multiply(const std::array<uint64_t, NA>& a, const std::array<uint64_t, NB>& b)
 {
     std::array<uint64_t, NC> c;
     memset(c.data(), 0, NC * sizeof(uint64_t));
@@ -254,10 +254,10 @@ fp fp::exp(const std::array<uint64_t, N>& s) const
     uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
-        _mul(&z, &z, &z);
+        _multiply(&z, &z, &z);
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            _mul(&z, &z, this);
+            _multiply(&z, &z, this);
         }
     }
     return z;
@@ -273,7 +273,7 @@ fp2 fp2::exp(const std::array<uint64_t, N>& s) const
         z = z.square();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z = z.multiply(*this);
         }
     }
     return z;
@@ -289,7 +289,7 @@ fp6 fp6::exp(const std::array<uint64_t, N>& s) const
         z = z.square();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z = z.multiply(*this);
         }
     }
     return z;
@@ -304,7 +304,7 @@ template<size_t N> fp12 fp12::exp(const std::array<uint64_t, N>& s) const
         z = z.square();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z = z.multiply(*this);
         }
     }
     return z;
@@ -320,7 +320,7 @@ fp12 fp12::cyclotomicExp(const std::array<uint64_t, N>& s) const
         z = z.cyclotomicSquare();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z = z.multiply(*this);
         }
     }
     return z;

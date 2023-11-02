@@ -111,7 +111,7 @@ optional<g1> g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
     //  =>  y   = +/- sqrt(x^3 + B)
     fp b = fp::B;
     _square(&p.y, &p.x);        // y = x^2
-    _mul(&p.y, &p.y, &p.x);     // y = x^2 * x = x^3
+    _multiply(&p.y, &p.y, &p.x);     // y = x^2 * x = x^3
     _add(&p.y, &p.y, &b);       // y = x^3 + B
     if(!p.y.sqrt(p.y))
     {
@@ -119,7 +119,7 @@ optional<g1> g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
     }
     if(p.y.isLexicographicallyLargest() ^ ysign)
     {
-        _neg(&p.y, &p.y);
+        _negate(&p.y, &p.y);
     }
     p.z = fp::one();
     return p;
@@ -252,12 +252,12 @@ bool g1::equal(const g1& e) const
     fp t[4];
     _square(&t[0], &z);
     _square(&t[1], &b.z);
-    _mul(&t[2], &t[0], &b.x);
-    _mul(&t[3], &t[1], &x);
-    _mul(&t[0], &t[0], &z);
-    _mul(&t[1], &t[1], &b.z);
-    _mul(&t[1], &t[1], &y);
-    _mul(&t[0], &t[0], &b.y);
+    _multiply(&t[2], &t[0], &b.x);
+    _multiply(&t[3], &t[1], &x);
+    _multiply(&t[0], &t[0], &z);
+    _multiply(&t[1], &t[1], &b.z);
+    _multiply(&t[1], &t[1], &y);
+    _multiply(&t[0], &t[0], &b.y);
     return t[0].equal(t[1]) && t[2].equal(t[3]);
 }
 
@@ -270,10 +270,10 @@ bool g1::inCorrectSubgroup() const
     g1 t1 = t0;
     t0 = t0.glvEndomorphism();
     t1 = t1.dbl();
-    t1 = t1.sub(*this);
-    t1 = t1.sub(t0);
+    t1 = t1.subtract(*this);
+    t1 = t1.subtract(t0);
     t1 = t1.scale<2>({0x0000000055555555, 0x396c8c005555e156});
-    t1 = t1.sub(t0);
+    t1 = t1.subtract(t0);
     return t1.isZero();
 }
 
@@ -286,11 +286,11 @@ bool g1::isOnCurve() const
     fp t[4], _b = fp::B;
     _square(&t[0], &y);
     _square(&t[1], &x);
-    _mul(&t[1], &t[1], &x);
+    _multiply(&t[1], &t[1], &x);
     _square(&t[2], &z);
     _square(&t[3], &t[2]);
-    _mul(&t[2], &t[2], &t[3]);
-    _mul(&t[2], &_b, &t[2]);
+    _multiply(&t[2], &t[2], &t[3]);
+    _multiply(&t[2], &_b, &t[2]);
     _add(&t[1], &t[1], &t[2]);
     return t[0].equal(t[1]);
 }
@@ -310,9 +310,9 @@ g1 g1::affine() const
     fp t[2];
     t[0] = r.z.inverse();
     _square(&t[1], &t[0]);
-    _mul(&r.x, &r.x, &t[1]);
-    _mul(&t[0], &t[0], &t[1]);
-    _mul(&r.y, &r.y, &t[0]);
+    _multiply(&r.x, &r.x, &t[1]);
+    _multiply(&t[0], &t[0], &t[1]);
+    _multiply(&r.y, &r.y, &t[0]);
     r.z = fp::one();
     return r;
 }
@@ -330,13 +330,13 @@ g1 g1::add(const g1& e) const
     }
     fp t[9];
     _square(&t[7], &z);
-    _mul(&t[1], &e.x, &t[7]);
-    _mul(&t[2], &z, &t[7]);
-    _mul(&t[0], &e.y, &t[2]);
+    _multiply(&t[1], &e.x, &t[7]);
+    _multiply(&t[2], &z, &t[7]);
+    _multiply(&t[0], &e.y, &t[2]);
     _square(&t[8], &e.z);
-    _mul(&t[3], &x, &t[8]);
-    _mul(&t[4], &e.z, &t[8]);
-    _mul(&t[2], &y, &t[4]);
+    _multiply(&t[3], &x, &t[8]);
+    _multiply(&t[4], &e.z, &t[8]);
+    _multiply(&t[2], &y, &t[4]);
     if(t[1].equal(t[3]))
     {
         if(t[0].equal(t[2]))
@@ -346,27 +346,27 @@ g1 g1::add(const g1& e) const
         return zero();
     }
     g1 r;
-    _sub(&t[1], &t[1], &t[3]);
+    _subtract(&t[1], &t[1], &t[3]);
     _double(&t[4], &t[1]);
     _square(&t[4], &t[4]);
-    _mul(&t[5], &t[1], &t[4]);
-    _sub(&t[0], &t[0], &t[2]);
+    _multiply(&t[5], &t[1], &t[4]);
+    _subtract(&t[0], &t[0], &t[2]);
     _double(&t[0], &t[0]);
     _square(&t[6], &t[0]);
-    _sub(&t[6], &t[6], &t[5]);
-    _mul(&t[3], &t[3], &t[4]);
+    _subtract(&t[6], &t[6], &t[5]);
+    _multiply(&t[3], &t[3], &t[4]);
     _double(&t[4], &t[3]);
-    _sub(&r.x, &t[6], &t[4]);
-    _sub(&t[4], &t[3], &r.x);
-    _mul(&t[6], &t[2], &t[5]);
+    _subtract(&r.x, &t[6], &t[4]);
+    _subtract(&t[4], &t[3], &r.x);
+    _multiply(&t[6], &t[2], &t[5]);
     _double(&t[6], &t[6]);
-    _mul(&t[0], &t[0], &t[4]);
-    _sub(&r.y, &t[0], &t[6]);
+    _multiply(&t[0], &t[0], &t[4]);
+    _subtract(&r.y, &t[0], &t[6]);
     _add(&t[0], &z, &e.z);
     _square(&t[0], &t[0]);
-    _sub(&t[0], &t[0], &t[7]);
-    _sub(&t[0], &t[0], &t[8]);
-    _mul(&r.z, &t[0], &t[1]);
+    _subtract(&t[0], &t[0], &t[7]);
+    _subtract(&t[0], &t[0], &t[8]);
+    _multiply(&r.z, &t[0], &t[1]);
     return r;
 }
 
@@ -384,39 +384,39 @@ g1 g1::dbl() const
     _square(&t[2], &t[1]);
     _add(&t[1], &x, &t[1]);
     _square(&t[1], &t[1]);
-    _sub(&t[1], &t[1], &t[0]);
-    _sub(&t[1], &t[1], &t[2]);
+    _subtract(&t[1], &t[1], &t[0]);
+    _subtract(&t[1], &t[1], &t[2]);
     _double(&t[1], &t[1]);
     _double(&t[3], &t[0]);
     _add(&t[0], &t[3], &t[0]);
     _square(&t[4], &t[0]);
     _double(&t[3], &t[1]);
-    _sub(&r.x, &t[4], &t[3]);
-    _sub(&t[1], &t[1], &r.x);
+    _subtract(&r.x, &t[4], &t[3]);
+    _subtract(&t[1], &t[1], &r.x);
     _double(&t[2], &t[2]);
     _double(&t[2], &t[2]);
     _double(&t[2], &t[2]);
-    _mul(&t[0], &t[0], &t[1]);
-    _sub(&t[1], &t[0], &t[2]);
-    _mul(&t[0], &y, &z);
+    _multiply(&t[0], &t[0], &t[1]);
+    _subtract(&t[1], &t[0], &t[2]);
+    _multiply(&t[0], &y, &z);
     r.y = t[1];
     _double(&r.z, &t[0]);
     return r;
 }
 
-g1 g1::neg() const
+g1 g1::negate() const
 {
     g1 r;
     r.x = x;
     r.z = z;
-    _neg(&r.y, &y);
+    _negate(&r.y, &y);
     return r;
 }
 
-g1 g1::sub(const g1& e) const
+g1 g1::subtract(const g1& e) const
 {
     g1 c, d;
-    d = e.neg();
+    d = e.negate();
     c = this->add(d);
     return c;
 }
@@ -530,7 +530,7 @@ tuple<fp, fp> g1::swuMapG1(const fp& e)
     };
     fp tv[4];
     _square(&tv[0], &e);
-    _mul(&tv[0], &tv[0], &params.z);
+    _multiply(&tv[0], &tv[0], &params.z);
     _square(&tv[1], &tv[0]);
     fp x1;
     _add(&x1, &tv[0], &tv[1]);
@@ -542,17 +542,17 @@ tuple<fp, fp> g1::swuMapG1(const fp& e)
     {
         x1 = params.zInv;
     }
-    _mul(&x1, &x1, &params.minusBOverA);
+    _multiply(&x1, &x1, &params.minusBOverA);
     fp gx1;
     _square(&gx1, &x1);
     _add(&gx1, &gx1, &params.a);
-    _mul(&gx1, &gx1, &x1);
+    _multiply(&gx1, &gx1, &x1);
     _add(&gx1, &gx1, &params.b);
     fp x2;
-    _mul(&x2, &tv[0], &x1);
-    _mul(&tv[1], &tv[0], &tv[1]);
+    _multiply(&x2, &tv[0], &x1);
+    _multiply(&tv[1], &tv[0], &tv[1]);
     fp gx2;
-    _mul(&gx2, &gx1, &tv[1]);
+    _multiply(&gx2, &gx1, &tv[1]);
     bool e2 = !gx1.isQuadraticNonResidue();
     fp x, y2;
     if(e2)
@@ -569,7 +569,7 @@ tuple<fp, fp> g1::swuMapG1(const fp& e)
     y2.sqrt(y);
     if(y.sign() != e.sign())
     {
-        _neg(&y, &y);
+        _negate(&y, &y);
     }
     return {x, y};
 }
@@ -660,10 +660,10 @@ void g1::isogenyMapG1(fp& x, fp& y)
     yDen = params[3][degree];
     for(int64_t i = degree - 1; i >= 0; i--)
     {
-        _mul(&xNum, &xNum, &x);
-        _mul(&xDen, &xDen, &x);
-        _mul(&yNum, &yNum, &x);
-        _mul(&yDen, &yDen, &x);
+        _multiply(&xNum, &xNum, &x);
+        _multiply(&xDen, &xDen, &x);
+        _multiply(&yNum, &yNum, &x);
+        _multiply(&yDen, &yDen, &x);
         _add(&xNum, &xNum, &params[0][i]);
         _add(&xDen, &xDen, &params[1][i]);
         _add(&yNum, &yNum, &params[2][i]);
@@ -671,9 +671,9 @@ void g1::isogenyMapG1(fp& x, fp& y)
     }
     xDen = xDen.inverse();
     yDen = yDen.inverse();
-    _mul(&xNum, &xNum, &xDen);
-    _mul(&yNum, &yNum, &yDen);
-    _mul(&yNum, &yNum, &y);
+    _multiply(&xNum, &xNum, &xDen);
+    _multiply(&yNum, &yNum, &yDen);
+    _multiply(&yNum, &yNum, &y);
     x = xNum;
     y = yNum;
 }
@@ -797,7 +797,7 @@ optional<g2> g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     //  =>  y   = +/- sqrt(x^3 + B)
     fp2 b = fp2::B;
     p.y = p.x.square();         // y = x^2
-    p.y = p.y.mul(p.x);         // y = x^2 * x = x^3
+    p.y = p.y.multiply(p.x);         // y = x^2 * x = x^3
     p.y = p.y.add(b);           // y = x^3 + B
     if(!p.y.sqrt(p.y))
     {
@@ -805,7 +805,7 @@ optional<g2> g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     }
     if(p.y.isLexicographicallyLargest() ^ ysign)
     {
-        p.y = p.y.neg();
+        p.y = p.y.negate();
     }
     p.z = fp2::one();
     return p;
@@ -938,12 +938,12 @@ bool g2::equal(const g2& e) const
     fp2 t[9];
     t[0] = z.square();
     t[1] = e.z.square();
-    t[2] = t[0].mul(e.x);
-    t[3] = t[1].mul(x);
-    t[0] = t[0].mul(z);
-    t[1] = t[1].mul(e.z);
-    t[1] = t[1].mul(y);
-    t[0] = t[0].mul(e.y);
+    t[2] = t[0].multiply(e.x);
+    t[3] = t[1].multiply(x);
+    t[0] = t[0].multiply(z);
+    t[1] = t[1].multiply(e.z);
+    t[1] = t[1].multiply(y);
+    t[0] = t[0].multiply(e.y);
     return t[0].equal(t[1]) && t[2].equal(t[3]);
 }
 
@@ -955,10 +955,10 @@ bool g2::inCorrectSubgroup() const
     g2 t0, t1;
     t0 = this->psi();
     t0 = t0.psi();
-    t1 = t0.neg();                  // - ψ^2(P)
+    t1 = t0.negate();                  // - ψ^2(P)
     t0 = t0.psi();                  // ψ^3(P)
     t0 = t0.scale(cofactorEFF); // - x ψ^3(P)
-    t0 = t0.neg();
+    t0 = t0.negate();
 
     t0 = t0.add(t1);
     t0 = t0.add(*this);
@@ -975,11 +975,11 @@ bool g2::isOnCurve() const
     fp2 t[9];
     t[0] = y.square();
     t[1] = x.square();
-    t[1] = t[1].mul(x);
+    t[1] = t[1].multiply(x);
     t[2] = z.square();
     t[3] = t[2].square();
-    t[2] = t[2].mul(t[3]);
-    t[2] = fp2::B.mul(t[2]);
+    t[2] = t[2].multiply(t[3]);
+    t[2] = fp2::B.multiply(t[2]);
     t[1] = t[1].add(t[2]);
     return t[0].equal(t[1]);
 }
@@ -999,9 +999,9 @@ g2 g2::affine() const
     fp2 t[9];
     t[0] = r.z.inverse();
     t[1] = t[0].square();
-    r.x = r.x.mul(t[1]);
-    t[0] = t[0].mul(t[1]);
-    r.y = r.y.mul(t[0]);
+    r.x = r.x.multiply(t[1]);
+    t[0] = t[0].multiply(t[1]);
+    r.y = r.y.multiply(t[0]);
     r.z = fp2::one();
     return r;
 }
@@ -1019,13 +1019,13 @@ g2 g2::add(const g2& e) const
     }
     fp2 t[9];
     t[7] = z.square();
-    t[1] = e.x.mul(t[7]);
-    t[2] = z.mul(t[7]);
-    t[0] = e.y.mul(t[2]);
+    t[1] = e.x.multiply(t[7]);
+    t[2] = z.multiply(t[7]);
+    t[0] = e.y.multiply(t[2]);
     t[8] = e.z.square();
-    t[3] = x.mul(t[8]);
-    t[4] = e.z.mul(t[8]);
-    t[2] = y.mul(t[4]);
+    t[3] = x.multiply(t[8]);
+    t[4] = e.z.multiply(t[8]);
+    t[2] = y.multiply(t[4]);
     if(t[1].equal(t[3]))
     {
         if(t[0].equal(t[2]))
@@ -1035,27 +1035,27 @@ g2 g2::add(const g2& e) const
         return zero();
     }
     g2 r;
-    t[1] = t[1].sub(t[3]);
+    t[1] = t[1].subtract(t[3]);
     t[4] = t[1].dbl();
     t[4] = t[4].square();
-    t[5] = t[1].mul(t[4]);
-    t[0] = t[0].sub(t[2]);
+    t[5] = t[1].multiply(t[4]);
+    t[0] = t[0].subtract(t[2]);
     t[0] = t[0].dbl();
     t[6] = t[0].square();
-    t[6] = t[6].sub(t[5]);
-    t[3] = t[3].mul(t[4]);
+    t[6] = t[6].subtract(t[5]);
+    t[3] = t[3].multiply(t[4]);
     t[4] = t[3].dbl();
-    r.x = t[6].sub(t[4]);
-    t[4] = t[3].sub(r.x);
-    t[6] = t[2].mul(t[5]);
+    r.x = t[6].subtract(t[4]);
+    t[4] = t[3].subtract(r.x);
+    t[6] = t[2].multiply(t[5]);
     t[6] = t[6].dbl();
-    t[0] = t[0].mul(t[4]);
-    r.y = t[0].sub(t[6]);
+    t[0] = t[0].multiply(t[4]);
+    r.y = t[0].subtract(t[6]);
     t[0] = z.add(e.z);
     t[0] = t[0].square();
-    t[0] = t[0].sub(t[7]);
-    t[0] = t[0].sub(t[8]);
-    r.z = t[0].mul(t[1]);
+    t[0] = t[0].subtract(t[7]);
+    t[0] = t[0].subtract(t[8]);
+    r.z = t[0].multiply(t[1]);
     return r;
 }
 
@@ -1073,39 +1073,39 @@ g2 g2::dbl() const
     t[2] = t[1].square();
     t[1] = x.add(t[1]);
     t[1] = t[1].square();
-    t[1] = t[1].sub(t[0]);
-    t[1] = t[1].sub(t[2]);
+    t[1] = t[1].subtract(t[0]);
+    t[1] = t[1].subtract(t[2]);
     t[1] = t[1].dbl();
     t[3] = t[0].dbl();
     t[0] = t[3].add(t[0]);
     t[4] = t[0].square();
     t[3] = t[1].dbl();
-    r.x = t[4].sub(t[3]);
-    t[1] = t[1].sub(r.x);
+    r.x = t[4].subtract(t[3]);
+    t[1] = t[1].subtract(r.x);
     t[2] = t[2].dbl();
     t[2] = t[2].dbl();
     t[2] = t[2].dbl();
-    t[0] = t[0].mul(t[1]);
-    t[1] = t[0].sub(t[2]);
-    t[0] = y.mul(z);
+    t[0] = t[0].multiply(t[1]);
+    t[1] = t[0].subtract(t[2]);
+    t[0] = y.multiply(z);
     r.y = t[1];
     r.z = t[0].dbl();
     return r;
 }
 
-g2 g2::neg() const
+g2 g2::negate() const
 {
     g2 r;
     r.x = x;
-    r.y = y.neg();
+    r.y = y.negate();
     r.z = z;
     return r;
 }
 
-g2 g2::sub(const g2& e) const
+g2 g2::subtract(const g2& e) const
 {
     g2 c, d;
-    d = e.neg();
+    d = e.negate();
     c = this->add(d);
     return c;
 }
@@ -1113,11 +1113,11 @@ g2 g2::sub(const g2& e) const
 g2 g2::psi() const
 {
     g2 p;
-    p.x = this->x.conj();
-    p.y = this->y.conj();
-    p.z = this->z.conj();
-    p.x = p.x.mul(fp2::psiX);
-    p.y = p.y.mul(fp2::psiY);
+    p.x = this->x.conjugate();
+    p.y = this->y.conjugate();
+    p.z = this->z.conjugate();
+    p.x = p.x.multiply(fp2::psiX);
+    p.y = p.y.multiply(fp2::psiY);
     return p;
 }
 
@@ -1127,17 +1127,17 @@ g2 g2::clearCofactor() const
     // Compute t0 = xP
     t0 = scale(cofactorEFF);
     // cofactorEFF has the MSB set, so relic has the sign bit set and negates the y coordinate
-    t0 = t0.neg();
+    t0 = t0.negate();
     // Compute t1 = [x^2]P
     t1 = t0.scale(cofactorEFF);
     // cofactorEFF has the MSB set, so relic has the sign bit set and negates the y coordinate
-    t1 = t1.neg();
+    t1 = t1.negate();
 
     // t2 = (x^2 - x - 1)P = x^2P - x*P - P
-    t2 = t1.sub(t0);
-    t2 = t2.sub(*this);
+    t2 = t1.subtract(t0);
+    t2 = t2.subtract(*this);
     // t3 = \psi(x - 1)P
-    t3 = t0.sub(*this);
+    t3 = t0.subtract(*this);
     t3 = t3.frobeniusMap(1);
     t2 = t2.add(t3);
     // t3 = \psi^2(2P)
@@ -1163,8 +1163,8 @@ g2 g2::frobeniusMap(int64_t power) const
         r.x.frobeniusMapAssign(1);
         r.y.frobeniusMapAssign(1);
         r.z.frobeniusMapAssign(1);
-        r.x = r.x.mul(frb0);
-        r.y = r.y.mul(frb1);
+        r.x = r.x.multiply(frb0);
+        r.y = r.y.multiply(frb1);
     }
     return r;
 }
@@ -1277,7 +1277,7 @@ tuple<fp2, fp2> g2::swuMapG2(const fp2& e)
     };
     fp2 tv[4];
     tv[0] = e.square();
-    tv[0] = tv[0].mul(params.z);
+    tv[0] = tv[0].multiply(params.z);
     tv[1] = tv[0].square();
     fp2 x1;
     x1 = tv[0].add(tv[1]);
@@ -1288,17 +1288,17 @@ tuple<fp2, fp2> g2::swuMapG2(const fp2& e)
     {
         x1 = params.zInv;
     }
-    x1 = x1.mul(params.minusBOverA);
+    x1 = x1.multiply(params.minusBOverA);
     fp2 gx1;
     gx1 = x1.square();
     gx1 = gx1.add(params.a);
-    gx1 = gx1.mul(x1);
+    gx1 = gx1.multiply(x1);
     gx1 = gx1.add(params.b);
     fp2 x2;
-    x2 = tv[0].mul(x1);
-    tv[1] = tv[0].mul(tv[1]);
+    x2 = tv[0].multiply(x1);
+    tv[1] = tv[0].multiply(tv[1]);
     fp2 gx2;
-    gx2 = gx1.mul(tv[1]);
+    gx2 = gx1.multiply(tv[1]);
     bool e2 = !gx1.isQuadraticNonResidue();
     fp2 x, y2;
     if(e2)
@@ -1315,7 +1315,7 @@ tuple<fp2, fp2> g2::swuMapG2(const fp2& e)
     y2.sqrt(y);
     if(y.sign() != e.sign())
     {
-        y = y.neg();
+        y = y.negate();
     }
     return {x, y};
 }
@@ -1405,10 +1405,10 @@ void g2::isogenyMapG2(fp2& x, fp2& y)
     fp2 yDen = params[3][degree];
     for(int64_t i = degree - 1; i >= 0; i--)
     {
-        xNum = xNum.mul(x);
-        xDen = xDen.mul(x);
-        yNum = yNum.mul(x);
-        yDen = yDen.mul(x);
+        xNum = xNum.multiply(x);
+        xDen = xDen.multiply(x);
+        yNum = yNum.multiply(x);
+        yDen = yDen.multiply(x);
         xNum = xNum.add(params[0][i]);
         xDen = xDen.add(params[1][i]);
         yNum = yNum.add(params[2][i]);
@@ -1416,9 +1416,9 @@ void g2::isogenyMapG2(fp2& x, fp2& y)
     }
     xDen = xDen.inverse();
     yDen = yDen.inverse();
-    xNum = xNum.mul(xDen);
-    yNum = yNum.mul(yDen);
-    yNum = yNum.mul(y);
+    xNum = xNum.multiply(xDen);
+    yNum = yNum.multiply(yDen);
+    yNum = yNum.multiply(y);
     x = xNum;
     y = yNum;
 }
@@ -1507,38 +1507,38 @@ g2 g2::isogenyMap() const
     t0 = params[0][3];
     for(int i = 3; i > 0; --i)
     {
-        t0 = t0.mul(x);
+        t0 = t0.multiply(x);
         t0 = t0.add(params[0][i - 1]);
     }
     t1 = params[2][3];
     for(int i = 3; i > 0; --i)
     {
-        t1 = t1.mul(x);
+        t1 = t1.multiply(x);
         t1 = t1.add(params[2][i - 1]);
     }
     t2 = params[3][3];
     for(int i = 3; i > 0; --i)
     {
-        t2 = t2.mul(x);
+        t2 = t2.multiply(x);
         t2 = t2.add(params[3][i - 1]);
     }
     t3 = params[1][2];
     for(int i = 2; i > 0; --i)
     {
-        t3 = t3.mul(x);
+        t3 = t3.multiply(x);
         t3 = t3.add(params[1][i - 1]);
     }
 
     // Y = Ny * Dx * Z^2.
-    q.y = y.mul(t1);
-    q.y = q.y.mul(t3);
+    q.y = y.multiply(t1);
+    q.y = q.y.multiply(t3);
     // Z = Dx * Dy, t1 = Z^2.
-    q.z = t2.mul(t3);
+    q.z = t2.multiply(t3);
     t1 = q.z.square();
-    q.y = q.y.mul(t1);
+    q.y = q.y.multiply(t1);
     // X = Nx * Dy * Z.
-    q.x = t0.mul(t2);
-    q.x = q.x.mul(q.z);
+    q.x = t0.multiply(t2);
+    q.x = q.x.multiply(q.z);
 
     return q;
 }

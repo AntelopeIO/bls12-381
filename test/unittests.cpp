@@ -247,7 +247,7 @@ void TestFieldElementArithmeticCornerCases() {
         fp s,m,a;
 
         _square(&s, &*input);
-        _mul(&m, &*input, &*input);
+        _multiply(&m, &*input, &*input);
         _add(&a, &*input, &*input);
 
         s = s.fromMont();
@@ -526,23 +526,23 @@ void TestG1AdditiveProperties()
         {
             throw invalid_argument("0 + 0 == 0");
         }
-        t0 = a.sub(zero);
+        t0 = a.subtract(zero);
         if(!t0.equal(a))
         {
             throw invalid_argument("a - 0 == a");
         }
-        t0 = zero.sub(zero);
+        t0 = zero.subtract(zero);
         if(!t0.equal(zero))
         {
             throw invalid_argument("0 - 0 == 0");
         }
-        t0 = zero.neg();
+        t0 = zero.negate();
         if(!t0.equal(zero))
         {
             throw invalid_argument("- 0 == 0");
         }
-        t0 = zero.sub(a);
-        t0 = t0.neg();
+        t0 = zero.subtract(a);
+        t0 = t0.negate();
         if(!t0.equal(a))
         {
             throw invalid_argument(" - (0 - a) == a");
@@ -553,7 +553,7 @@ void TestG1AdditiveProperties()
             throw invalid_argument("2 * 0 == 0");
         }
         t0 = a.dbl();
-        t0 = t0.sub(a);
+        t0 = t0.subtract(a);
         if(!t0.equal(a) || !t0.isOnCurve())
         {
             throw invalid_argument(" (2 * a) - a == a");
@@ -564,9 +564,9 @@ void TestG1AdditiveProperties()
         {
             throw invalid_argument("a + b == b + a");
         }
-        t0 = a.sub(b);
-        t1 = b.sub(a);
-        t1 = t1.neg();
+        t0 = a.subtract(b);
+        t1 = b.subtract(a);
+        t1 = t1.negate();
         if(!t0.equal(t1))
         {
             throw invalid_argument("a - b == - ( b - a )");
@@ -580,10 +580,10 @@ void TestG1AdditiveProperties()
         {
             throw invalid_argument("(a + b) + c == (a + c ) + b");
         }
-        t0 = a.sub(b);
-        t0 = t0.sub(c);
-        t1 = a.sub(c);
-        t1 = t1.sub(b);
+        t0 = a.subtract(b);
+        t0 = t0.subtract(c);
+        t1 = a.subtract(c);
+        t1 = t1.subtract(b);
         if(!t0.equal(t1))
         {
             throw invalid_argument("(a - b) - c == (a - c) -b");
@@ -636,7 +636,7 @@ void TestG1MultiplicativePropertiesExpected()
         }
         t0 = a.scale(s1);
         t0 = t0.scale(s2);
-        s3 = scalar::mul<10, 4, 4>(s1, s2);
+        s3 = scalar::multiply<10, 4, 4>(s1, s2);
         t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
@@ -682,7 +682,7 @@ void TestG1MultiplicativeProperties()
         }
         t0 = a.scale(s1);
         t0 = t0.scale(s2);
-        s3 = scalar::mul<10, 4, 4>(s1, s2);
+        s3 = scalar::multiply<10, 4, 4>(s1, s2);
         t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
@@ -902,23 +902,23 @@ void TestG2AdditiveProperties()
         {
             throw invalid_argument("0 + 0 == 0");
         }
-        t0 = a.sub(zero);
+        t0 = a.subtract(zero);
         if(!t0.equal(a))
         {
             throw invalid_argument("a - 0 == a");
         }
-        t0 = zero.sub(zero);
+        t0 = zero.subtract(zero);
         if(!t0.equal(zero))
         {
             throw invalid_argument("0 - 0 == 0");
         }
-        t0 = zero.neg();
+        t0 = zero.negate();
         if(!t0.equal(zero))
         {
             throw invalid_argument("- 0 == 0");
         }
-        t0 = zero.sub(a);
-        t0 = t0.neg();
+        t0 = zero.subtract(a);
+        t0 = t0.negate();
         if(!t0.equal(a))
         {
             throw invalid_argument(" - (0 - a) == a");
@@ -929,7 +929,7 @@ void TestG2AdditiveProperties()
             throw invalid_argument("2 * 0 == 0");
         }
         t0 = a.dbl();
-        t0 = t0.sub(a);
+        t0 = t0.subtract(a);
         if(!t0.equal(a) || !t0.isOnCurve())
         {
             throw invalid_argument(" (2 * a) - a == a");
@@ -940,9 +940,9 @@ void TestG2AdditiveProperties()
         {
             throw invalid_argument("a + b == b + a");
         }
-        t0 = a.sub(b);
-        t1 = b.sub(a);
-        t1 = t1.neg();
+        t0 = a.subtract(b);
+        t1 = b.subtract(a);
+        t1 = t1.negate();
         if(!t0.equal(t1))
         {
             throw invalid_argument("a - b == - ( b - a )");
@@ -956,10 +956,10 @@ void TestG2AdditiveProperties()
         {
             throw invalid_argument("(a + b) + c == (a + c ) + b");
         }
-        t0 = a.sub(b);
-        t0 = t0.sub(c);
-        t1 = a.sub(c);
-        t1 = t1.sub(b);
+        t0 = a.subtract(b);
+        t0 = t0.subtract(c);
+        t1 = a.subtract(c);
+        t1 = t1.subtract(b);
         if(!t0.equal(t1))
         {
             throw invalid_argument("(a - b) - c == (a - c) -b");
@@ -995,7 +995,7 @@ void TestG2MultiplicativeProperties()
         }
         t0 = a.scale(s1);
         t0 = t0.scale(s2);
-        s3 = scalar::mul<10, 4, 4>(s1, s2);
+        s3 = scalar::multiply<10, 4, 4>(s1, s2);
         t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
@@ -1253,7 +1253,7 @@ void TestPairingBilinearity()
         g2 P2 = g2::one();
         P1 = P1.scale(a);
         P2 = P2.scale(b);
-        P1 = P1.neg();
+        P1 = P1.negate();
         pairing::add_pair(v, P1, P2);
         // should be one
         if(!pairing::calculate(v).isOne())
@@ -1279,7 +1279,7 @@ void TestPairingBilinearity()
         g2 H2 = g2::one();
         H1 = H1.scale(a);
         H2 = H2.scale(b);
-        H1 = H1.neg();
+        H1 = H1.negate();
         pairing::add_pair(v, H1, H2);
         // should be one
         if(!pairing::calculate(v).isOne())
@@ -1309,7 +1309,7 @@ void TestPairingMulti()
         pairing::add_pair(v, P1, P2);
         // accumulate targetExp
         // t += (ai1 * ai2)
-        array<uint64_t, 10> tmp = scalar::mul<10, 4, 4>(a1, a2);
+        array<uint64_t, 10> tmp = scalar::multiply<10, 4, 4>(a1, a2);
         targetExp = scalar::add<10, 10, 10>(targetExp, tmp);
     }
     // LHS
@@ -1317,7 +1317,7 @@ void TestPairingMulti()
     g1 T1 = g1::one();
     g2 T2 = g2::one();
     T1 = T1.scale(targetExp);
-    T1 = T1.neg();
+    T1 = T1.negate();
     pairing::add_pair(v, T1, T2);
     if(!pairing::calculate(v).isOne())
     {

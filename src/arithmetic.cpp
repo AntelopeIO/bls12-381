@@ -476,7 +476,7 @@ void _ldouble(fp* z, const fp* x)
 #endif
 
 #ifdef __x86_64__
-void _sub(fp* z, const fp* x, const fp* y)
+void _subtract(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -532,7 +532,7 @@ void _sub(fp* z, const fp* x, const fp* y)
     asm("pop %r15;");
 }
 #else
-void _sub(fp* z, const fp* x, const fp* y)
+void _subtract(fp* z, const fp* x, const fp* y)
 {
     uint64_t b;
     tie(z->d[0], b) = Sub64(x->d[0], y->d[0], 0);
@@ -555,7 +555,7 @@ void _sub(fp* z, const fp* x, const fp* y)
 #endif
 
 #ifdef __x86_64__
-void _subAssign(fp* z, const fp* x)
+void _subtractAssign(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -610,7 +610,7 @@ void _subAssign(fp* z, const fp* x)
     asm("pop %r15;");
 }
 #else
-void _subAssign(fp* z, const fp* x)
+void _subtractAssign(fp* z, const fp* x)
 {
     uint64_t b;
     tie(z->d[0], b) = Sub64(z->d[0], x->d[0], 0);
@@ -633,7 +633,7 @@ void _subAssign(fp* z, const fp* x)
 #endif
 
 #ifdef __x86_64__
-void _lsubAssign(fp* z, const fp* x)
+void _lsubtractAssign(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -659,7 +659,7 @@ void _lsubAssign(fp* z, const fp* x)
     asm("mov %rax,0x28(%rdi);");
 }
 #else
-void _lsubAssign(fp* z, const fp* x)
+void _lsubtractAssign(fp* z, const fp* x)
 {
     uint64_t b, _;
     tie(z->d[0], b) = Sub64(z->d[0], x->d[0], 0);
@@ -672,7 +672,7 @@ void _lsubAssign(fp* z, const fp* x)
 #endif
 
 #ifdef __x86_64__
-void __neg(fp* z, const fp* x)
+void __negate(fp* z, const fp* x)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi
@@ -697,9 +697,9 @@ void __neg(fp* z, const fp* x)
     asm("mov %rcx,0x20(%rdi);");
     asm("mov %rax,0x28(%rdi);");
 }
-void _neg(fp* z, const fp* x)
+void _negate(fp* z, const fp* x)
 {
-    __neg(z, x);
+    __negate(z, x);
     // put zero check after __neg because gcc messes up %rdi in -O3 (doesn't restore it before inlining asm code)
     if(x->isZero())
     {
@@ -708,7 +708,7 @@ void _neg(fp* z, const fp* x)
     }
 }
 #else
-void _neg(fp* z, const fp* x)
+void _negate(fp* z, const fp* x)
 {
     if(x->isZero())
     {
@@ -726,7 +726,7 @@ void _neg(fp* z, const fp* x)
 #endif
 
 #ifdef __x86_64__
-void __mul(fp* z, const fp* x, const fp* y)
+void __multiply(fp* z, const fp* x, const fp* y)
 {
     // x86_64 calling convention (https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI):
     // z => %rdi (=> stack)
@@ -1796,7 +1796,7 @@ extern "C" blsmul_func_t __attribute__((no_sanitize_address)) resolve_blsmul() {
     return __mul;
 }
 
-void _mul(fp*, const fp*, const fp*) __attribute__((ifunc("resolve_blsmul")));
+void _multiply(fp*, const fp*, const fp*) __attribute__((ifunc("resolve_blsmul")));
 #else
 blsmul_func_t _mul = __mul;
 
@@ -1810,7 +1810,7 @@ static bls_mul_init the_bls_mul_init;
 
 #endif //__ELF__
 #else
-void _mul(fp* z, const fp* x, const fp* y)
+void _multiply(fp* z, const fp* x, const fp* y)
 {
     array<uint64_t, 6> t;
     array<uint64_t, 3> c;
@@ -1936,16 +1936,16 @@ void _mul(fp* z, const fp* x, const fp* y)
 void _square(fp* z, const fp* x)
 {
     #ifdef __clang__
-    // The clang compiler completely optimizes out the _square() function and inlines __mul() wherever
+    // The clang compiler completely optimizes out the _square() function and inlines __multiply() wherever
     // it occurs. However, for some reason the compiler forgets that it has to move the third
-    // parameter ('y') of __mul() into %rdx according to the calling convention. The first two
+    // parameter ('y') of __multiply() into %rdx according to the calling convention. The first two
     // parameters, 'z' (%rdi) and 'x' (%rsi), are set properly because they are the exact same as for
     // __square(). But the third parameter (which sould be 'x' as well) is somehow ignored by the
-    // clang compiler. So we need to help out by moving it into %rdx before calling __mul().
+    // clang compiler. So we need to help out by moving it into %rdx before calling __multiply().
     // This is probably a bug in clang!
     asm("mov %rsi,%rdx;");
     #endif
-    __mul(z, x, x);
+    __multiply(z, x, x);
 }
 #else
 void _square(fp* z, const fp* x)
