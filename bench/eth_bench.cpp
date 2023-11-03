@@ -205,6 +205,78 @@ void benchPairing() {
     endStopwatch(testName, start, numIters);
 }
 
+void benchG1Add2() {
+    string testName = "G1 Addition With different settings";
+    cout << endl << testName << endl;
+
+    const int numIters = 10000;
+    g1 pbak = random_g1();
+    
+   
+
+    array<uint64_t, 4> s = {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff};
+
+
+    auto performTest = [numIters, s, pbak](bool check, bool raw) {
+        array<uint8_t, 144> pRaw = {};
+        g1 p = pbak;
+        p.toJacobianBytesLE(pRaw, raw);
+
+        auto start = startStopwatch();
+
+        for (int i = 0; i < numIters; i++) {
+            p = *g1::fromJacobianBytesLE(pRaw, check, raw);
+            p.add(p);
+            p.toJacobianBytesLE(pRaw, raw);
+        }
+        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+
+        start = startStopwatch();
+    };
+
+    performTest(true, true);
+    performTest(true, false);
+    performTest(false, true);
+    performTest(false, false);
+
+}
+
+void benchG2Add2() {
+    string testName = "G2 Addition With different settings";
+    cout << endl << testName << endl;
+
+    const int numIters = 10000;
+    g2 pbak = random_g2();
+    
+   
+
+    array<uint64_t, 4> s = {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff};
+
+
+    auto performTest = [numIters, s, pbak](bool check, bool raw) {
+        array<uint8_t, 288> pRaw = {};
+        g2 p = pbak;
+        p.toJacobianBytesLE(pRaw, raw);
+
+        auto start = startStopwatch();
+
+        for (int i = 0; i < numIters; i++) {
+            p = *g2::fromJacobianBytesLE(pRaw, check, raw);
+            p.add(p);
+            p.toJacobianBytesLE(pRaw, raw);
+        }
+        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+
+        start = startStopwatch();
+    };
+
+    performTest(true, true);
+    performTest(true, false);
+    performTest(false, true);
+    performTest(false, false);
+
+}
+
 int main(int argc, char* argv[])
 {
     benchG1Add();
@@ -214,4 +286,6 @@ int main(int argc, char* argv[])
     benchG2Mul();
     benchG2WeightedSum();
     benchPairing();
+    benchG1Add2();
+    benchG2Add2();
 }
