@@ -5,7 +5,7 @@ using namespace std;
 namespace bls12_381
 {
 
-vector<uint8_t> hexToBytes(const string& s)
+vector<uint8_t> hexToBytes(std::string_view s)
 {
     uint64_t start_idx = 0;
     if(s[0] == '0' && s[1] == 'x')
@@ -16,7 +16,7 @@ vector<uint8_t> hexToBytes(const string& s)
     if(s.length() % 2 != 0)
     {
         // string length invalid!
-        return vector<uint8_t>();
+        return {};
     }
 
     vector<uint8_t> bytes;
@@ -30,7 +30,7 @@ vector<uint8_t> hexToBytes(const string& s)
     return bytes;
 }
 
-string bytesToHex(const vector<uint8_t>& in)
+string bytesToHex(std::span<const uint8_t> in)
 {
     constexpr char hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     string s(2 + in.size() * 2, ' ');

@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath>
-#include <vector>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <span>
@@ -57,7 +57,10 @@ public:
     template<size_t N> g1 scale(const std::array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
     g1 glvEndomorphism() const;
-    static std::optional<g1> weightedSum(const std::vector<g1>& points, const std::vector<std::array<uint64_t, 4>>& scalars, std::function<void()> yield = std::function<void()>());
+    
+    auto operator<=>(const g1&) const = default;
+   
+    static std::optional<g1> weightedSum(std::span<const g1> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield = std::function<void()>());
     static g1 mapToCurve(const fp& e);
     static std::tuple<fp, fp> swuMapG1(const fp& e);
     static void isogenyMapG1(fp& x, fp& y);
@@ -111,7 +114,10 @@ public:
     template<size_t N> g2 scale(const std::array<uint64_t, N>& s) const;
     g2 clearCofactor() const;
     g2 frobeniusMap(int64_t power) const;
-    static std::optional<g2> weightedSum(const std::vector<g2>& points, const std::vector<std::array<uint64_t, 4>>& scalars, std::function<void()> yield = std::function<void()>());
+
+    auto operator<=>(const g2&) const = default;
+
+    static std::optional<g2> weightedSum(std::span<const g2> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield = std::function<void()>());
     static g2 mapToCurve(const fp2& e);
     static std::tuple<fp2, fp2> swuMapG2(const fp2& e);
     //static void isogenyMapG2(fp2& x, fp2& y);

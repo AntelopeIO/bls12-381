@@ -41,7 +41,7 @@ void doubling_step(array<fp2, 3>& coeff, g2& r)
     coeff[2] = t[6].negate();
 }
 
-void addition_step(array<fp2, 3>& coeff, g2& r, g2& tp)
+void addition_step(array<fp2, 3>& coeff, g2& r, const g2& tp)
 {
     // Algorithm 12 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
@@ -72,7 +72,7 @@ void addition_step(array<fp2, 3>& coeff, g2& r, g2& tp)
     coeff[2] = t[1];
 }
 
-void pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
+void pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, const g2& twistPoint)
 {
     // Algorithm 5 in  https://eprint.iacr.org/2019/077.pdf
     if(twistPoint.isZero())
@@ -93,7 +93,7 @@ void pre_compute(array<array<fp2, 3>, 68>& ellCoeffs, g2& twistPoint)
     }
 }
 
-fp12 miller_loop(vector<tuple<g1, g2>>& pairs, std::function<void()> yield)
+fp12 miller_loop(std::span<const std::tuple<g1, g2>> pairs, std::function<void()> yield)
 {
     vector<array<array<fp2, 3>, 68>> ellCoeffs;
     ellCoeffs.resize(pairs.size());
@@ -177,10 +177,10 @@ void final_exponentiation(fp12& f)
     f = t[3].multiply(t[4]);
 }
 
-fp12 calculate(vector<tuple<g1, g2>>& pairs, std::function<void()> yield)
+fp12 calculate(std::span<const std::tuple<g1, g2>> pairs, std::function<void()> yield)
 {
     fp12 f = fp12::one();
-    if(pairs.size() == 0)
+    if(pairs.empty())
     {
         return f;
     }
@@ -193,10 +193,7 @@ void add_pair(vector<tuple<g1, g2>>& pairs, const g1& e1, const g2& e2)
 {
     if(!(e1.isZero() || e2.isZero()))
     {
-        pairs.push_back({
-            e1.affine(),
-            e2.affine()
-        });
+        pairs.emplace_back(e1.affine(), e2.affine());
     }
 }
 

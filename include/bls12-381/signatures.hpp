@@ -1,11 +1,13 @@
 #include <cstdint>
 #include <cstdlib>
 #include <array>
+#include <span>
 #include <vector>
 #include <string>
+#include <bls12-381/g.hpp>
+#include <bls12-381/fp.hpp>
 
-namespace bls12_381
-{
+namespace bls12_381 {
 
 class g1;
 class g2;
@@ -100,48 +102,72 @@ g2 derive_child_g2_unhardened(
 );
 
 // Implements secret key derivation based on HKDF Mod R as specified in EIP 2333: https://eips.ethereum.org/EIPS/eip-2333#hkdf_mod_r
-std::array<uint64_t, 4> secret_key(const std::vector<uint8_t>& seed);
+std::array<uint64_t, 4> secret_key(std::span<const uint8_t> seed);
 
 // Derive public key from a BLS private key
 g1 public_key(const std::array<uint64_t, 4>& sk);
 
 g2 fromMessage(
-    const std::vector<uint8_t>& msg,
+    std::span<const uint8_t> msg,
     const std::string& dst
 );
 
 // Sign message with a private key
 g2 sign(
     const std::array<uint64_t, 4>& sk,
-    const std::vector<uint8_t>& msg
+    std::span<const uint8_t> msg
 );
 
 // Verify signature of a message using a public key
 bool verify(
     const g1& pubkey,
-    const std::vector<uint8_t>& message,
+    std::span<const uint8_t> message,
     const g2& signature
 );
 
 // Aggregate private keys
-std::array<uint64_t, 4> aggregate_secret_keys(const std::vector<std::array<uint64_t, 4>>& sks);
+std::array<uint64_t, 4> aggregate_secret_keys(std::span<const std::array<uint64_t, 4>> sks);
 
 // Aggregate public keys
-g1 aggregate_public_keys(const std::vector<g1>& pks);
+g1 aggregate_public_keys(std::span<const g1> pks);
 
 // Aggregate signatures
-g2 aggregate_signatures(const std::vector<g2>& sigs);
+g2 aggregate_signatures(std::span<const g2> sigs);
 
 // Aggregate verify using a set of public keys, a set of messages and an aggregated signature
-// the boolean parameter enables an additional check for dublicate messages (possible attack
-// std::vector: see page 6 of https://crypto.stanford.edu/~dabo/pubs/papers/aggreg.pdf, "A potential
+// the boolean parameter enables an additional check for duplicate messages (possible attack
+// vector: see page 6 of https://crypto.stanford.edu/~dabo/pubs/papers/aggreg.pdf, "A potential
 // attack on aggregate signatures.")
 bool aggregate_verify(
-    const std::vector<g1>& pubkeys,
-    const std::vector<std::vector<uint8_t>> &messages,
+    std::span<const g1> pubkeys,
+    std::span<const std::vector<uint8_t>> messages,
     const g2& signature,
     const bool checkForDuplicateMessages = false
 );
+
+// `f` is an accessor function in case we have a span of objects of type T containing public keys: `g1 f(const T&)`
+// `pred` can be used to aggregate public keys specified in a bit mask for example: `bool pred(const T&, size_t)`
+template<class T, class F, class PRED = decltype([](const T&, size_t){return true;})>
+inline auto aggregate_public_keys(std::span<T> pks, F&& f, PRED&& pred = PRED())
+    -> decltype(f(*pks.data()), pred(*pks.data(), 0), g1()) {
+    g1 agg_pk = g1({fp::zero(), fp::zero(), fp::zero()});
+    for (size_t i=0; i<pks.size(); ++i)
+        if (std::forward<PRED>(pred)(pks[i], i))
+            agg_pk = agg_pk.add(std::forward<F>(f)(pks[i]));
+    return agg_pk;
+}
+
+// f is an accessor function in case we have a span of objects of type T containing signatures: `g2 f(const T&)`
+// pred can be used to aggregate signatures specified in a bit mask for example: `bool pred(const T&, size_t)`
+template<class T, class F, class PRED = decltype([](const T&, size_t){return true;})>
+inline auto aggregate_signatures(std::span<T> sigs, F&& f, PRED&& pred = PRED()) 
+    -> decltype(f(*sigs.data()), pred(*sigs.data(), 0), g2()) {
+    g2 agg_sig = g2({fp2::zero(), fp2::zero(), fp2::zero()});
+    for (size_t i=0; i<sigs.size(); ++i)
+        if (std::forward<PRED>(pred)(sigs[i], i))
+            agg_sig = agg_sig.add(std::forward<F>(f)(sigs[i]));
+    return agg_sig;
+}
 
 // Create new BLS private key from bytes. Enable modulo division to ensure scalar is element of the field
 std::array<uint64_t, 4> sk_from_bytes(
@@ -161,8 +187,8 @@ bool pop_verify(
 );
 
 bool pop_fast_aggregate_verify(
-    const std::vector<g1>& pubkeys,
-    const std::vector<uint8_t>& message,
+    std::span<const g1> pubkeys,
+    std::span<const uint8_t> message,
     const g2& signature
 );
 

@@ -6,6 +6,7 @@
 #include <tuple>
 #include <optional>
 #include <span>
+#include <compare>
 
 namespace bls12_381
 {
@@ -33,7 +34,7 @@ public:
     bool isEven() const;
     bool isZero() const;
     bool isOne() const;
-    int64_t cmp(const fp& e) const;
+    std::strong_ordering cmp(const fp& e) const;
     bool equal(const fp& e) const;
     bool sign() const;
     
@@ -60,6 +61,8 @@ public:
     bool isQuadraticNonResidue() const;
     bool isLexicographicallyLargest() const;
     template<size_t N> static fp modPrime(const std::array<uint64_t, N>& k);
+
+    std::strong_ordering operator<=>(const fp& e) const { return cmp(e); }
 
     static const fp MODULUS;                            // base field modulus: p = 4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787 or 0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB
     static const uint64_t INP;                          // INP = -(p^{-1} mod 2^64) mod 2^64
@@ -122,6 +125,8 @@ public:
     bool sqrt(fp2& c) const;
     bool isQuadraticNonResidue() const;
     bool isLexicographicallyLargest() const;
+
+    auto operator<=>(const fp2&) const = default;
 
     static const fp2 negativeOne2;
     static const fp2 B;
