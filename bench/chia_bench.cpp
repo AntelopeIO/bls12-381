@@ -22,15 +22,15 @@ void endStopwatch(string testName,
     auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
             end - start);
 
-    cout << endl << testName << endl;
+    cout << '\n' << testName << '\n';
     cout << "Total: " << numIters << " runs in " << now_ms.count()
-         << " ms" << endl;
+         << " ms" << '\n';
     cout << "Avg: " << now_ms.count() / static_cast<double>(numIters)
-         << " ms" << endl;
+         << " ms" << '\n';
 }
 
-std::vector<uint8_t> getRandomSeed() {
-    uint64_t buf[4];
+std::array<uint8_t, 32> getRandomSeed() {
+    std::array<uint64_t, 4> buf;
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<uint64_t> dis;
@@ -38,8 +38,9 @@ std::vector<uint8_t> getRandomSeed() {
     buf[1] = dis(gen);
     buf[2] = dis(gen);
     buf[3] = dis(gen);
-    vector<uint8_t> ret(buf, buf + 32);
-    return ret;
+    std::array<uint8_t, 32> res;
+    memcpy(res.data(), buf.data(), sizeof(res));
+    return res;
 }
 
 void IntToFourBytes(uint8_t* result,
@@ -54,12 +55,11 @@ void benchSigs() {
     const int numIters = 5000;
     array<uint64_t, 4> sk = secret_key(getRandomSeed());
     array<uint8_t, 48UL> pk = public_key(sk).toCompressedBytesBE();
-    vector<uint8_t> message1(pk.begin(), pk.end());
 
     auto start = startStopwatch();
 
     for (int i = 0; i < numIters; i++) {
-        sign(sk, message1);
+        sign(sk, pk);
     }
     endStopwatch(testName, start, numIters);
 }
@@ -75,16 +75,14 @@ void benchVerification() {
     for (int i = 0; i < numIters; i++) {
         uint8_t message[4];
         IntToFourBytes(message, i);
-        vector<uint8_t> messageBytes(message, message + 4);
-        sigs.push_back(sign(sk, messageBytes));
+        sigs.push_back(sign(sk, message));
     }
 
     auto start = startStopwatch();
     for (int i = 0; i < numIters; i++) {
         uint8_t message[4];
         IntToFourBytes(message, i);
-        vector<uint8_t> messageBytes(message, message + 4);
-        bool ok = verify(pk, messageBytes, sigs[i]);
+        bool ok = verify(pk, message, sigs[i]);
         if(!ok) throw std::invalid_argument("benchVerification: !ok");
     }
     endStopwatch(testName, start, numIters);

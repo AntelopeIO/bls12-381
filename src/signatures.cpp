@@ -163,7 +163,7 @@ int hkdf256_extract_expand(
     return hkdf256_expand(output, outputLen, prk.data(), info, infoLen);
 }
 
-array<uint64_t, 4> secret_key(const vector<uint8_t>& seed)
+array<uint64_t, 4> secret_key(std::span<const uint8_t> seed)
 {
     // KeyGen
     // 1. PRK = HKDF-Extract("BLS-SIG-KEYGEN-SALT-", IKM || I2OSP(0, 1))
@@ -325,7 +325,7 @@ array<uint64_t, 4> derive_child_sk_unhardened(
     sha.update(buf.data(), 48 + 4);
     sha.digest(digest.data());
 
-    array<uint64_t, 4> ret = aggregate_secret_keys({parentSk, sk_from_bytes(digest, true)});
+    array<uint64_t, 4> ret = aggregate_secret_keys(std::array{parentSk, sk_from_bytes(digest, true)});
     return ret;
 }
 
@@ -381,7 +381,7 @@ g2 derive_child_g2_unhardened(
     return pk.add(g2::one().mulScalar(remainder));
 }
 
-array<uint64_t, 4> aggregate_secret_keys(const vector<array<uint64_t, 4>>& sks)
+array<uint64_t, 4> aggregate_secret_keys(std::span<const std::array<uint64_t, 4>> sks)
 {
     if(sks.empty())
     {
@@ -495,7 +495,7 @@ int xmd_sh256(
 
 
 g2 fromMessage(
-    const vector<uint8_t>& msg,
+    std::span<const uint8_t> msg,
     const string& dst
 )
 {
@@ -528,7 +528,7 @@ g2 fromMessage(
 
 g2 sign(
     const array<uint64_t, 4>& sk,
-    const vector<uint8_t>& msg
+    std::span<const uint8_t> msg
 )
 {
     g2 p = fromMessage(msg, CIPHERSUITE_ID);
@@ -537,7 +537,7 @@ g2 sign(
 
 bool verify(
     const g1& pubkey,
-    const vector<uint8_t>& message,
+    std::span<const uint8_t> message,
     const g2& signature
 )
 {
@@ -559,7 +559,7 @@ bool verify(
     return fp12::one().equal(pairing::calculate(v));
 }
 
-g1 aggregate_public_keys(const vector<g1>& pks)
+g1 aggregate_public_keys(std::span<const g1> pks)
 {
     g1 agg_pk = g1({fp::zero(), fp::zero(), fp::zero()});
     for(const g1& pk : pks)
@@ -569,7 +569,7 @@ g1 aggregate_public_keys(const vector<g1>& pks)
     return agg_pk;
 }
 
-g2 aggregate_signatures(const vector<g2>& sigs)
+g2 aggregate_signatures(std::span<const g2> sigs)
 {
     g2 agg_sig = g2({fp2::zero(), fp2::zero(), fp2::zero()});
     for(const g2& sig : sigs)
@@ -580,8 +580,8 @@ g2 aggregate_signatures(const vector<g2>& sigs)
 }
 
 bool aggregate_verify(
-    const vector<g1>& pubkeys,
-    const vector<vector<uint8_t>> &messages,
+    std::span<const g1> pubkeys,
+    std::span<const std::vector<uint8_t>> messages,
     const g2& signature,
     const bool checkForDuplicateMessages
 )
@@ -661,8 +661,8 @@ bool pop_verify(
 }
 
 bool pop_fast_aggregate_verify(
-    const vector<g1>& pubkeys,
-    const vector<uint8_t>& message,
+    std::span<const g1> pubkeys,
+    std::span<const uint8_t> message,
     const g2& signature
 )
 {

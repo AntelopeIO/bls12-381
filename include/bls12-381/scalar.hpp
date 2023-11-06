@@ -6,6 +6,7 @@
 #include <span>
 #include <stdexcept>
 #include <bit>
+#include <string_view>
 
 #include <bls12-381/fp.hpp>
 #include <bls12-381/g.hpp>
@@ -378,7 +379,7 @@ std::string bytesToHex(const std::span<const uint8_t, N>& in)
     }
     return s;
 }
-std::string bytesToHex(const std::vector<uint8_t>& in);
+std::string bytesToHex(std::span<const uint8_t> in);
 
 template<size_t N>
 void hexToBytes(const std::string& s, std::span<uint8_t, N> out)
@@ -402,6 +403,6 @@ std::array<uint8_t, N> hexToBytes(const std::string& s)
     hexToBytes<N>(s, out);
     return out;
 }
-std::vector<uint8_t> hexToBytes(const std::string& s);
+std::vector<uint8_t> hexToBytes(std::string_view s);
 
 } // namespace bls12_381
