@@ -23,7 +23,7 @@ void _square(fp* z, const fp* x);
 #if defined(__x86_64__) && defined(__ELF__)
 extern void _multiply(fp*, const fp*, const fp*);
 #elif defined(__x86_64__)
-extern void (*_mul)(fp*, const fp*, const fp*);
+extern void (*_multiply)(fp*, const fp*, const fp*);
 #else
 void _multiply(fp*, const fp*, const fp*);
 #endif

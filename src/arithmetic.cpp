@@ -1499,22 +1499,22 @@ extern "C" blsmul_func_t __attribute__((no_sanitize_address)) resolve_blsmul() {
     while(*my_environ != nullptr) {
        const char disable_str[] = "BLS_DISABLE_BMI2";
         if(strncmp(*my_environ++, disable_str, strlen(disable_str)) == 0)
-           return __mul;
+           return __multiply;
     }
 
     if(cpu_has_bmi2_and_adx())
        return __mul_ex;
-    return __mul;
+    return __multiply;
 }
 
 void _multiply(fp*, const fp*, const fp*) __attribute__((ifunc("resolve_blsmul")));
 #else
-blsmul_func_t _mul = __mul;
+blsmul_func_t _multiply = __multiply;
 
 struct bls_mul_init {
    bls_mul_init() {
       if(cpu_has_bmi2_and_adx())
-         _mul = __mul_ex;
+         _multiply = __mul_ex;
    }
 };
 static bls_mul_init the_bls_mul_init;
