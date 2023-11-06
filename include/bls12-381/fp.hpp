@@ -36,6 +36,19 @@ public:
     int64_t cmp(const fp& e) const;
     bool equal(const fp& e) const;
     bool sign() const;
+    
+    fp add(const fp& e) const;
+    void addAssign(const fp& e);
+    fp dbl() const;
+    void doubleAssign();
+    fp subtract(const fp& e) const;
+    void subtractAssign(const fp& e);
+    fp negate() const;
+    fp multiply(const fp& e) const;
+    void multiplyAssign(const fp& e);
+    fp square() const;
+    void squareAssign();
+
     void div2(const uint64_t& e);
     uint64_t mul2();
     fp toMont() const;

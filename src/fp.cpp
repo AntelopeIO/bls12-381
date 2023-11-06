@@ -109,6 +109,73 @@ bool fp::sign() const
     return (fromMont().d[0] & 1) == 0;
 }
 
+fp fp::add(const fp& e) const
+{
+    fp c(*this);
+    c.addAssign(e);
+    return c;
+}
+
+void fp::addAssign(const fp& e)
+{
+    _add(this, this, &e);
+}
+
+fp fp::dbl() const
+{
+    fp c(*this);
+    c.doubleAssign();
+    return c;
+}
+
+void fp::doubleAssign()
+{
+    _double(this, this);
+}
+
+fp fp::subtract(const fp& e) const
+{
+    fp c(*this);
+    c.subtractAssign(e);
+    return c;
+}
+
+void fp::subtractAssign(const fp& e)
+{
+    _subtract(this, this, &e);
+}
+
+fp fp::negate() const
+{
+    fp c;
+    _negate(&c, this);
+    return c;
+}
+
+fp fp::multiply(const fp& e) const
+{
+    fp c(*this);
+    c.multiply(e);
+    return c;
+}
+
+void fp::multiplyAssign(const fp& e)
+{
+    _multiply(this, this, &e);
+}
+
+fp fp::square() const
+{
+    fp c(*this);
+    c.squareAssign();
+    return c;
+}
+
+void fp::squareAssign()
+{
+    _square(this, this);
+}
+
 void fp::div2(const uint64_t& e)
 {
     d[0] = d[0]>>1 | d[1]<<63;
@@ -447,9 +514,8 @@ bool fp2::sign() const
 
 fp2 fp2::add(const fp2& e) const
 {
-    fp2 c;
-    _add(&c.c0, &c0, &e.c0);
-    _add(&c.c1, &c1, &e.c1);
+    fp2 c(*this);
+    c.addAssign(e);
     return c;
 }
 
@@ -469,9 +535,8 @@ fp2 fp2::ladd(const fp2& e) const
 
 fp2 fp2::dbl() const
 {
-    fp2 c;
-    _double(&c.c0, &c0);
-    _double(&c.c1, &c1);
+    fp2 c(*this);
+    c.doubleAssign();
     return c;
 }
 
@@ -491,9 +556,8 @@ fp2 fp2::ldouble() const
 
 fp2 fp2::subtract(const fp2& e) const
 {
-    fp2 c;
-    _subtract(&c.c0, &c0, &e.c0);
-    _subtract(&c.c1, &c1, &e.c1);
+    fp2 c(*this);
+    c.subtractAssign(e);
     return c;
 }
 
@@ -521,16 +585,9 @@ fp2 fp2::conjugate() const
 
 fp2 fp2::multiply(const fp2& e) const
 {
-    fp t[4];
-    fp2 c;
-    _multiply(&t[1], &c0, &e.c0);
-    _multiply(&t[2], &c1, &e.c1);
-    _add(&t[0], &c0, &c1);
-    _add(&t[3], &e.c0, &e.c1);
-    _subtract(&c.c0, &t[1], &t[2]);
-    _add(&t[1], &t[1], &t[2]);
-    _multiply(&t[0], &t[0], &t[3]);
-    _subtract(&c.c1, &t[0], &t[1]);
+    fp2 c(*this);
+    c.multiplyAssign(e);
+    return c;
     return c;
 }
 
@@ -549,13 +606,8 @@ void fp2::multiplyAssign(const fp2& e)
 
 fp2 fp2::square() const
 {
-    fp t[3];
-    fp2 c;
-    _ladd(&t[0], &c0, &c1);
-    _subtract(&t[1], &c0, &c1);
-    _ldouble(&t[2], &c0);
-    _multiply(&c.c0, &t[0], &t[1]);
-    _multiply(&c.c1, &t[2], &c1);
+    fp2 c(*this);
+    c.squareAssign();
     return c;
 }
 
@@ -833,10 +885,8 @@ bool fp6::equal(const fp6& e) const
 
 fp6 fp6::add(const fp6& e) const
 {
-    fp6 c;
-    c.c0 = c0.add(e.c0);
-    c.c1 = c1.add(e.c1);
-    c.c2 = c2.add(e.c2);
+    fp6 c(*this);
+    c.addAssign(e);
     return c;
 }
 
@@ -849,10 +899,8 @@ void fp6::addAssign(const fp6& e)
 
 fp6 fp6::dbl() const
 {
-    fp6 c;
-    c.c0 = c0.dbl();
-    c.c1 = c1.dbl();
-    c.c2 = c2.dbl();
+    fp6 c(*this);
+    c.doubleAssign();
     return c;
 }
 
@@ -865,10 +913,8 @@ void fp6::doubleAssign()
 
 fp6 fp6::subtract(const fp6& e) const
 {
-    fp6 c;
-    c.c0 = c0.subtract(e.c0);
-    c.c1 = c1.subtract(e.c1);
-    c.c2 = c2.subtract(e.c2);
+    fp6 c(*this);
+    c.subtractAssign(e);
     return c;
 }
 
@@ -890,32 +936,8 @@ fp6 fp6::negate() const
 
 fp6 fp6::multiply(const fp6& e) const
 {
-    fp2 t[6];
-    fp6 c;
-    t[0] = c0.multiply(e.c0);
-    t[1] = c1.multiply(e.c1);
-    t[2] = c2.multiply(e.c2);
-    t[3] = c1.add(c2);
-    t[4] = e.c1.add(e.c2);
-    t[3].multiplyAssign(t[4]);
-    t[4] = t[1].add(t[2]);
-    t[3].subtractAssign(t[4]);
-    t[3] = t[3].mulByNonResidue();
-    t[5] = t[0].add(t[3]);
-    t[3] = c0.add(c1);
-    t[4] = e.c0.add(e.c1);
-    t[3].multiplyAssign(t[4]);
-    t[4] = t[0].add(t[1]);
-    t[3].subtractAssign(t[4]);
-    t[4] = t[2].mulByNonResidue();
-    c.c1 = t[3].add(t[4]);
-    t[3] = c0.add(c2);
-    t[4] = e.c0.add(e.c2);
-    t[3].multiplyAssign(t[4]);
-    t[4] = t[0].add(t[2]);
-    t[3].subtractAssign(t[4]);
-    c.c2 = t[1].add(t[3]);
-    c.c0 = t[5];
+    fp6 c(*this);
+    c.multiplyAssign(e);
     return c;
 }
 
