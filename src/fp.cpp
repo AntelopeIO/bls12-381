@@ -185,16 +185,16 @@ fp fp::inverse() const
         }
         else if(u.cmp(v) == 1)
         {
-            _lsubtractAssign(&u, &v);
+            _lsubtract(&u, &u, &v);
             u.div2(0);
-            _laddAssign(&r, &s);
+            _ladd(&r, &r, &s);
             s.mul2();
         }
         else
         {
-            _lsubtractAssign(&v, &u);
+            _lsubtract(&v, &v, &u);
             v.div2(0);
-            _laddAssign(&s, &r);
+            _ladd(&s, &s, &r);
             z += r.mul2();
         }
         k += 1;
@@ -212,10 +212,10 @@ fp fp::inverse() const
 
     if(r.cmp(MODULUS) != -1 || z > 0)
     {
-        _lsubtractAssign(&r, &MODULUS);
+        _lsubtract(&r, &r, &MODULUS);
     }
     u = MODULUS;
-    _lsubtractAssign(&u, &r);
+    _lsubtract(&u, &u, &r);
 
     // Phase 2
     for(uint64_t i = k; i < 384*2; i++)
@@ -455,8 +455,8 @@ fp2 fp2::add(const fp2& e) const
 
 void fp2::addAssign(const fp2& e)
 {
-    _addAssign(&c0, &e.c0);
-    _addAssign(&c1, &e.c1);
+    _add(&c0, &c0, &e.c0);
+    _add(&c1, &c1, &e.c1);
 }
 
 fp2 fp2::ladd(const fp2& e) const
@@ -477,8 +477,8 @@ fp2 fp2::dbl() const
 
 void fp2::doubleAssign()
 {
-    _doubleAssign(&c0);
-    _doubleAssign(&c1);
+    _double(&c0, &c0);
+    _double(&c1, &c1);
 }
 
 fp2 fp2::ldouble() const
@@ -499,8 +499,8 @@ fp2 fp2::subtract(const fp2& e) const
 
 void fp2::subtractAssign(const fp2& e)
 {
-    _subtractAssign(&c0, &e.c0);
-    _subtractAssign(&c1, &e.c1);
+    _subtract(&c0, &c0, &e.c0);
+    _subtract(&c1, &c1, &e.c1);
 }
 
 fp2 fp2::negate() const
@@ -528,7 +528,7 @@ fp2 fp2::multiply(const fp2& e) const
     _add(&t[0], &c0, &c1);
     _add(&t[3], &e.c0, &e.c1);
     _subtract(&c.c0, &t[1], &t[2]);
-    _addAssign(&t[1], &t[2]);
+    _add(&t[1], &t[1], &t[2]);
     _multiply(&t[0], &t[0], &t[3]);
     _subtract(&c.c1, &t[0], &t[1]);
     return c;
@@ -542,7 +542,7 @@ void fp2::multiplyAssign(const fp2& e)
     _add(&t[0], &c0, &c1);
     _add(&t[3], &e.c0, &e.c1);
     _subtract(&c0, &t[1], &t[2]);
-    _addAssign(&t[1], &t[2]);
+    _add(&t[1], &t[1], &t[2]);
     _multiply(&t[0], &t[0], &t[3]);
     _subtract(&c1, &t[0], &t[1]);
 }
@@ -585,8 +585,8 @@ fp2 fp2::mulByB() const
     fp2 c;
     _double(&t[0], &c0);
     _double(&t[1], &c1);
-    _doubleAssign(&t[0]);
-    _doubleAssign(&t[1]);
+    _double(&t[0], &t[0]);
+    _double(&t[1], &t[1]);
     _subtract(&c.c0, &t[0], &t[1]);
     _add(&c.c1, &t[0], &t[1]);
     return c;
@@ -598,7 +598,7 @@ fp2 fp2::inverse() const
     fp2 c;
     _square(&t[0], &c0);
     _square(&t[1], &c1);
-    _addAssign(&t[0], &t[1]);
+    _add(&t[0], &t[0], &t[1]);
     t[0] = t[0].inverse();
     _multiply(&c.c0, &c0, &t[0]);
     _multiply(&t[0], &t[0], &c1);

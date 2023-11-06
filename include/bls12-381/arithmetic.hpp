@@ -12,15 +12,11 @@ class fp;
 void init(bool cpu_features = true);
 
 void _add(fp* z, const fp* x, const fp* y);
-void _addAssign(fp* x, const fp* y);
 void _ladd(fp* z, const fp* x, const fp* y);
-void _laddAssign(fp* x, const fp* y);
 void _double(fp* z, const fp* x);
-void _doubleAssign(fp* z);
 void _ldouble(fp* z, const fp* x);
 void _subtract(fp* z, const fp* x, const fp* y);
-void _subtractAssign(fp* z, const fp* x);
-void _lsubtractAssign(fp* z, const fp* x);
+void _lsubtract(fp* z, const fp* x, const fp* y);
 void _negate(fp* z, const fp* x);
 void _square(fp* z, const fp* x);
 
