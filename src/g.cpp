@@ -440,16 +440,13 @@ g1 g1::glvEndomorphism() const
 // WeightedSum calculates multi exponentiation. Given pairs of G1 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise NONE is returned.
-optional<g1> g1::weightedSum(std::span<const g1> points, std::span<const array<uint64_t, 4>> scalars, std::function<void()> yield)
+g1 g1::weightedSum(std::span<const g1> points, std::span<const array<uint64_t, 4>> scalars, std::function<void()> yield)
 {
-    if(points.size() != scalars.size())
-    {
-        return {};
-    }
+    const size_t effective_size = min(scalars.size(), points.size());
     uint64_t c = 3;
-    if(scalars.size() >= 32)
+    if(effective_size >= 32)
     {
-        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(scalars.size()))));
+        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(effective_size))));
     }
     uint64_t bucketSize = (1<<c)-1;
     uint64_t windowsSize = 255/c+1;
@@ -463,7 +460,7 @@ optional<g1> g1::weightedSum(std::span<const g1> points, std::span<const array<u
         {
             bucket[i] = zero();
         }
-        for(uint64_t i = 0; i < scalars.size(); i++)
+        for(uint64_t i = 0; i < effective_size; i++)
         {
             array<uint64_t, 4> shifted;
             scalar::rsh(shifted, scalars[i], c*j);
@@ -1172,16 +1169,13 @@ g2 g2::frobeniusMap(int64_t power) const
 // WeightedSum calculates multi exponentiation. Given pairs of G2 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
 // Length of points and scalars are expected to be equal, otherwise NONE is returned.
-optional<g2> g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield)
+g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield)
 {
-    if(points.size() != scalars.size())
-    {
-        return {};
-    }
+    const size_t effective_size = min(scalars.size(), points.size());
     uint64_t c = 3;
-    if(scalars.size() >= 32)
+    if(effective_size >= 32)
     {
-        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(scalars.size()))));
+        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(effective_size))));
     }
     uint64_t bucketSize = (1<<c)-1;
     uint64_t windowsSize = 255/c+1;
@@ -1195,7 +1189,7 @@ optional<g2> g2::weightedSum(std::span<const g2> points, std::span<const std::ar
         {
             bucket[i] = zero();
         }
-        for(uint64_t i = 0; i < scalars.size(); i++)
+        for(uint64_t i = 0; i < effective_size; i++)
         {
             array<uint64_t, 4> shifted;
             scalar::rsh(shifted, scalars[i], c*j);

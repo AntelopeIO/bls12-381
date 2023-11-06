@@ -710,7 +710,7 @@ void TestG1WeightedSumExpected()
     vector<g1> bases = {one, one};
     g1 expected, result;
     expected = one.scale<1>({5});
-    result = g1::weightedSum(bases, scalars).value();
+    result = g1::weightedSum(bases, scalars);
     if(!expected.equal(result))
     {
         throw invalid_argument("TestG1WeightedSumExpected: bad multi-exponentiation");
@@ -738,7 +738,7 @@ void TestG1WeightedSumBatch()
         tmp = bases[i].scale(scalars[i]);
         expected = expected.add(tmp);
     }
-    g1 result = g1::weightedSum(bases, scalars).value();
+    g1 result = g1::weightedSum(bases, scalars);
     if(!expected.equal(result))
     {
         throw invalid_argument("bad multi-exponentiation");
@@ -1023,7 +1023,7 @@ void TestG2WeightedSumExpected()
     vector<g2> bases = {one, one};
     g2 expected, result;
     expected = one.scale<1>({5});
-    result = g2::weightedSum(bases, scalars).value();
+    result = g2::weightedSum(bases, scalars);
     if(!expected.equal(result))
     {
         throw invalid_argument("bad multi-exponentiation");
@@ -1051,7 +1051,7 @@ void TestG2WeightedSumBatch()
         tmp = bases[i].scale(scalars[i]);
         expected = expected.add(tmp);
     }
-    g2 result = g2::weightedSum(bases, scalars).value();
+    g2 result = g2::weightedSum(bases, scalars);
     if(!expected.equal(result))
     {
         throw invalid_argument("bad multi-exponentiation");
