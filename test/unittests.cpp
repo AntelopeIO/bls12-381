@@ -719,30 +719,44 @@ void TestG1WeightedSumExpected()
 
 void TestG1WeightedSumBatch()
 {
-    g1 one = g1::one();
-    int64_t n = 1000;
-    vector<array<uint64_t, 4>> scalars;
-    vector<g1> bases;
-    // scalars: [s0,s1 ... s(n-1)]
-    // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
-    for(int64_t i = 0, j = n-1; i < n; i++, j--)
-    {
-        scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
-        bases.push_back(g1::zero());
-        bases[i] = one.scale(scalars[0]);
-    }
-    // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
-    g1 expected, tmp;
-    for(int64_t i = 0; i < n; i++)
-    {
-        tmp = bases[i].scale(scalars[i]);
-        expected = expected.add(tmp);
-    }
-    g1 result = g1::weightedSum(bases, scalars);
-    if(!expected.equal(result))
-    {
-        throw invalid_argument("bad multi-exponentiation");
-    }
+    const auto doTest = [](int64_t n) {
+        g1 one = g1::one();
+        vector<array<uint64_t, 4>> scalars;
+        vector<g1> bases;
+        // scalars: [s0,s1 ... s(n-1)]
+        // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
+        for(int64_t i = 0; i < n; i++)
+        {
+            scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
+            bases.push_back(g1::zero());
+            bases[i] = one.scale(array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
+        }
+        // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
+        g1 expected, tmp;
+        for(int64_t i = 0; i < n; i++)
+        {
+            tmp = bases[i].scale(scalars[i]);
+            expected = expected.add(tmp);
+        }
+        g1 result = g1::weightedSum(bases, scalars);
+        if(!expected.equal(result))
+        {
+            throw invalid_argument("bad multi-exponentiation");
+        }
+    };
+
+    doTest(0);
+    doTest(1);
+    doTest(2);
+    doTest(31);
+    doTest(32);
+    doTest(33);
+    doTest(63);
+    doTest(64);
+    doTest(65);
+    doTest(511);
+    doTest(512);
+    doTest(513);
 }
 
 void TestG1MapToCurve()
@@ -1032,30 +1046,44 @@ void TestG2WeightedSumExpected()
 
 void TestG2WeightedSumBatch()
 {
-    g2 one = g2::one();
-    int64_t n = 1000;
-    vector<array<uint64_t, 4>> scalars;
-    vector<g2> bases;
-    // scalars: [s0,s1 ... s(n-1)]
-    // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
-    for(int64_t i = 0, j = n-1; i < n; i++, j--)
-    {
-        scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
-        bases.push_back(g2::zero());
-        bases[i] = one.scale(scalars[0]);
-    }
-    // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
-    g2 expected, tmp;
-    for(int64_t i = 0; i < n; i++)
-    {
-        tmp = bases[i].scale(scalars[i]);
-        expected = expected.add(tmp);
-    }
-    g2 result = g2::weightedSum(bases, scalars);
-    if(!expected.equal(result))
-    {
-        throw invalid_argument("bad multi-exponentiation");
-    }
+    const auto doTest = [](int64_t n) {
+        g2 one = g2::one();
+        vector<array<uint64_t, 4>> scalars;
+        vector<g2> bases;
+        // scalars: [s0,s1 ... s(n-1)]
+        // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
+        for(int64_t i = 0, j = n-1; i < n; i++, j--)
+        {
+            scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
+            bases.push_back(g2::zero());
+            bases[i] = one.scale(array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
+        }
+        // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
+        g2 expected, tmp;
+        for(int64_t i = 0; i < n; i++)
+        {
+            tmp = bases[i].scale(scalars[i]);
+            expected = expected.add(tmp);
+        }
+        g2 result = g2::weightedSum(bases, scalars);
+        if(!expected.equal(result))
+        {
+            throw invalid_argument("bad multi-exponentiation");
+        }
+    };
+    
+    doTest(0);
+    doTest(1);
+    doTest(2);
+    doTest(31);
+    doTest(32);
+    doTest(33);
+    doTest(63);
+    doTest(64);
+    doTest(65);
+    doTest(511);
+    doTest(512);
+    doTest(513);
 }
 
 void TestG2MapToCurve()
