@@ -450,7 +450,7 @@ g1 g1::weightedSum(std::span<const g1> points, std::span<const array<uint64_t, 4
     uint64_t c = 3;
     if(effective_size >= 32)
     {
-        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(effective_size))));
+        c = (std::numeric_limits<size_t>::digits - std::countl_zero(effective_size))/3 + 2;
     }
     uint64_t bucketSize = (1<<c)-1;
     uint64_t windowsSize = 255/c+1;
@@ -1183,7 +1183,7 @@ g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64
     uint64_t c = 3;
     if(effective_size >= 32)
     {
-        c = static_cast<uint64_t>(ceil(log10(static_cast<double>(effective_size))));
+        c = (std::numeric_limits<size_t>::digits - std::countl_zero(effective_size))/3 + 2;
     }
     uint64_t bucketSize = (1<<c)-1;
     uint64_t windowsSize = 255/c+1;
