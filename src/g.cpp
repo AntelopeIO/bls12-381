@@ -478,14 +478,14 @@ g1 g1::weightedSum(std::span<const g1> points, std::span<const std::array<uint64
     {
         for(uint64_t i = 0; i < bucketSize; i++)
         {
-            if (i & 255 == 0) {
+            if (yield && ((i & 255) == 0)) {
                 yield();
             }
             bucket[i] = zero();
         }
         for(uint64_t i = 0; i < effective_size; i++)
         {
-            if (i & 255 == 0) {
+            if (yield && ((i & 255) == 0)) {
                 yield();
             }
             array<uint64_t, 4> shifted;
@@ -500,7 +500,7 @@ g1 g1::weightedSum(std::span<const g1> points, std::span<const std::array<uint64
         g1 sum = zero();
         for(int64_t i = bucketSize-1; i >= 0; i--)
         {
-            if (i & 255 == 0) {
+            if (yield && ((i & 255) == 0)) {
                 yield();
             }
             sum.addAssign(bucket[i]);
@@ -1233,14 +1233,14 @@ g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64
     {
         for(uint64_t i = 0; i < bucketSize; i++)
         {
-            if (i & 255 == 0) {
+            if (yield && ((i & 255) == 0)) {
                 yield();
             }
             bucket[i] = zero();
         }
         for(uint64_t i = 0; i < effective_size; i++)
         {
-            if (i & 255 == 0) {
+            if (yield && ((i & 255) == 0)) {
                 yield();
             }
             array<uint64_t, 4> shifted;
@@ -1255,7 +1255,7 @@ g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64
         g2 sum = zero();
         for(int64_t i = bucketSize-1; i >= 0; i--)
         {
-            if (i & 255 == 0) {
+            if (yield && ((i & 255) == 0)) {
                 yield();
             }
             sum.addAssign(bucket[i]);
