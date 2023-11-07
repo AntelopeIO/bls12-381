@@ -323,14 +323,21 @@ g1 g1::affine() const
 
 g1 g1::add(const g1& e) const
 {
+    g1 r(*this);
+    r.addAssign(e);
+    return r;
+}
+
+void g1::addAssign(const g1& e) {
     // www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#addition-add-2007-bl
     if(isZero())
     {
-        return e;
+        *this = e;
+        return;
     }
     if(e.isZero())
     {
-        return *this;
+        return;
     }
     fp t[9];
     _square(&t[7], &z);
@@ -345,11 +352,13 @@ g1 g1::add(const g1& e) const
     {
         if(t[0].equal(t[2]))
         {
-            return dbl();
+            doubleAssign();
+            return;
         }
-        return zero();
+        *this = zero();
+        return;
     }
-    g1 r;
+    
     _subtract(&t[1], &t[1], &t[3]);
     _double(&t[4], &t[1]);
     _square(&t[4], &t[4]);
@@ -360,29 +369,34 @@ g1 g1::add(const g1& e) const
     _subtract(&t[6], &t[6], &t[5]);
     _multiply(&t[3], &t[3], &t[4]);
     _double(&t[4], &t[3]);
-    _subtract(&r.x, &t[6], &t[4]);
-    _subtract(&t[4], &t[3], &r.x);
+    _subtract(&x, &t[6], &t[4]);
+    _subtract(&t[4], &t[3], &x);
     _multiply(&t[6], &t[2], &t[5]);
     _double(&t[6], &t[6]);
     _multiply(&t[0], &t[0], &t[4]);
-    _subtract(&r.y, &t[0], &t[6]);
+    _subtract(&y, &t[0], &t[6]);
     _add(&t[0], &z, &e.z);
     _square(&t[0], &t[0]);
     _subtract(&t[0], &t[0], &t[7]);
     _subtract(&t[0], &t[0], &t[8]);
-    _multiply(&r.z, &t[0], &t[1]);
-    return r;
+    _multiply(&z, &t[0], &t[1]);
 }
 
 g1 g1::dbl() const
 {
+    g1 r(*this);
+    r.doubleAssign();
+    return r;
+}
+
+void g1::doubleAssign() {
     // http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#doubling-dbl-2009-l
     if(isZero())
     {
-        return *this;
+        return;
     }
     fp t[5];
-    g1 r;
+
     _square(&t[0], &x);
     _square(&t[1], &y);
     _square(&t[2], &t[1]);
@@ -395,17 +409,16 @@ g1 g1::dbl() const
     _add(&t[0], &t[3], &t[0]);
     _square(&t[4], &t[0]);
     _double(&t[3], &t[1]);
-    _subtract(&r.x, &t[4], &t[3]);
-    _subtract(&t[1], &t[1], &r.x);
+    _subtract(&x, &t[4], &t[3]);
+    _subtract(&t[1], &t[1], &x);
     _double(&t[2], &t[2]);
     _double(&t[2], &t[2]);
     _double(&t[2], &t[2]);
     _multiply(&t[0], &t[0], &t[1]);
     _subtract(&t[1], &t[0], &t[2]);
     _multiply(&t[0], &y, &z);
-    r.y = t[1];
-    _double(&r.z, &t[0]);
-    return r;
+    y = t[1];
+    _double(&z, &t[0]);
 }
 
 g1 g1::negate() const
@@ -419,10 +432,13 @@ g1 g1::negate() const
 
 g1 g1::subtract(const g1& e) const
 {
-    g1 c, d;
-    d = e.negate();
-    c = this->add(d);
+    g1 c(*this);
+    c.subtractAssign(e);
     return c;
+}
+
+void g1::subtractAssign(const g1& e) {
+    addAssign(e.negate());
 }
 
 g1 g1::clearCofactor() const
@@ -477,7 +493,7 @@ g1 g1::weightedSum(std::span<const g1> points, std::span<const std::array<uint64
             uint64_t index = bucketSize & shifted[0];
             if(index != 0)
             {
-                bucket[index-1] = bucket[index-1].add(points[i]);
+                bucket[index-1].addAssign(points[i]);
             }
         }
         g1 acc = zero();
@@ -487,8 +503,8 @@ g1 g1::weightedSum(std::span<const g1> points, std::span<const std::array<uint64
             if (i & 255 == 0) {
                 yield();
             }
-            sum = sum.add(bucket[i]);
-            acc = acc.add(sum);
+            sum.addAssign(bucket[i]);
+            acc.addAssign(sum);
         }
         windows.push_back(acc);
     }
@@ -498,9 +514,9 @@ g1 g1::weightedSum(std::span<const g1> points, std::span<const std::array<uint64
     {
         for(uint64_t j = 0; j < c; j++)
         {
-            acc = acc.dbl();
+            acc.doubleAssign();
         }
-        acc = acc.add(windows[i]);
+        acc.addAssign(windows[i]);
     }
     return acc;
 }
@@ -1019,14 +1035,21 @@ g2 g2::affine() const
 
 g2 g2::add(const g2& e) const
 {
+    g2 r(*this);
+    r.addAssign(e);
+    return r;
+}
+
+void g2::addAssign(const g2& e) {
     // http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#addition-add-2007-bl
     if(isZero())
     {
-        return e;
+        *this = e;
+        return;
     }
     if(e.isZero())
     {
-        return *this;
+        return;
     }
     fp2 t[9];
     t[7] = z.square();
@@ -1041,11 +1064,13 @@ g2 g2::add(const g2& e) const
     {
         if(t[0].equal(t[2]))
         {
-            return dbl();
+            doubleAssign();
+            return;
         }
-        return zero();
+        *this = zero();
+        return;
     }
-    g2 r;
+
     t[1] = t[1].subtract(t[3]);
     t[4] = t[1].dbl();
     t[4] = t[4].square();
@@ -1056,29 +1081,34 @@ g2 g2::add(const g2& e) const
     t[6] = t[6].subtract(t[5]);
     t[3] = t[3].multiply(t[4]);
     t[4] = t[3].dbl();
-    r.x = t[6].subtract(t[4]);
-    t[4] = t[3].subtract(r.x);
+    x = t[6].subtract(t[4]);
+    t[4] = t[3].subtract(x);
     t[6] = t[2].multiply(t[5]);
     t[6] = t[6].dbl();
     t[0] = t[0].multiply(t[4]);
-    r.y = t[0].subtract(t[6]);
+    y = t[0].subtract(t[6]);
     t[0] = z.add(e.z);
     t[0] = t[0].square();
     t[0] = t[0].subtract(t[7]);
     t[0] = t[0].subtract(t[8]);
-    r.z = t[0].multiply(t[1]);
-    return r;
+    z = t[0].multiply(t[1]);
 }
 
 g2 g2::dbl() const
 {
+    g2 r(*this);
+    r.doubleAssign();
+    return r;
+}
+
+void g2::doubleAssign() {
     // http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#doubling-dbl-2009-l
     if(isZero())
     {
-        return *this;
+        return;
     }
     fp2 t[9];
-    g2 r;
+
     t[0] = x.square();
     t[1] = y.square();
     t[2] = t[1].square();
@@ -1091,17 +1121,16 @@ g2 g2::dbl() const
     t[0] = t[3].add(t[0]);
     t[4] = t[0].square();
     t[3] = t[1].dbl();
-    r.x = t[4].subtract(t[3]);
-    t[1] = t[1].subtract(r.x);
+    x = t[4].subtract(t[3]);
+    t[1] = t[1].subtract(x);
     t[2] = t[2].dbl();
     t[2] = t[2].dbl();
     t[2] = t[2].dbl();
     t[0] = t[0].multiply(t[1]);
     t[1] = t[0].subtract(t[2]);
     t[0] = y.multiply(z);
-    r.y = t[1];
-    r.z = t[0].dbl();
-    return r;
+    y = t[1];
+    z = t[0].dbl();
 }
 
 g2 g2::negate() const
@@ -1115,10 +1144,13 @@ g2 g2::negate() const
 
 g2 g2::subtract(const g2& e) const
 {
-    g2 c, d;
-    d = e.negate();
-    c = this->add(d);
+    g2 c(*this);
+    c.subtractAssign(e);
     return c;
+}
+
+void g2::subtractAssign(const g2& e) {
+    addAssign(e.negate());
 }
 
 g2 g2::psi() const
@@ -1216,7 +1248,7 @@ g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64
             uint64_t index = bucketSize & shifted[0];
             if(index != 0)
             {
-                bucket[index-1] = bucket[index-1].add(points[i]);
+                bucket[index-1].addAssign(points[i]);
             }
         }
         g2 acc = zero();
@@ -1226,8 +1258,8 @@ g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64
             if (i & 255 == 0) {
                 yield();
             }
-            sum = sum.add(bucket[i]);
-            acc = acc.add(sum);
+            sum.addAssign(bucket[i]);
+            acc.addAssign(sum);
         }
         windows.push_back(acc);
     }
@@ -1237,9 +1269,9 @@ g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64
     {
         for(uint64_t j = 0; j < c; j++)
         {
-            acc = acc.dbl();
+            acc.doubleAssign();
         }
-        acc = acc.add(windows[i]);
+        acc.addAssign(windows[i]);
     }
     return acc;
 }

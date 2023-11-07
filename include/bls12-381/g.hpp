@@ -51,9 +51,12 @@ public:
     bool isAffine() const;
     g1 affine() const;
     g1 add(const g1& e) const;
+    void addAssign(const g1& e);
     g1 dbl() const;
+    void doubleAssign();
     g1 negate() const;
     g1 subtract(const g1& e) const;
+    void subtractAssign(const g1& e);
     template<size_t N> g1 scale(const std::array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
     g1 glvEndomorphism() const;
@@ -107,9 +110,12 @@ public:
     bool isAffine() const;
     g2 affine() const;
     g2 add(const g2& e) const;
+    void addAssign(const g2& e);
     g2 dbl() const;
+    void doubleAssign();
     g2 negate() const;
     g2 subtract(const g2& e) const;
+    void subtractAssign(const g2& e);
     g2 psi() const;
     template<size_t N> g2 scale(const std::array<uint64_t, N>& s) const;
     g2 clearCofactor() const;
