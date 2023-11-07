@@ -525,14 +525,6 @@ void fp2::addAssign(const fp2& e)
     _add(&c1, &c1, &e.c1);
 }
 
-fp2 fp2::ladd(const fp2& e) const
-{
-    fp2 c;
-    _ladd(&c.c0, &c0, &e.c0);
-    _ladd(&c.c1, &c1, &e.c1);
-    return c;
-}
-
 fp2 fp2::dbl() const
 {
     fp2 c(*this);
@@ -544,14 +536,6 @@ void fp2::doubleAssign()
 {
     _double(&c0, &c0);
     _double(&c1, &c1);
-}
-
-fp2 fp2::ldouble() const
-{
-    fp2 c;
-    _ldouble(&c.c0, &c0);
-    _ldouble(&c.c1, &c1);
-    return c;
 }
 
 fp2 fp2::subtract(const fp2& e) const
