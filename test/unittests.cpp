@@ -878,9 +878,8 @@ void TestG1WeightedSumBatch()
         // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
         for(int64_t i = 0; i < n; i++)
         {
-            scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
-            bases.push_back(g1::zero());
-            bases[i] = one.scale(array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
+            scalars.push_back(random_scalar());
+            bases.push_back(random_g1());
         }
         // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
         g1 expected, tmp;
@@ -1203,11 +1202,10 @@ void TestG2WeightedSumBatch()
         vector<g2> bases;
         // scalars: [s0,s1 ... s(n-1)]
         // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
-        for(int64_t i = 0, j = n-1; i < n; i++, j--)
+        for(int64_t i = 0; i < n; i++)
         {
-            scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
-            bases.push_back(g2::zero());
-            bases[i] = one.scale(array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
+            scalars.push_back(random_scalar());
+            bases.push_back(random_g2());
         }
         // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
         g2 expected, tmp;
