@@ -122,17 +122,8 @@ void benchG1WeightedSum() {
     string testName = "G1 WeightedSum";
     const int numIters = 10000;
     g1 p = random_g1();
-    vector<g1> bases = {p,p,p,p,p,p,p,p};
-    vector<array<uint64_t, 4>> scalars = {
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff}
-    };
+    vector<g1> bases{8, p};
+    vector<array<uint64_t, 4>> scalars{8, {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff}};
     auto start = startStopwatch();
     for (int i = 0; i < numIters; i++) {
         g1::weightedSum(bases, scalars);
