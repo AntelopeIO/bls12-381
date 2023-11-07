@@ -111,8 +111,8 @@ bool fp::sign() const
 
 fp fp::add(const fp& e) const
 {
-    fp c(*this);
-    c.addAssign(e);
+    fp c;
+    _add(&c, this, &e);
     return c;
 }
 
@@ -123,8 +123,8 @@ void fp::addAssign(const fp& e)
 
 fp fp::dbl() const
 {
-    fp c(*this);
-    c.doubleAssign();
+    fp c;
+    _double(&c, this);
     return c;
 }
 
@@ -135,8 +135,8 @@ void fp::doubleAssign()
 
 fp fp::subtract(const fp& e) const
 {
-    fp c(*this);
-    c.subtractAssign(e);
+    fp c;
+    _subtract(&c, this, &e);
     return c;
 }
 
@@ -154,8 +154,8 @@ fp fp::negate() const
 
 fp fp::multiply(const fp& e) const
 {
-    fp c(*this);
-    c.multiplyAssign(e);
+    fp c;
+    _multiply(&c, this, &e);
     return c;
 }
 
@@ -166,8 +166,8 @@ void fp::multiplyAssign(const fp& e)
 
 fp fp::square() const
 {
-    fp c(*this);
-    c.squareAssign();
+    fp c;
+    _square(&c, this);
     return c;
 }
 
