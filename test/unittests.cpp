@@ -388,6 +388,45 @@ void TestArithmeticOpraters() {
     }
 }
 
+void TestSqrt() {
+    for (int i = 0; i < 100; ++ i) {
+        fp a = random_fe();
+        fp as = a.square();
+        fp asqrt;
+        if (as.sqrt(asqrt)) {
+            if(!as.equal(asqrt.square()))
+            {
+                throw invalid_argument("sqrt(fp).square != fp");
+            }
+            if(!a.equal(asqrt) && !a.equal(asqrt.negate()))
+            {
+                throw invalid_argument("fp2!= sqrt(fp.square)");
+            }
+        } else {
+            throw invalid_argument("failed to find sqrt for fp");
+        }
+    }
+    
+    for (int i = 0; i < 100; ++ i) {
+        fp2 a = random_fe2();
+        fp2 as = a.square();
+        fp2 asqrt;
+        if (as.sqrt(asqrt)) {
+            if(!as.equal(asqrt.square()))
+            {
+                throw invalid_argument("sqrt(fp2).square != fp2");
+            }
+            if(!a.equal(asqrt) && !a.equal(asqrt.negate()))
+            {
+                throw invalid_argument("fp2 != sqrt(fp2.square)");
+            }
+        } else {
+            throw invalid_argument("failed to find sqrt for fp2");
+        }
+    }
+
+}
+
 void TestFieldElementHelpers()
 {
     // fe
@@ -2070,6 +2109,8 @@ int main()
     TestFieldElementByteInputs();
 
     TestArithmeticOpraters();
+
+    TestSqrt();
 
     TestG1Serialization();
     TestG1SerializationGarbage();
