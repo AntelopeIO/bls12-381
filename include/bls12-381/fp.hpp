@@ -103,10 +103,8 @@ public:
     bool sign() const;
     fp2 add(const fp2& e) const;
     void addAssign(const fp2& e);
-    fp2 ladd(const fp2& e) const;
     fp2 dbl() const;
     void doubleAssign();
-    fp2 ldouble() const;
     fp2 subtract(const fp2& e) const;
     void subtractAssign(const fp2& e);
     fp2 negate() const;
