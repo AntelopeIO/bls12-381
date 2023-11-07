@@ -588,7 +588,6 @@ fp2 fp2::multiply(const fp2& e) const
     fp2 c(*this);
     c.multiplyAssign(e);
     return c;
-    return c;
 }
 
 void fp2::multiplyAssign(const fp2& e)
