@@ -971,6 +971,13 @@ void fp6::multiplyAssign(const fp6& e)
 
 fp6 fp6::square() const
 {
+    fp6 c(*this);
+    c.squareAssign();
+    return c;
+}
+
+void fp6::squareAssign()
+{
     fp2 t[6];
     fp6 c;
     t[0] = c0.square();
@@ -983,14 +990,13 @@ fp6 fp6::square() const
     t[3].doubleAssign();
     t[4] = c2.square();
     t[5] = t[3].mulByNonResidue();
-    c.c0 = t[0].add(t[5]);
+    c0 = t[0].add(t[5]);
     t[5] = t[4].mulByNonResidue();
-    c.c1 = t[1].add(t[5]);
+    c1 = t[1].add(t[5]);
     t[1].addAssign(t[2]);
     t[1].addAssign(t[3]);
     t[0].addAssign(t[4]);
-    c.c2 = t[1].subtract(t[0]);
-    return c;
+    c2 = t[1].subtract(t[0]);
 }
 
 void fp6::mulBy01Assign(const fp2& e0, const fp2& e1)
@@ -1293,26 +1299,38 @@ bool fp12::equal(const fp12& e) const
 
 fp12 fp12::add(const fp12& e) const
 {
-    fp12 c;
-    c.c0 = c0.add(e.c0);
-    c.c1 = c1.add(e.c1);
+    fp12 c(*this);
+    c.addAssign(e);
     return c;
+}
+
+void fp12::addAssign(const fp12& e) {
+    c0.addAssign(e.c0);
+    c1.addAssign(e.c1);
 }
 
 fp12 fp12::dbl() const
 {
-    fp12 c;
-    c.c0 = c0.dbl();
-    c.c1 = c1.dbl();
+    fp12 c(*this);
+    c.doubleAssign();
     return c;
+}
+
+void fp12::doubleAssign() {
+    c0.doubleAssign();
+    c1.doubleAssign();
 }
 
 fp12 fp12::subtract(const fp12& e) const
 {
-    fp12 c;
-    c.c0 = c0.subtract(e.c0);
-    c.c1 = c1.subtract(e.c1);
+    fp12 c(*this);
+    c.subtractAssign(e);
     return c;
+}
+
+void fp12::subtractAssign(const fp12& e) {
+    c0.subtractAssign(e.c0);
+    c1.subtractAssign(e.c1);
 }
 
 fp12 fp12::negate() const
@@ -1333,8 +1351,14 @@ fp12 fp12::conjugate() const
 
 fp12 fp12::square() const
 {
+    fp12 c(*this);
+    c.squareAssign();
+    return c;
+}
+
+void fp12::squareAssign() {
     fp6 t[4];
-    fp12 c;
+
     t[0] = c0.add(c1);
     t[2] = c0.multiply(c1);
     t[1] = c1.mulByNonResidue();
@@ -1342,54 +1366,47 @@ fp12 fp12::square() const
     t[3] = t[2].mulByNonResidue();
     t[0].multiplyAssign(t[1]);
     t[0].subtractAssign(t[2]);
-    c.c0 = t[0].subtract(t[3]);
-    c.c1 = t[2].dbl();
-    return c;
+    c0 = t[0].subtract(t[3]);
+    c1 = t[2].dbl();
 }
 
 fp12 fp12::cyclotomicSquare() const
 {
+    fp12 c(*this);
+    c.cyclotomicSquareAssign();
+    return c;
+}
+
+void fp12::cyclotomicSquareAssign() {
     fp2 t[7];
-    fp12 c;
     tie(t[3], t[4]) = fp4Square(c0.c0, c1.c1);
     t[2] = t[3].subtract(c0.c0);
     t[2].doubleAssign();
-    c.c0.c0 = t[2].add(t[3]);
+    c0.c0 = t[2].add(t[3]);
     t[2] = t[4].add(c1.c1);
     t[2].doubleAssign();
-    c.c1.c1 = t[2].add(t[4]);
+    c1.c1 = t[2].add(t[4]);
     tie(t[3], t[4]) = fp4Square(c1.c0, c0.c2);
     tie(t[5], t[6]) = fp4Square(c0.c1, c1.c2);
     t[2] = t[3].subtract(c0.c1);
     t[2].doubleAssign();
-    c.c0.c1 = t[2].add(t[3]);
+    c0.c1 = t[2].add(t[3]);
     t[2] = t[4].add(c1.c2);
     t[2].doubleAssign();
-    c.c1.c2 = t[2].add(t[4]);
+    c1.c2 = t[2].add(t[4]);
     t[3] = t[6].mulByNonResidue();
     t[2] = t[3].add(c1.c0);
     t[2].doubleAssign();
-    c.c1.c0 = t[2].add(t[3]);
+    c1.c0 = t[2].add(t[3]);
     t[2] = t[5].subtract(c0.c2);
     t[2].doubleAssign();
-    c.c0.c2 = t[2].add(t[5]);
-    return c;
+    c0.c2 = t[2].add(t[5]);
 }
 
 fp12 fp12::multiply(const fp12& e) const
 {
-    fp6 t[4];
-    fp12 c;
-    t[1] = c0.multiply(e.c0);
-    t[2] = c1.multiply(e.c1);
-    t[0] = t[1].add(t[2]);
-    t[2] = t[2].mulByNonResidue();
-    t[3] = t[1].add(t[2]);
-    t[1] = c0.add(c1);
-    t[2] = e.c0.add(e.c1);
-    t[1].multiplyAssign(t[2]);
-    c.c0 = t[3];
-    c.c1 = t[1].subtract(t[0]);
+    fp12 c(*this);
+    c.multiplyAssign(e);
     return c;
 }
 

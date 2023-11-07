@@ -168,6 +168,7 @@ public:
     fp6 multiply(const fp6& e) const;
     void multiplyAssign(const fp6& e);
     fp6 square() const;
+    void squareAssign();
     void mulBy01Assign(const fp2& e0, const fp2& e1);
     fp6 mulBy01(const fp2& e0, const fp2& e1) const;
     fp6 mulBy1(const fp2& e1) const;
@@ -207,12 +208,17 @@ public:
     bool isGtValid() const;
     bool equal(const fp12& e) const;
     fp12 add(const fp12& e) const;
+    void addAssign(const fp12& e);
     fp12 dbl() const;
+    void doubleAssign();
     fp12 subtract(const fp12& e) const;
+    void subtractAssign(const fp12& e);
     fp12 negate() const;
     fp12 conjugate() const;
     fp12 square() const;
+    void squareAssign();
     fp12 cyclotomicSquare() const;
+    void cyclotomicSquareAssign();
     fp12 multiply(const fp12& e) const;
     void multiplyAssign(const fp12& e);
     static std::tuple<fp2, fp2> fp4Square(const fp2& e0, const fp2& e1);
