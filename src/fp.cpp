@@ -155,7 +155,7 @@ fp fp::negate() const
 fp fp::multiply(const fp& e) const
 {
     fp c(*this);
-    c.multiply(e);
+    c.multiplyAssign(e);
     return c;
 }
 

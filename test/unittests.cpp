@@ -244,15 +244,36 @@ void TestFieldElementArithmeticCornerCases() {
         auto fpExpectedSquare = fp::fromBytesBE(hexToBytes<48>(expectedSquare), false, true);
         auto fpExpectedAdd = fp::fromBytesBE(hexToBytes<48>(expectedAdd), false, true);
 
-        fp s,m,a;
+        fp s,m,a,d;
+        fp s1,m1,a1,d1;
 
         _square(&s, &*input);
         _multiply(&m, &*input, &*input);
         _add(&a, &*input, &*input);
+        _double(&d, &*input);
+
+        s1 = input->square();
+        m1 = input->multiply(*input);
+        a1 = input->add(*input);
+        d1 = input->dbl();
+
+        if(!s.equal(s1)) {
+            throw invalid_argument("_square != fp::square");
+        }
+        if(!m.equal(m1)) {
+            throw invalid_argument("_multiply != fp::multiply");
+        }
+        if(!a.equal(a1)) {
+            throw invalid_argument("_add != fp::add");
+        }
+        if(!d.equal(d1)) {
+            throw invalid_argument("_double != fp::dbl");
+        }
 
         s = s.fromMont();
         m = m.fromMont();
         a = a.fromMont();
+        d = d.fromMont();
 
         if(!s.equal(m))
         {
@@ -262,6 +283,11 @@ void TestFieldElementArithmeticCornerCases() {
         if(!s.equal(*fpExpectedSquare))
         {
             throw invalid_argument("square != expected");
+        }
+
+        if(!a.equal(d))
+        {
+            throw invalid_argument("double != add self");
         }
 
         if(!a.equal(*fpExpectedAdd))
