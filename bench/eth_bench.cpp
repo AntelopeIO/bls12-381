@@ -119,7 +119,7 @@ void benchG1Mul() {
 }
 
 void benchG1WeightedSum() {
-    string testName = "G2 WeightedSum";
+    string testName = "G1 WeightedSum";
     const int numIters = 10000;
     g1 p = random_g1();
     vector<g1> bases = {p,p,p,p,p,p,p,p};
