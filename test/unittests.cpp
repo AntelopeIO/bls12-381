@@ -302,6 +302,92 @@ void TestFieldElementArithmeticCornerCases() {
     }
 }
 
+template<class T> void TestHelperMultiplySquare(const T input) {
+    T s,m;
+    s = input.square();
+    m = input.multiply(input);
+
+    T sa,ma;
+    sa = input;
+    sa.squareAssign();
+    ma = input;
+    ma.multiplyAssign(ma);
+
+    if(!s.equal(sa))
+    {
+        throw invalid_argument("square != squareAssign");
+    }
+
+    if(!m.equal(ma))
+    {
+        throw invalid_argument("multiply != multiplyAssign");
+    }
+
+    if(!s.equal(m))
+    {
+        throw invalid_argument("square != mul self");
+    }
+}
+
+template<class T> void TestHelperAddSubtractDouble(const T input) {
+    T a,d;
+    a = input.add(input);
+    d = input.dbl();
+
+    T aa,da;
+    aa = input;
+    aa.addAssign(aa);
+    da = input;
+    da.doubleAssign();
+
+    if(!a.equal(aa))
+    {
+        throw invalid_argument("add != addAssign");
+    }
+
+    if(!d.equal(da))
+    {
+        throw invalid_argument("dbl != doubleAssign");
+    }
+
+    if(!a.equal(d))
+    {
+        throw invalid_argument("double != add self");
+    }
+
+    T s = input.subtract(input);
+    T sa = input;
+    sa.subtractAssign(sa);
+
+    if(!s.equal(sa))
+    {
+        throw invalid_argument("subtract != subtractAssign");
+    }
+
+    if(!s.isZero())
+    {
+        throw invalid_argument("zero != sub self");
+    }
+}
+
+void TestArithmeticOpraters() {
+    for(int i = 0; i < 100; i++)
+    {
+        TestHelperMultiplySquare(random_fe());
+        TestHelperMultiplySquare(random_fe2());
+        TestHelperMultiplySquare(random_fe6());
+        TestHelperMultiplySquare(random_fe12());
+
+        TestHelperAddSubtractDouble(random_fe());
+        TestHelperAddSubtractDouble(random_fe2());
+        TestHelperAddSubtractDouble(random_fe6());
+        TestHelperAddSubtractDouble(random_fe12());
+
+        TestHelperAddSubtractDouble(random_g1());
+        TestHelperAddSubtractDouble(random_g2());
+    }
+}
+
 void TestFieldElementHelpers()
 {
     // fe
@@ -1982,6 +2068,8 @@ int main()
     TestFieldElementHelpers();
     TestFieldElementSerialization();
     TestFieldElementByteInputs();
+
+    TestArithmeticOpraters();
 
     TestG1Serialization();
     TestG1SerializationGarbage();
