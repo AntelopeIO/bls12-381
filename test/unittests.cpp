@@ -2163,6 +2163,61 @@ void TestExtraVectors()
     }
 }
 
+void TestOutOfRangeInputs() {
+    // This test is to make sure multiplication wiil not fail if the inputs is just slightly larger than p
+    // The 4(p-1) limit may be not that strict. But we should only relax this limit if we are absolutely sure this 
+    // will not cause problems all the methods calling _ladd/_lsubstract/_ldouble.
+    auto p = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB"), false, true);
+    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), false, true);
+    // 4(p-1) * 4(p-1) will work
+    for (int i = 0 ; i < 3; ++ i) {
+        auto a = pminus1;
+        auto b = pminus1;
+        auto a2 = pminus1;
+        a2 = a2.fromMont().toMont();
+        auto b2 = pminus1;
+        b2 = b2.fromMont().toMont();
+        for (int j = 0; j < i; ++ j) {
+            _ldouble(&a,&a);
+            _ldouble(&b,&b);
+            a2 = a2.dbl();
+            b2 = b2.dbl();
+        }
+        auto c = a.multiply(b); 
+        auto c2 = a2.multiply(b2);
+
+        if (!c.equal(c2)) {
+            cout << "multiplication 2^i(p-1) * 2^i(p-1) failed: i = "<< i;
+            break;
+        }
+        
+    }
+
+    // 2p * 2p will work
+    for (int i = 0 ; i < 2; ++ i) {
+        auto a = p;
+        auto b = p;
+        auto a2 = p;
+        a2 = a2.fromMont().toMont();
+        auto b2 = p;
+        b2 = b2.fromMont().toMont();
+        for (int j = 0; j < i; ++ j) {
+            _ldouble(&a,&a);
+            _ldouble(&b,&b);
+            a2 = a2.dbl();
+            b2 = b2.dbl();
+        }
+        auto c = a.multiply(b); 
+        auto c2 = a2.multiply(b2);
+
+        if (!c.equal(c2)) {
+            cout << "multiplication 2^i(p) * 2^i(p) failed: i = "<< i;
+            break;
+        }
+        
+    }
+}
+
 int main()
 {
     TestScalar();
@@ -2216,6 +2271,7 @@ int main()
     TestPopScheme();
 
     TestExtraVectors();
+    TestOutOfRangeInputs();
 
     return 0;
 }
