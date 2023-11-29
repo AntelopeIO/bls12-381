@@ -94,11 +94,6 @@ bool fp::isOne() const
     return equal(R1);
 }
 
-std::strong_ordering fp::cmp(const fp& e) const
-{
-    return scalar::cmp<6>(d, e.d);
-}
-
 bool fp::equal(const fp& e) const
 {
     return d[0] == e.d[0] && d[1] == e.d[1] && d[2] == e.d[2] && d[3] == e.d[3] && d[4] == e.d[4] && d[5] == e.d[5];

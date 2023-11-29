@@ -34,7 +34,20 @@ public:
     bool isEven() const;
     bool isZero() const;
     bool isOne() const;
-    std::strong_ordering cmp(const fp& e) const;
+    constexpr std::strong_ordering cmp(const fp& e) const {
+        for(int64_t i = 5; i >= 0; i--)
+        {
+            if(d[i] < e.d[i])
+            {
+                return std::strong_ordering::less;
+            }
+            if(d[i] > e.d[i])
+            {
+                return std::strong_ordering::greater;
+            }
+        }
+        return std::strong_ordering::equal;
+    };
     bool equal(const fp& e) const;
     bool sign() const;
     
