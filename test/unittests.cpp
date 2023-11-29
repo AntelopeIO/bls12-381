@@ -66,13 +66,13 @@ fp12 random_fe12()
 g1 random_g1()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g1::one().mulScalar(k);
+    return g1::one().scale(k);
 }
 
 g2 random_g2()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g2::one().mulScalar(k);
+    return g2::one().scale(k);
 }
 
 void TestScalar()
@@ -201,6 +201,345 @@ void TestFieldElementEquality()
     if(a12.equal(b12))
     {
         throw invalid_argument("a != a + 1");
+    }
+}
+
+void TestFieldElementArithmeticCornerCases() {
+    const char* testVectorInput[] = {
+        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA", // p-1
+        "1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB", // p
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    };
+
+    const char* testVectorExpectedSquare[] = {
+        "NA",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "NA",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    };
+
+    const char* testVectorExpectedAdd[] = {
+        "NA",
+        "1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaa9",
+        "NA",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    };
+
+    auto testSqureMul = [](const char* in, const char* expectedSquare, const char* expectedAdd) {
+        // Input should be convert to Montgomery form, so "raw" = false
+        auto input = fp::fromBytesBE(hexToBytes<48>(in), true, false);
+
+        if (0 == strcmp("NA", expectedSquare)) {
+            if (input) {
+                throw invalid_argument("input should be invalid but not");
+            }
+            return;
+        }
+
+        // Expected result will be compared against numbers converted back from Montgomery form, so "raw" = true
+        auto fpExpectedSquare = fp::fromBytesBE(hexToBytes<48>(expectedSquare), false, true);
+        auto fpExpectedAdd = fp::fromBytesBE(hexToBytes<48>(expectedAdd), false, true);
+
+        fp s,m,a,d;
+        fp s1,m1,a1,d1;
+
+        _square(&s, &*input);
+        _multiply(&m, &*input, &*input);
+        _add(&a, &*input, &*input);
+        _double(&d, &*input);
+
+        s1 = input->square();
+        m1 = input->multiply(*input);
+        a1 = input->add(*input);
+        d1 = input->dbl();
+
+        if(!s.equal(s1)) {
+            throw invalid_argument("_square != fp::square");
+        }
+        if(!m.equal(m1)) {
+            throw invalid_argument("_multiply != fp::multiply");
+        }
+        if(!a.equal(a1)) {
+            throw invalid_argument("_add != fp::add");
+        }
+        if(!d.equal(d1)) {
+            throw invalid_argument("_double != fp::dbl");
+        }
+
+        s = s.fromMont();
+        m = m.fromMont();
+        a = a.fromMont();
+        d = d.fromMont();
+
+        if(!s.equal(m))
+        {
+            throw invalid_argument("square != mul self");
+        }
+
+        if(!s.equal(*fpExpectedSquare))
+        {
+            throw invalid_argument("square != expected");
+        }
+
+        if(!a.equal(d))
+        {
+            throw invalid_argument("double != add self");
+        }
+
+        if(!a.equal(*fpExpectedAdd))
+        {
+            throw invalid_argument("add != expected");
+        }
+
+    };
+
+    for (int i = 0; i < sizeof(testVectorInput) / sizeof(const char*); ++i) {
+        testSqureMul(testVectorInput[i], testVectorExpectedSquare[i], testVectorExpectedAdd[i]);
+    }
+}
+
+template<class T> void TestHelperMultiplySquare(const T input) {
+    T s,m;
+    s = input.square();
+    m = input.multiply(input);
+
+    T sa,ma;
+    sa = input;
+    sa.squareAssign();
+    ma = input;
+    ma.multiplyAssign(ma);
+
+    if(!s.equal(sa))
+    {
+        throw invalid_argument("square != squareAssign");
+    }
+
+    if(!m.equal(ma))
+    {
+        throw invalid_argument("multiply != multiplyAssign");
+    }
+
+    if(!s.equal(m))
+    {
+        throw invalid_argument("square != mul self");
+    }
+}
+
+template<class T> void TestHelperAddSubtractDouble(const T input) {
+    T a,d;
+    a = input.add(input);
+    d = input.dbl();
+
+    T aa,da;
+    aa = input;
+    aa.addAssign(aa);
+    da = input;
+    da.doubleAssign();
+
+    if(!a.equal(aa))
+    {
+        throw invalid_argument("add != addAssign");
+    }
+
+    if(!d.equal(da))
+    {
+        throw invalid_argument("dbl != doubleAssign");
+    }
+
+    if(!a.equal(d))
+    {
+        throw invalid_argument("double != add self");
+    }
+
+    T s = input.subtract(input);
+    T sa = input;
+    sa.subtractAssign(sa);
+
+    if(!s.equal(sa))
+    {
+        throw invalid_argument("subtract != subtractAssign");
+    }
+
+    if(!s.isZero())
+    {
+        throw invalid_argument("zero != sub self");
+    }
+}
+
+void TestArithmeticOpraters() {
+    for(int i = 0; i < 100; i++)
+    {
+        TestHelperMultiplySquare(random_fe());
+        TestHelperMultiplySquare(random_fe2());
+        TestHelperMultiplySquare(random_fe6());
+        TestHelperMultiplySquare(random_fe12());
+
+        TestHelperAddSubtractDouble(random_fe());
+        TestHelperAddSubtractDouble(random_fe2());
+        TestHelperAddSubtractDouble(random_fe6());
+        TestHelperAddSubtractDouble(random_fe12());
+
+        TestHelperAddSubtractDouble(random_g1());
+        TestHelperAddSubtractDouble(random_g2());
+    }
+}
+
+void TestSqrt() {
+    for (int i = 0; i < 100; ++ i) {
+        fp a = random_fe();
+        fp as = a.square();
+        fp asqrt;
+        if (as.sqrt(asqrt)) {
+            if(!as.equal(asqrt.square()))
+            {
+                throw invalid_argument("sqrt(fp).square != fp");
+            }
+            if(!a.equal(asqrt) && !a.equal(asqrt.negate()))
+            {
+                throw invalid_argument("fp!= sqrt(fp.square)");
+            }
+        } else {
+            throw invalid_argument("failed to find sqrt for fp");
+        }
+    }
+    
+    for (int i = 0; i < 100; ++ i) {
+        fp2 a = random_fe2();
+        fp2 as = a.square();
+        fp2 asqrt;
+        if (as.sqrt(asqrt)) {
+            if(!as.equal(asqrt.square()))
+            {
+                throw invalid_argument("sqrt(fp2).square != fp2");
+            }
+            if(!a.equal(asqrt) && !a.equal(asqrt.negate()))
+            {
+                throw invalid_argument("fp2 != sqrt(fp2.square)");
+            }
+        } else {
+            throw invalid_argument("failed to find sqrt for fp2");
+        }
+    }
+
+}
+
+void TestInverse() {
+    if (!fp::one().inverse().equal(fp::one())) {
+        throw invalid_argument("1^-1 != 1");
+    }
+
+    auto two = fp::one().dbl();
+    if (!two.multiply(two.inverse()).equal(fp::one())) {
+        throw invalid_argument("2 * 2^-1 != 1");
+    }
+
+    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), false, true);
+    if (!pminus1.multiply(pminus1.inverse()).equal(fp::one())) {
+        throw invalid_argument("(p-1) * (p-1)^-1 != 1");
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp a = random_fe();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp::one())) {
+            throw invalid_argument("fp * fp^-1 != 1");
+        }
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp2 a = random_fe2();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp2::one())) {
+            throw invalid_argument("fp2 * fp2^-1 != 1");
+        }
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp6 a = random_fe6();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp6::one())) {
+            throw invalid_argument("fp * fp^-1 != 1");
+        }
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp12 a = random_fe12();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp12::one())) {
+            throw invalid_argument("fp * fp^-1 != 1");
+        }
+    }
+}
+
+void TestMod() {
+
+    const char* testVectorInput[] = {
+        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "000000000000000000000000000000001A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA", // p-1
+        "000000000000000000000000000000001A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB", // p
+        "000000000000000000000000000000001A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAC", // p+1
+    };
+
+    const char* testVectorExpected[] = {
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+    };
+
+    for (int i = 0; i < sizeof(testVectorInput)/sizeof(const char*); ++ i) {
+        auto s = hexToBytes<64>(testVectorInput[i]);
+        auto k = scalar::fromBytesBE<8>(s);
+        fp r = fp::modPrime<8>(k);
+        auto fpExpected = fp::fromBytesBE(hexToBytes<48>(testVectorExpected[i]), false, false);
+        if(!fpExpected->equal(r))
+        {
+            throw invalid_argument("r != expected for Mod");
+        }
+        
+    }
+}
+
+void TestExp() {
+
+    const char* testVectorInput[] = {
+        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "000000000000000000000000000000001A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA", // p-1
+    };
+
+    const char* testVectorInput2[] = {
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA", // p-1
+    };
+
+    const char* testVectorExpected[] = {
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+    };
+
+    for (int i = 0; i < sizeof(testVectorInput)/sizeof(const char*); ++ i) {
+        auto s = hexToBytes<64>(testVectorInput[i]);
+        auto b = fp::fromBytesBE(hexToBytes<48>(testVectorInput2[i]), false, false);
+        auto k = scalar::fromBytesBE<8>(s);
+        fp r = b->exp(k);
+        auto fpExpected = fp::fromBytesBE(hexToBytes<48>(testVectorExpected[i]), false, false);
+        if(!fpExpected->equal(r))
+        {
+            throw invalid_argument("r != expected for Exp");
+        }
+        
     }
 }
 
@@ -391,6 +730,36 @@ void TestG1Serialization()
     }
 }
 
+void TestG1SerializationGarbage() {
+    array<uint8_t, 144> buf;
+    buf.fill(0xff);
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g1::fromJacobianBytesBE(buf, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g1, jacobianBE: serialization not catching invalid input");
+        }
+        auto b = g1::fromJacobianBytesLE(buf, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g1, jacobianLE: serialization not catching invalid input");
+        }
+    }
+       
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g1::fromAffineBytesBE(std::span<const uint8_t, 96>{buf.begin(),96}, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g1, affineBE: serialization not catching invalid input");
+        }
+        auto b = g1::fromAffineBytesLE(std::span<const uint8_t, 96>{buf.begin(),96}, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g1, affineLE: serialization not catching invalid input");
+        }
+    }
+}
+
 void TestG1IsOnCurve()
 {
     g1 zero = g1::zero();
@@ -424,23 +793,23 @@ void TestG1AdditiveProperties()
         {
             throw invalid_argument("0 + 0 == 0");
         }
-        t0 = a.sub(zero);
+        t0 = a.subtract(zero);
         if(!t0.equal(a))
         {
             throw invalid_argument("a - 0 == a");
         }
-        t0 = zero.sub(zero);
+        t0 = zero.subtract(zero);
         if(!t0.equal(zero))
         {
             throw invalid_argument("0 - 0 == 0");
         }
-        t0 = zero.neg();
+        t0 = zero.negate();
         if(!t0.equal(zero))
         {
             throw invalid_argument("- 0 == 0");
         }
-        t0 = zero.sub(a);
-        t0 = t0.neg();
+        t0 = zero.subtract(a);
+        t0 = t0.negate();
         if(!t0.equal(a))
         {
             throw invalid_argument(" - (0 - a) == a");
@@ -451,7 +820,7 @@ void TestG1AdditiveProperties()
             throw invalid_argument("2 * 0 == 0");
         }
         t0 = a.dbl();
-        t0 = t0.sub(a);
+        t0 = t0.subtract(a);
         if(!t0.equal(a) || !t0.isOnCurve())
         {
             throw invalid_argument(" (2 * a) - a == a");
@@ -462,9 +831,9 @@ void TestG1AdditiveProperties()
         {
             throw invalid_argument("a + b == b + a");
         }
-        t0 = a.sub(b);
-        t1 = b.sub(a);
-        t1 = t1.neg();
+        t0 = a.subtract(b);
+        t1 = b.subtract(a);
+        t1 = t1.negate();
         if(!t0.equal(t1))
         {
             throw invalid_argument("a - b == - ( b - a )");
@@ -478,10 +847,10 @@ void TestG1AdditiveProperties()
         {
             throw invalid_argument("(a + b) + c == (a + c ) + b");
         }
-        t0 = a.sub(b);
-        t0 = t0.sub(c);
-        t1 = a.sub(c);
-        t1 = t1.sub(b);
+        t0 = a.subtract(b);
+        t0 = t0.subtract(c);
+        t1 = a.subtract(c);
+        t1 = t1.subtract(b);
         if(!t0.equal(t1))
         {
             throw invalid_argument("(a - b) - c == (a - c) -b");
@@ -517,34 +886,34 @@ void TestG1MultiplicativePropertiesExpected()
         array<uint64_t, 4> s2 = tv[i].s2;
         array<uint64_t, 10> s3;
         array<uint64_t, 4> sone = {1, 0, 0, 0};
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == 0");
         }
-        t0 = a.mulScalar(sone);
+        t0 = a.scale(sone);
         if(!t0.equal(a))
         {
             throw invalid_argument(" a ^ 1 == a");
         }
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == a");
         }
-        t0 = a.mulScalar(s1);
-        t0 = t0.mulScalar(s2);
-        s3 = scalar::mul<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t0 = a.scale(s1);
+        t0 = t0.scale(s2);
+        s3 = scalar::multiply<10, 4, 4>(s1, s2);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument("G1: (a ^ s1) ^ s2 == a ^ (s1 * s2)");
         }
-        t0 = a.mulScalar(s1);
-        t1 = a.mulScalar(s2);
+        t0 = a.scale(s1);
+        t1 = a.scale(s2);
         t0 = t0.add(t1);
         s3 = scalar::add<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument(" (a ^ s1) + (a ^ s2) == a ^ (s1 + s2)");
@@ -563,34 +932,34 @@ void TestG1MultiplicativeProperties()
         array<uint64_t, 4> s2 = random_scalar(); 
         array<uint64_t, 10> s3;
         array<uint64_t, 4> sone = {1, 0, 0, 0};
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == 0");
         }
-        t0 = a.mulScalar(sone);
+        t0 = a.scale(sone);
         if(!t0.equal(a))
         {
             throw invalid_argument(" a ^ 1 == a");
         }
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == a");
         }
-        t0 = a.mulScalar(s1);
-        t0 = t0.mulScalar(s2);
-        s3 = scalar::mul<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t0 = a.scale(s1);
+        t0 = t0.scale(s2);
+        s3 = scalar::multiply<10, 4, 4>(s1, s2);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument("G1: (a ^ s1) ^ s2 == a ^ (s1 * s2)");
         }
-        t0 = a.mulScalar(s1);
-        t1 = a.mulScalar(s2);
+        t0 = a.scale(s1);
+        t1 = a.scale(s2);
         t0 = t0.add(t1);
         s3 = scalar::add<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument(" (a ^ s1) + (a ^ s2) == a ^ (s1 + s2)");
@@ -598,7 +967,7 @@ void TestG1MultiplicativeProperties()
     }
 }
 
-void TestG1MultiExpExpected()
+void TestG1WeightedSumExpected()
 {
     g1 one = g1::one();
     vector<array<uint64_t, 4>> scalars = {
@@ -607,40 +976,52 @@ void TestG1MultiExpExpected()
     };
     vector<g1> bases = {one, one};
     g1 expected, result;
-    expected = one.mulScalar<1>({5});
-    result = g1::multiExp(bases, scalars).value();
+    expected = one.scale<1>({5});
+    result = g1::weightedSum(bases, scalars);
     if(!expected.equal(result))
     {
-        throw invalid_argument("TestG1MultiExpExpected: bad multi-exponentiation");
+        throw invalid_argument("TestG1WeightedSumExpected: bad multi-exponentiation");
     }
 }
 
-void TestG1MultiExpBatch()
+void TestG1WeightedSumBatch()
 {
-    g1 one = g1::one();
-    int64_t n = 1000;
-    vector<array<uint64_t, 4>> scalars;
-    vector<g1> bases;
-    // scalars: [s0,s1 ... s(n-1)]
-    // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
-    for(int64_t i = 0, j = n-1; i < n; i++, j--)
-    {
-        scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
-        bases.push_back(g1::zero());
-        bases[i] = one.mulScalar(scalars[0]);
-    }
-    // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
-    g1 expected, tmp;
-    for(int64_t i = 0; i < n; i++)
-    {
-        tmp = bases[i].mulScalar(scalars[i]);
-        expected = expected.add(tmp);
-    }
-    g1 result = g1::multiExp(bases, scalars).value();
-    if(!expected.equal(result))
-    {
-        throw invalid_argument("bad multi-exponentiation");
-    }
+    const auto doTest = [](int64_t n) {
+        g1 one = g1::one();
+        vector<array<uint64_t, 4>> scalars;
+        vector<g1> bases;
+
+        for(int64_t i = 0; i < n; i++)
+        {
+            scalars.push_back(random_scalar());
+            bases.push_back(random_g1());
+        }
+
+        g1 expected, tmp;
+        for(int64_t i = 0; i < n; i++)
+        {
+            tmp = bases[i].scale(scalars[i]);
+            expected = expected.add(tmp);
+        }
+        g1 result = g1::weightedSum(bases, scalars);
+        if(!expected.equal(result))
+        {
+            throw invalid_argument("bad G1 weighted sum");
+        }
+    };
+
+    doTest(0);
+    doTest(1);
+    doTest(2);
+    doTest(31);
+    doTest(32);
+    doTest(33);
+    doTest(63);
+    doTest(64);
+    doTest(65);
+    doTest(511);
+    doTest(512);
+    doTest(513);
 }
 
 void TestG1MapToCurve()
@@ -738,6 +1119,35 @@ void TestG2Serialization()
     }
 }
 
+void TestG2SerializationGarbage() {
+    array<uint8_t, 288> buf;
+    buf.fill(0xff);
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g2::fromJacobianBytesBE(buf, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g2, jacobianBE: serialization not catching invalid input");
+        }
+        auto b = g2::fromJacobianBytesLE(buf, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g2, jacobianLE: serialization not catching invalid input");
+        }
+    }
+    for (int i = 0 ; i < 4; ++i ) {
+        auto a = g2::fromAffineBytesBE(std::span<const uint8_t, 192>{buf.begin(),192}, i < 2, i%2);
+        if(a)
+        {
+            throw invalid_argument("g2, affineBE: serialization not catching invalid input");
+        }
+        auto b = g2::fromAffineBytesLE(std::span<const uint8_t, 192>{buf.begin(),192}, i < 2, i%2);
+        if(b)
+        {
+            throw invalid_argument("g2, affineLE: serialization not catching invalid input");
+        }
+    }
+}
+
 void TestG2IsOnCurve()
 {
     g2 zero = g2::zero();
@@ -771,23 +1181,23 @@ void TestG2AdditiveProperties()
         {
             throw invalid_argument("0 + 0 == 0");
         }
-        t0 = a.sub(zero);
+        t0 = a.subtract(zero);
         if(!t0.equal(a))
         {
             throw invalid_argument("a - 0 == a");
         }
-        t0 = zero.sub(zero);
+        t0 = zero.subtract(zero);
         if(!t0.equal(zero))
         {
             throw invalid_argument("0 - 0 == 0");
         }
-        t0 = zero.neg();
+        t0 = zero.negate();
         if(!t0.equal(zero))
         {
             throw invalid_argument("- 0 == 0");
         }
-        t0 = zero.sub(a);
-        t0 = t0.neg();
+        t0 = zero.subtract(a);
+        t0 = t0.negate();
         if(!t0.equal(a))
         {
             throw invalid_argument(" - (0 - a) == a");
@@ -798,7 +1208,7 @@ void TestG2AdditiveProperties()
             throw invalid_argument("2 * 0 == 0");
         }
         t0 = a.dbl();
-        t0 = t0.sub(a);
+        t0 = t0.subtract(a);
         if(!t0.equal(a) || !t0.isOnCurve())
         {
             throw invalid_argument(" (2 * a) - a == a");
@@ -809,9 +1219,9 @@ void TestG2AdditiveProperties()
         {
             throw invalid_argument("a + b == b + a");
         }
-        t0 = a.sub(b);
-        t1 = b.sub(a);
-        t1 = t1.neg();
+        t0 = a.subtract(b);
+        t1 = b.subtract(a);
+        t1 = t1.negate();
         if(!t0.equal(t1))
         {
             throw invalid_argument("a - b == - ( b - a )");
@@ -825,10 +1235,10 @@ void TestG2AdditiveProperties()
         {
             throw invalid_argument("(a + b) + c == (a + c ) + b");
         }
-        t0 = a.sub(b);
-        t0 = t0.sub(c);
-        t1 = a.sub(c);
-        t1 = t1.sub(b);
+        t0 = a.subtract(b);
+        t0 = t0.subtract(c);
+        t1 = a.subtract(c);
+        t1 = t1.subtract(b);
         if(!t0.equal(t1))
         {
             throw invalid_argument("(a - b) - c == (a - c) -b");
@@ -847,34 +1257,34 @@ void TestG2MultiplicativeProperties()
         array<uint64_t, 4> s2 = random_scalar(); 
         array<uint64_t, 10> s3;
         array<uint64_t, 4> sone = {1, 0, 0, 0};
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == 0");
         }
-        t0 = a.mulScalar(sone);
+        t0 = a.scale(sone);
         if(!t0.equal(a))
         {
             throw invalid_argument(" a ^ 1 == a");
         }
-        t0 = zero.mulScalar(s1);
+        t0 = zero.scale(s1);
         if(!t0.equal(zero))
         {
             throw invalid_argument(" 0 ^ s == a");
         }
-        t0 = a.mulScalar(s1);
-        t0 = t0.mulScalar(s2);
-        s3 = scalar::mul<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t0 = a.scale(s1);
+        t0 = t0.scale(s2);
+        s3 = scalar::multiply<10, 4, 4>(s1, s2);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument("G2: (a ^ s1) ^ s2 == a ^ (s1 * s2)");
         }
-        t0 = a.mulScalar(s1);
-        t1 = a.mulScalar(s2);
+        t0 = a.scale(s1);
+        t1 = a.scale(s2);
         t0 = t0.add(t1);
         s3 = scalar::add<10, 4, 4>(s1, s2);
-        t1 = a.mulScalar(s3);
+        t1 = a.scale(s3);
         if(!t0.equal(t1))
         {
             throw invalid_argument(" (a ^ s1) + (a ^ s2) == a ^ (s1 + s2)");
@@ -882,7 +1292,7 @@ void TestG2MultiplicativeProperties()
     }
 }
 
-void TestG2MultiExpExpected()
+void TestG2WeightedSumExpected()
 {
     g2 one = g2::one();
     vector<array<uint64_t, 4>> scalars = {
@@ -891,40 +1301,52 @@ void TestG2MultiExpExpected()
     };
     vector<g2> bases = {one, one};
     g2 expected, result;
-    expected = one.mulScalar<1>({5});
-    result = g2::multiExp(bases, scalars).value();
+    expected = one.scale<1>({5});
+    result = g2::weightedSum(bases, scalars);
     if(!expected.equal(result))
     {
         throw invalid_argument("bad multi-exponentiation");
     }
 }
 
-void TestG2MultiExpBatch()
+void TestG2WeightedSumBatch()
 {
-    g2 one = g2::one();
-    int64_t n = 1000;
-    vector<array<uint64_t, 4>> scalars;
-    vector<g2> bases;
-    // scalars: [s0,s1 ... s(n-1)]
-    // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
-    for(int64_t i = 0, j = n-1; i < n; i++, j--)
-    {
-        scalars.insert(scalars.begin(), array<uint64_t, 4>{static_cast<uint64_t>(rand()%100000), 0, 0, 0});
-        bases.push_back(g2::zero());
-        bases[i] = one.mulScalar(scalars[0]);
-    }
-    // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
-    g2 expected, tmp;
-    for(int64_t i = 0; i < n; i++)
-    {
-        tmp = bases[i].mulScalar(scalars[i]);
-        expected = expected.add(tmp);
-    }
-    g2 result = g2::multiExp(bases, scalars).value();
-    if(!expected.equal(result))
-    {
-        throw invalid_argument("bad multi-exponentiation");
-    }
+    const auto doTest = [](int64_t n) {
+        g2 one = g2::one();
+        vector<array<uint64_t, 4>> scalars;
+        vector<g2> bases;
+
+        for(int64_t i = 0; i < n; i++)
+        {
+            scalars.push_back(random_scalar());
+            bases.push_back(random_g2());
+        }
+
+        g2 expected, tmp;
+        for(int64_t i = 0; i < n; i++)
+        {
+            tmp = bases[i].scale(scalars[i]);
+            expected = expected.add(tmp);
+        }
+        g2 result = g2::weightedSum(bases, scalars);
+        if(!expected.equal(result))
+        {
+            throw invalid_argument("bad G2 weighted sum");
+        }
+    };
+    
+    doTest(0);
+    doTest(1);
+    doTest(2);
+    doTest(31);
+    doTest(32);
+    doTest(33);
+    doTest(63);
+    doTest(64);
+    doTest(65);
+    doTest(511);
+    doTest(512);
+    doTest(513);
 }
 
 void TestG2MapToCurve()
@@ -1093,8 +1515,8 @@ void TestPairingBilinearity()
         vector<tuple<g1, g2>> v;
         pairing::add_pair(v, G1, G2);
         fp12 e0 = pairing::calculate(v);
-        g1 P1 = G1.mulScalar(a);
-        g2 P2 = G2.mulScalar(b);
+        g1 P1 = G1.scale(a);
+        g2 P2 = G2.scale(b);
         v = {};
         pairing::add_pair(v, P1, P2);
         fp12 e1 = pairing::calculate(v);
@@ -1115,14 +1537,14 @@ void TestPairingBilinearity()
         // LHS
         g1 G1 = g1::one();
         g2 G2 = g2::one();
-        G1 = G1.mulScalar(c);
+        G1 = G1.scale(c);
         pairing::add_pair(v, G1, G2);
         // RHS
         g1 P1 = g1::one();
         g2 P2 = g2::one();
-        P1 = P1.mulScalar(a);
-        P2 = P2.mulScalar(b);
-        P1 = P1.neg();
+        P1 = P1.scale(a);
+        P2 = P2.scale(b);
+        P1 = P1.negate();
         pairing::add_pair(v, P1, P2);
         // should be one
         if(!pairing::calculate(v).isOne())
@@ -1141,14 +1563,14 @@ void TestPairingBilinearity()
         // LHS
         g1 G1 = g1::one();
         g2 G2 = g2::one();
-        G2 = G2.mulScalar(c);
+        G2 = G2.scale(c);
         pairing::add_pair(v, G1, G2);
         // RHS
         g1 H1 = g1::one();
         g2 H2 = g2::one();
-        H1 = H1.mulScalar(a);
-        H2 = H2.mulScalar(b);
-        H1 = H1.neg();
+        H1 = H1.scale(a);
+        H2 = H2.scale(b);
+        H1 = H1.negate();
         pairing::add_pair(v, H1, H2);
         // should be one
         if(!pairing::calculate(v).isOne())
@@ -1173,20 +1595,20 @@ void TestPairingMulti()
         array<uint64_t, 4> a2 = random_scalar();
         g1 P1 = g1::one();
         g2 P2 = g2::one();
-        P1 = P1.mulScalar(a1);
-        P2 = P2.mulScalar(a2);
+        P1 = P1.scale(a1);
+        P2 = P2.scale(a2);
         pairing::add_pair(v, P1, P2);
         // accumulate targetExp
         // t += (ai1 * ai2)
-        array<uint64_t, 10> tmp = scalar::mul<10, 4, 4>(a1, a2);
+        array<uint64_t, 10> tmp = scalar::multiply<10, 4, 4>(a1, a2);
         targetExp = scalar::add<10, 10, 10>(targetExp, tmp);
     }
     // LHS
     // e(t * G1, G2)
     g1 T1 = g1::one();
     g2 T2 = g2::one();
-    T1 = T1.mulScalar(targetExp);
-    T1 = T1.neg();
+    T1 = T1.scale(targetExp);
+    T1 = T1.negate();
     pairing::add_pair(v, T1, T2);
     if(!pairing::calculate(v).isOne())
     {
@@ -1787,31 +2209,115 @@ void TestExtraVectors()
     }
 }
 
+void TestOutOfRangeInputs() {
+    // This test is to make sure multiplication wiil not fail if the inputs is just slightly larger than p
+    // The 4(p-1) limit may be not that strict. But we should only relax this limit if we are absolutely sure this 
+    // will not cause problems all the methods calling _ladd/_lsubstract/_ldouble.
+    auto p = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB"), false, true);
+    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), false, true);
+    // 2^383, largest possible input to multiplication during the inverse().
+    auto two383 = *fp::fromBytesBE(hexToBytes<48>("400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), false, true);
+    // 4(p-1) * 4(p-1) will work
+    for (int i = 0 ; i < 3; ++ i) {
+        auto a = pminus1;
+        auto b = pminus1;
+        auto a2 = pminus1;
+        a2 = a2.fromMont().toMont();
+        auto b2 = pminus1;
+        b2 = b2.fromMont().toMont();
+        for (int j = 0; j < i; ++ j) {
+            _ldouble(&a,&a);
+            _ldouble(&b,&b);
+            a2 = a2.dbl();
+            b2 = b2.dbl();
+        }
+        auto c = a.multiply(b); 
+        auto c2 = a2.multiply(b2);
+
+        if (!c.equal(c2)) {
+            cout << "multiplication 2^i(p-1) * 2^i(p-1) failed: i = "<< i;
+            throw;
+        }
+        
+    }
+
+    // 2p * 2p will work
+    for (int i = 0 ; i < 2; ++ i) {
+        auto a = p;
+        auto b = p;
+        auto a2 = p;
+        a2 = a2.fromMont().toMont();
+        auto b2 = p;
+        b2 = b2.fromMont().toMont();
+        for (int j = 0; j < i; ++ j) {
+            _ldouble(&a,&a);
+            _ldouble(&b,&b);
+            a2 = a2.dbl();
+            b2 = b2.dbl();
+        }
+        auto c = a.multiply(b); 
+        auto c2 = a2.multiply(b2);
+
+        if (!c.equal(c2)) {
+            cout << "multiplication 2^i(p) * 2^i(p) failed: i = "<< i;
+            throw;
+        }
+        
+    }
+
+    {
+        auto a = two383;
+        auto b = two383;
+        auto a2 = two383;
+        a2 = a2.fromMont().toMont();
+        auto b2 = two383;
+        b2 = b2.fromMont().toMont();
+        
+        auto c = a.multiply(b); 
+        auto c2 = a2.multiply(b2);
+
+        if (!c.equal(c2)) {
+            cout << "multiplication 2^383 * 2^383 failed";
+            throw;
+        }
+    }
+}
+
 int main()
 {
     TestScalar();
 
     TestFieldElementValidation();
     TestFieldElementEquality();
+    TestFieldElementArithmeticCornerCases();
     TestFieldElementHelpers();
     TestFieldElementSerialization();
     TestFieldElementByteInputs();
 
+    TestArithmeticOpraters();
+
+    TestSqrt();
+    TestInverse();
+    TestMod();
+    TestExp();
+
     TestG1Serialization();
+    TestG1SerializationGarbage();
     TestG1IsOnCurve();
     TestG1AdditiveProperties();
     TestG1MultiplicativePropertiesExpected();
     TestG1MultiplicativeProperties();
-    TestG1MultiExpExpected();
-    TestG1MultiExpBatch();
+    TestG1WeightedSumExpected();
+    TestG1WeightedSumBatch();
     TestG1MapToCurve();
 
     TestG2Serialization();
+    TestG2SerializationGarbage();
     TestG2IsOnCurve();
     TestG2AdditiveProperties();
     TestG2MultiplicativeProperties();
-    TestG2MultiExpExpected();
-    TestG2MultiExpBatch();
+    TestG2WeightedSumExpected();
+    TestG2WeightedSumBatch();
     TestG2MapToCurve();
 
     TestPairingExpected();
@@ -1831,6 +2337,7 @@ int main()
     TestPopScheme();
 
     TestExtraVectors();
-    
+    TestOutOfRangeInputs();
+
     return 0;
 }

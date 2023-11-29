@@ -19,6 +19,7 @@ fp::fp(const fp& e) : d{e.d[0], e.d[1], e.d[2], e.d[3], e.d[4], e.d[5]}
 
 optional<fp> fp::fromBytesBE(const span<const uint8_t, 48> in, const bool check, const bool raw)
 {
+    // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesBE<6>(in));
     if(check && !e.isValid()) return {};
     if(raw) return e;
@@ -27,6 +28,7 @@ optional<fp> fp::fromBytesBE(const span<const uint8_t, 48> in, const bool check,
 
 optional<fp> fp::fromBytesLE(const span<const uint8_t, 48> in, const bool check, const bool raw)
 {
+    // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesLE<6>(in));
     if(check && !e.isValid()) return {};
     if(raw) return e;
@@ -92,11 +94,6 @@ bool fp::isOne() const
     return equal(R1);
 }
 
-std::strong_ordering fp::cmp(const fp& e) const
-{
-    return scalar::cmp<6>(d, e.d);
-}
-
 bool fp::equal(const fp& e) const
 {
     return d[0] == e.d[0] && d[1] == e.d[1] && d[2] == e.d[2] && d[3] == e.d[3] && d[4] == e.d[4] && d[5] == e.d[5];
@@ -105,6 +102,73 @@ bool fp::equal(const fp& e) const
 bool fp::sign() const
 {
     return (fromMont().d[0] & 1) == 0;
+}
+
+fp fp::add(const fp& e) const
+{
+    fp c;
+    _add(&c, this, &e);
+    return c;
+}
+
+void fp::addAssign(const fp& e)
+{
+    _add(this, this, &e);
+}
+
+fp fp::dbl() const
+{
+    fp c;
+    _double(&c, this);
+    return c;
+}
+
+void fp::doubleAssign()
+{
+    _double(this, this);
+}
+
+fp fp::subtract(const fp& e) const
+{
+    fp c;
+    _subtract(&c, this, &e);
+    return c;
+}
+
+void fp::subtractAssign(const fp& e)
+{
+    _subtract(this, this, &e);
+}
+
+fp fp::negate() const
+{
+    fp c;
+    _negate(&c, this);
+    return c;
+}
+
+fp fp::multiply(const fp& e) const
+{
+    fp c;
+    _multiply(&c, this, &e);
+    return c;
+}
+
+void fp::multiplyAssign(const fp& e)
+{
+    _multiply(this, this, &e);
+}
+
+fp fp::square() const
+{
+    fp c;
+    _square(&c, this);
+    return c;
+}
+
+void fp::squareAssign()
+{
+    _square(this, this);
 }
 
 void fp::div2(const uint64_t& e)
@@ -132,24 +196,28 @@ uint64_t fp::mul2()
 fp fp::toMont() const
 {
     fp c;
-    _mul(&c, this, &R2);
+    _multiply(&c, this, &R2);
     return c;
 }
 
 fp fp::fromMont() const
 {
     fp c, b = fp({1, 0, 0, 0, 0, 0});
-    _mul(&c, this, &b);
+    _multiply(&c, this, &b);
     return c;
 }
 
 fp fp::phi() const
 {
     fp c;
-    _mul(&c, this, &glvPhi1);
+    _multiply(&c, this, &glvPhi1);
     return c;
 }
 
+// Origin algorithm comes from:
+// [1] B.S.Kaliski Jr. The Montgomery inverse and its applications. IEEE Transactions on Computers, 44(8):1064–1065, August 1995.
+// Modified according to:
+// [2] Savas, Erkay, and Cetin Kaya Koç. "The Montgomery modular inverse-revisited." IEEE transactions on computers 49, no. 7 (2000): 763-766.
 fp fp::inverse() const
 {
     if(isZero())
@@ -161,9 +229,16 @@ fp fp::inverse() const
     fp s({1, 0, 0, 0, 0, 0});
     fp r({0, 0, 0, 0, 0, 0});
     int64_t k = 0;
-    uint64_t z = 0;
     bool found = false;
+
     // Phase 1
+    // Input: a*2^384 mod p < p, p.
+    // Output: a^{-1} * 2^{k-384} mod p, where 381 <= k <= 2 * 381.
+    // 1. Input is in Montgomery form, so the input is a*2^384 mod p.
+    // 2. All Phase 1 operations will treat fp as integer in Z instead of elements in GF(p).
+    // Therefore, NO modular reduction shall happen in Phase 1.
+    // 3. As proved in [1], s,r,u,v < 2p. 
+    // Therefore, there shall be NO overflow in the process as p has 381 bits and we can hold 384 bits in fp.
     for(uint64_t i = 0; i < 768; i++)
     {
         if(v.isZero())
@@ -179,21 +254,21 @@ fp fp::inverse() const
         else if(v.isEven())
         {
             v.div2(0);
-            z += r.mul2();
+            r.mul2();
         }
         else if(u.cmp(v) > 0)
         {
-            _lsubAssign(&u, &v);
+            _lsubtract(&u, &u, &v);
             u.div2(0);
-            _laddAssign(&r, &s);
+            _ladd(&r, &r, &s);
             s.mul2();
         }
         else
         {
-            _lsubAssign(&v, &u);
+            _lsubtract(&v, &v, &u);
             v.div2(0);
-            _laddAssign(&s, &r);
-            z += r.mul2();
+            _ladd(&s, &s, &r);
+            r.mul2();
         }
         k += 1;
     }
@@ -203,23 +278,47 @@ fp fp::inverse() const
         return zero();
     }
 
-    if(k < 381 || k > 381+384)
+    if(r.cmp(MODULUS) >= 0)
+    {
+        _lsubtract(&r, &r, &MODULUS);
+    }
+    u = MODULUS;
+    _lsubtract(&u, &u, &r);
+
+    // Phase 2
+    // Input: u = a^{-1} * 2^{k-384} mod p, k where 381 <= k <= 2*381
+    // Output: a^{-1} * 2^384 mod p
+
+    // Process for 381 <= k <= 384
+    // Generate new u, k pair that
+    // k' = k + 384
+    // u' = u * 2^{2*384} * 2^{-384} mod p
+    // u' = a^{-1} * 2^{k'-384} mod p will still hold.
+    // Will hit this case if and only if input is fp::one() for the current p.
+    if (k <= 384) {
+        u.multiplyAssign(fp::R2);
+        k += 384;
+    }
+
+    // u = u * 2^{2*384} * 2^{-384} mod p = a^{-1} * 2^k mod p
+    u.multiplyAssign(fp::R2);
+
+    // This case should not happen mathmatically.
+    // Leave it here as sanity check to guard against access vialotion later.
+    if(k > 2 * 384)
     {
         return zero();
     }
 
-    if(r.cmp(MODULUS) >= 0 || z > 0)
-    {
-        _lsubAssign(&r, &MODULUS);
-    }
-    u = MODULUS;
-    _lsubAssign(&u, &r);
+    // 384 < k <= 2 * 384
+    // 0 <= power < 384
+    uint64_t power = 2*384 - k;
+    fp fpPower;
+    fpPower.d[power/64] = ((uint64_t)1) << (power%64);
+   
+    // result = u * 2^(2*384-k) * 2^{-384} = a^{-1} * 2^k * 2^{384-k} mod p = a^{-1} * 2^384 mod p
+    u.multiplyAssign(fpPower);
 
-    // Phase 2
-    for(uint64_t i = k; i < 384*2; i++)
-    {
-        _double(&u, &u);
-    }
     return u;
 }
 
@@ -370,16 +469,16 @@ optional<fp2> fp2::fromBytesBE(const span<const uint8_t, 96> in, const bool chec
 {
     optional<fp> c1 = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
     optional<fp> c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
-    if(!c1.has_value() || !c0.has_value()) return {};
-    return fp2({c0.value(), c1.value()});
+    if(!c1 || !c0) return {};
+    return fp2({*c0, *c1});
 }
 
 optional<fp2> fp2::fromBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
 {
     optional<fp> c0 = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
     optional<fp> c1 = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
-    if(!c1.has_value() || !c0.has_value()) return {};
-    return fp2({c0.value(), c1.value()});
+    if(!c1 || !c0) return {};
+    return fp2({*c0, *c1});
 }
 
 void fp2::toBytesBE(const span<uint8_t, 96> out, const bool raw) const
@@ -445,115 +544,83 @@ bool fp2::sign() const
 
 fp2 fp2::add(const fp2& e) const
 {
-    fp2 c;
-    _add(&c.c0, &c0, &e.c0);
-    _add(&c.c1, &c1, &e.c1);
+    fp2 c(*this);
+    c.addAssign(e);
     return c;
 }
 
 void fp2::addAssign(const fp2& e)
 {
-    _addAssign(&c0, &e.c0);
-    _addAssign(&c1, &e.c1);
-}
-
-fp2 fp2::ladd(const fp2& e) const
-{
-    fp2 c;
-    _ladd(&c.c0, &c0, &e.c0);
-    _ladd(&c.c1, &c1, &e.c1);
-    return c;
+    _add(&c0, &c0, &e.c0);
+    _add(&c1, &c1, &e.c1);
 }
 
 fp2 fp2::dbl() const
 {
-    fp2 c;
-    _double(&c.c0, &c0);
-    _double(&c.c1, &c1);
+    fp2 c(*this);
+    c.doubleAssign();
     return c;
 }
 
 void fp2::doubleAssign()
 {
-    _doubleAssign(&c0);
-    _doubleAssign(&c1);
+    _double(&c0, &c0);
+    _double(&c1, &c1);
 }
 
-fp2 fp2::ldouble() const
+fp2 fp2::subtract(const fp2& e) const
 {
-    fp2 c;
-    _ldouble(&c.c0, &c0);
-    _ldouble(&c.c1, &c1);
+    fp2 c(*this);
+    c.subtractAssign(e);
     return c;
 }
 
-fp2 fp2::sub(const fp2& e) const
+void fp2::subtractAssign(const fp2& e)
+{
+    _subtract(&c0, &c0, &e.c0);
+    _subtract(&c1, &c1, &e.c1);
+}
+
+fp2 fp2::negate() const
 {
     fp2 c;
-    _sub(&c.c0, &c0, &e.c0);
-    _sub(&c.c1, &c1, &e.c1);
+    _negate(&c.c0, &c0);
+    _negate(&c.c1, &c1);
     return c;
 }
 
-void fp2::subAssign(const fp2& e)
-{
-    _subAssign(&c0, &e.c0);
-    _subAssign(&c1, &e.c1);
-}
-
-fp2 fp2::neg() const
-{
-    fp2 c;
-    _neg(&c.c0, &c0);
-    _neg(&c.c1, &c1);
-    return c;
-}
-
-fp2 fp2::conj() const
+fp2 fp2::conjugate() const
 {
     fp2 c;
     c.c0 = c0;
-    _neg(&c.c1, &c1);
+    _negate(&c.c1, &c1);
     return c;
 }
 
-fp2 fp2::mul(const fp2& e) const
+fp2 fp2::multiply(const fp2& e) const
 {
-    fp t[4];
-    fp2 c;
-    _mul(&t[1], &c0, &e.c0);
-    _mul(&t[2], &c1, &e.c1);
-    _add(&t[0], &c0, &c1);
-    _add(&t[3], &e.c0, &e.c1);
-    _sub(&c.c0, &t[1], &t[2]);
-    _addAssign(&t[1], &t[2]);
-    _mul(&t[0], &t[0], &t[3]);
-    _sub(&c.c1, &t[0], &t[1]);
+    fp2 c(*this);
+    c.multiplyAssign(e);
     return c;
 }
 
-void fp2::mulAssign(const fp2& e)
+void fp2::multiplyAssign(const fp2& e)
 {
     fp t[4];
-    _mul(&t[1], &c0, &e.c0);
-    _mul(&t[2], &c1, &e.c1);
+    _multiply(&t[1], &c0, &e.c0);
+    _multiply(&t[2], &c1, &e.c1);
     _add(&t[0], &c0, &c1);
     _add(&t[3], &e.c0, &e.c1);
-    _sub(&c0, &t[1], &t[2]);
-    _addAssign(&t[1], &t[2]);
-    _mul(&t[0], &t[0], &t[3]);
-    _sub(&c1, &t[0], &t[1]);
+    _subtract(&c0, &t[1], &t[2]);
+    _add(&t[1], &t[1], &t[2]);
+    _multiply(&t[0], &t[0], &t[3]);
+    _subtract(&c1, &t[0], &t[1]);
 }
 
 fp2 fp2::square() const
 {
-    fp t[3];
-    fp2 c;
-    _ladd(&t[0], &c0, &c1);
-    _sub(&t[1], &c0, &c1);
-    _ldouble(&t[2], &c0);
-    _mul(&c.c0, &t[0], &t[1]);
-    _mul(&c.c1, &t[2], &c1);
+    fp2 c(*this);
+    c.squareAssign();
     return c;
 }
 
@@ -561,17 +628,17 @@ void fp2::squareAssign()
 {
     fp t[3];
     _ladd(&t[0], &c0, &c1);
-    _sub(&t[1], &c0, &c1);
+    _subtract(&t[1], &c0, &c1);
     _ldouble(&t[2], &c0);
-    _mul(&c0, &t[0], &t[1]);
-    _mul(&c1, &t[2], &c1);
+    _multiply(&c0, &t[0], &t[1]);
+    _multiply(&c1, &t[2], &c1);
 }
 
 fp2 fp2::mulByNonResidue() const
 {
     fp t;
     fp2 c;
-    _sub(&t, &c0, &c1);
+    _subtract(&t, &c0, &c1);
     _add(&c.c1, &c0, &c1);
     c.c0 = t;
     return c;
@@ -583,9 +650,9 @@ fp2 fp2::mulByB() const
     fp2 c;
     _double(&t[0], &c0);
     _double(&t[1], &c1);
-    _doubleAssign(&t[0]);
-    _doubleAssign(&t[1]);
-    _sub(&c.c0, &t[0], &t[1]);
+    _double(&t[0], &t[0]);
+    _double(&t[1], &t[1]);
+    _subtract(&c.c0, &t[0], &t[1]);
     _add(&c.c1, &t[0], &t[1]);
     return c;
 }
@@ -596,19 +663,19 @@ fp2 fp2::inverse() const
     fp2 c;
     _square(&t[0], &c0);
     _square(&t[1], &c1);
-    _addAssign(&t[0], &t[1]);
+    _add(&t[0], &t[0], &t[1]);
     t[0] = t[0].inverse();
-    _mul(&c.c0, &c0, &t[0]);
-    _mul(&t[0], &t[0], &c1);
-    _neg(&c.c1, &t[0]);
+    _multiply(&c.c0, &c0, &t[0]);
+    _multiply(&t[0], &t[0], &c1);
+    _negate(&c.c1, &t[0]);
     return c;
 }
 
 fp2 fp2::mulByFq(const fp& e) const
 {
     fp2 c;
-    _mul(&c.c0, &c0, &e);
-    _mul(&c.c1, &c1, &e);
+    _multiply(&c.c0, &c0, &e);
+    _multiply(&c.c1, &c1, &e);
     return c;
 }
 
@@ -618,7 +685,7 @@ fp2 fp2::frobeniusMap(const uint64_t& power) const
     c.c0 = c0;
     if(power%2 == 1)
     {
-        _neg(&c.c1, &c1);
+        _negate(&c.c1, &c1);
         return c;
     }
     c.c1 = c1;
@@ -629,7 +696,7 @@ void fp2::frobeniusMapAssign(const uint64_t& power)
 {
     if(power%2 == 1)
     {
-        _neg(&c1, &c1);
+        _negate(&c1, &c1);
     }
 }
 
@@ -639,17 +706,17 @@ bool fp2::sqrt(fp2& c) const
     u = *this;
     a1 = this->exp(fp::pMinus3Over4);
     alpha = a1.square();
-    alpha = alpha.mul(*this);
-    x0 = a1.mul(*this);
+    alpha = alpha.multiply(*this);
+    x0 = a1.multiply(*this);
     if(alpha.equal(fp2::negativeOne2))
     {
-        _neg(&c.c0, &x0.c1);
+        _negate(&c.c0, &x0.c1);
         c.c1 = x0.c0;
         return true;
     }
     alpha = alpha.add(fp2::one());
     alpha = alpha.exp(fp::pMinus1Over2);
-    c = alpha.mul(x0);
+    c = alpha.multiply(x0);
     alpha = c.square();
     return alpha.equal(u);
 }
@@ -763,8 +830,8 @@ optional<fp6> fp6::fromBytesBE(const span<const uint8_t, 288> in, const bool che
     optional<fp2> c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
     optional<fp2> c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
     optional<fp2> c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
-    if(!c2.has_value() || !c1.has_value() || !c0.has_value()) return {};
-    return fp6({c0.value(), c1.value(), c2.value()});
+    if(!c2 || !c1 || !c0) return {};
+    return fp6({*c0, *c1, *c2});
 }
 
 optional<fp6> fp6::fromBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
@@ -772,8 +839,8 @@ optional<fp6> fp6::fromBytesLE(const span<const uint8_t, 288> in, const bool che
     optional<fp2> c0 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
     optional<fp2> c1 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
     optional<fp2> c2 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
-    if(!c2.has_value() || !c1.has_value() || !c0.has_value()) return {};
-    return fp6({c0.value(), c1.value(), c2.value()});
+    if(!c2 || !c1 || !c0) return {};
+    return fp6({*c0, *c1, *c2});
 }
 
 void fp6::toBytesBE(const span<uint8_t, 288> out, const bool raw) const
@@ -831,10 +898,8 @@ bool fp6::equal(const fp6& e) const
 
 fp6 fp6::add(const fp6& e) const
 {
-    fp6 c;
-    c.c0 = c0.add(e.c0);
-    c.c1 = c1.add(e.c1);
-    c.c2 = c2.add(e.c2);
+    fp6 c(*this);
+    c.addAssign(e);
     return c;
 }
 
@@ -847,10 +912,8 @@ void fp6::addAssign(const fp6& e)
 
 fp6 fp6::dbl() const
 {
-    fp6 c;
-    c.c0 = c0.dbl();
-    c.c1 = c1.dbl();
-    c.c2 = c2.dbl();
+    fp6 c(*this);
+    c.doubleAssign();
     return c;
 }
 
@@ -861,133 +924,113 @@ void fp6::doubleAssign()
     c2.doubleAssign();
 }
 
-fp6 fp6::sub(const fp6& e) const
+fp6 fp6::subtract(const fp6& e) const
 {
-    fp6 c;
-    c.c0 = c0.sub(e.c0);
-    c.c1 = c1.sub(e.c1);
-    c.c2 = c2.sub(e.c2);
+    fp6 c(*this);
+    c.subtractAssign(e);
     return c;
 }
 
-void fp6::subAssign(const fp6& e)
+void fp6::subtractAssign(const fp6& e)
 {
-    c0.subAssign(e.c0);
-    c1.subAssign(e.c1);
-    c2.subAssign(e.c2);
+    c0.subtractAssign(e.c0);
+    c1.subtractAssign(e.c1);
+    c2.subtractAssign(e.c2);
 }
 
-fp6 fp6::neg() const
+fp6 fp6::negate() const
 {
     fp6 c;
-    c.c0 = c0.neg();
-    c.c1 = c1.neg();
-    c.c2 = c2.neg();
+    c.c0 = c0.negate();
+    c.c1 = c1.negate();
+    c.c2 = c2.negate();
     return c;
 }
 
-fp6 fp6::mul(const fp6& e) const
+fp6 fp6::multiply(const fp6& e) const
+{
+    fp6 c(*this);
+    c.multiplyAssign(e);
+    return c;
+}
+
+void fp6::multiplyAssign(const fp6& e)
 {
     fp2 t[6];
-    fp6 c;
-    t[0] = c0.mul(e.c0);
-    t[1] = c1.mul(e.c1);
-    t[2] = c2.mul(e.c2);
+    t[0] = c0.multiply(e.c0);
+    t[1] = c1.multiply(e.c1);
+    t[2] = c2.multiply(e.c2);
     t[3] = c1.add(c2);
     t[4] = e.c1.add(e.c2);
-    t[3].mulAssign(t[4]);
+    t[3].multiplyAssign(t[4]);
     t[4] = t[1].add(t[2]);
-    t[3].subAssign(t[4]);
+    t[3].subtractAssign(t[4]);
     t[3] = t[3].mulByNonResidue();
     t[5] = t[0].add(t[3]);
     t[3] = c0.add(c1);
     t[4] = e.c0.add(e.c1);
-    t[3].mulAssign(t[4]);
+    t[3].multiplyAssign(t[4]);
     t[4] = t[0].add(t[1]);
-    t[3].subAssign(t[4]);
-    t[4] = t[2].mulByNonResidue();
-    c.c1 = t[3].add(t[4]);
-    t[3] = c0.add(c2);
-    t[4] = e.c0.add(e.c2);
-    t[3].mulAssign(t[4]);
-    t[4] = t[0].add(t[2]);
-    t[3].subAssign(t[4]);
-    c.c2 = t[1].add(t[3]);
-    c.c0 = t[5];
-    return c;
-}
-
-void fp6::mulAssign(const fp6& e)
-{
-    fp2 t[6];
-    t[0] = c0.mul(e.c0);
-    t[1] = c1.mul(e.c1);
-    t[2] = c2.mul(e.c2);
-    t[3] = c1.add(c2);
-    t[4] = e.c1.add(e.c2);
-    t[3].mulAssign(t[4]);
-    t[4] = t[1].add(t[2]);
-    t[3].subAssign(t[4]);
-    t[3] = t[3].mulByNonResidue();
-    t[5] = t[0].add(t[3]);
-    t[3] = c0.add(c1);
-    t[4] = e.c0.add(e.c1);
-    t[3].mulAssign(t[4]);
-    t[4] = t[0].add(t[1]);
-    t[3].subAssign(t[4]);
+    t[3].subtractAssign(t[4]);
     t[4] = t[2].mulByNonResidue();
     c1 = t[3].add(t[4]);
     t[3] = c0.add(c2);
     t[4] = e.c0.add(e.c2);
-    t[3].mulAssign(t[4]);
+    t[3].multiplyAssign(t[4]);
     t[4] = t[0].add(t[2]);
-    t[3].subAssign(t[4]);
+    t[3].subtractAssign(t[4]);
     c2 = t[1].add(t[3]);
     c0 = t[5];
 }
 
 fp6 fp6::square() const
 {
+    fp6 c(*this);
+    c.squareAssign();
+    return c;
+}
+
+void fp6::squareAssign()
+{
     fp2 t[6];
     fp6 c;
     t[0] = c0.square();
-    t[1] = c0.mul(c1);
+    t[1] = c0.multiply(c1);
     t[1].doubleAssign();
-    t[2] = c0.sub(c1);
+    t[2] = c0.subtract(c1);
     t[2].addAssign(c2);
     t[2].squareAssign();
-    t[3] = c1.mul(c2);
+    t[3] = c1.multiply(c2);
     t[3].doubleAssign();
     t[4] = c2.square();
     t[5] = t[3].mulByNonResidue();
-    c.c0 = t[0].add(t[5]);
+    c0 = t[0].add(t[5]);
     t[5] = t[4].mulByNonResidue();
-    c.c1 = t[1].add(t[5]);
+    c1 = t[1].add(t[5]);
     t[1].addAssign(t[2]);
     t[1].addAssign(t[3]);
     t[0].addAssign(t[4]);
-    c.c2 = t[1].sub(t[0]);
-    return c;
+    c2 = t[1].subtract(t[0]);
 }
 
 void fp6::mulBy01Assign(const fp2& e0, const fp2& e1)
 {
     fp2 t[6];
-    t[0] = c0.mul(e0);
-    t[1] = c1.mul(e1);
+    t[0] = c0.multiply(e0);
+    t[1] = c1.multiply(e1);
     t[5] = c1.add(c2);
-    t[2] = e1.mul(t[5]);
-    t[2].subAssign(t[1]);
+    t[2] = e1.multiply(t[5]);
+    t[2].subtractAssign(t[1]);
     t[2] = t[2].mulByNonResidue();
     t[5] = c0.add(c2);
-    t[3] = e0.mul(t[5]);
-    t[3].subAssign(t[0]);
+    t[3] = e0.multiply(t[5]);
+    t[3].subtractAssign(t[0]);
     c2 = t[3].add(t[1]);
     t[4] = e0.add(e1);
     t[5] = c0.add(c1);
-    t[4].mulAssign(t[5]);
-    t[4].subAssign(t[0]);
-    c1 = t[4].sub(t[1]);
+    t[4].multiplyAssign(t[5]);
+    t[4].subtractAssign(t[0]);
+    c1 = t[4].subtract(t[1]);
     c0 = t[2].add(t[0]);
 }
 
@@ -995,21 +1038,21 @@ fp6 fp6::mulBy01(const fp2& e0, const fp2& e1) const
 {
     fp2 t[5];
     fp6 c;
-    t[0] = c0.mul(e0);
-    t[1] = c1.mul(e1);
+    t[0] = c0.multiply(e0);
+    t[1] = c1.multiply(e1);
     t[2] = c1.add(c2);
-    t[2].mulAssign(e1);
-    t[2].subAssign(t[1]);
+    t[2].multiplyAssign(e1);
+    t[2].subtractAssign(t[1]);
     t[2] = t[2].mulByNonResidue();
     t[3] = c0.add(c2);
-    t[3].mulAssign(e0);
-    t[3].subAssign(t[0]);
+    t[3].multiplyAssign(e0);
+    t[3].subtractAssign(t[0]);
     c.c2 = t[3].add(t[1]);
     t[4] = e0.add(e1);
     t[3] = c0.add(c1);
-    t[4].mulAssign(t[3]);
-    t[4].subAssign(t[0]);
-    c.c1 = t[4].sub(t[1]);
+    t[4].multiplyAssign(t[3]);
+    t[4].subtractAssign(t[0]);
+    c.c1 = t[4].subtract(t[1]);
     c.c0 = t[2].add(t[0]);
     return c;
 }
@@ -1018,9 +1061,9 @@ fp6 fp6::mulBy1(const fp2& e1) const
 {
     fp2 t;
     fp6 c;
-    t = c2.mul(e1);
-    c.c2 = c1.mul(e1);
-    c.c1 = c0.mul(e1);
+    t = c2.multiply(e1);
+    c.c2 = c1.multiply(e1);
+    c.c1 = c0.multiply(e1);
     c.c0 = t.mulByNonResidue();
     return c;
 }
@@ -1037,9 +1080,9 @@ fp6 fp6::mulByNonResidue() const
 fp6 fp6::mulByBaseField(const fp2& e) const
 {
     fp6 c;
-    c.c0 = c0.mul(e);
-    c.c1 = c1.mul(e);
-    c.c2 = c2.mul(e);
+    c.c0 = c0.multiply(e);
+    c.c1 = c1.multiply(e);
+    c.c2 = c2.multiply(e);
     return c;
 }
 
@@ -1048,26 +1091,26 @@ fp6 fp6::inverse() const
     fp2 t[5];
     fp6 c;
     t[0] = c0.square();
-    t[1] = c1.mul(c2);
+    t[1] = c1.multiply(c2);
     t[1] = t[1].mulByNonResidue();
-    t[0].subAssign(t[1]);
+    t[0].subtractAssign(t[1]);
     t[1] = c1.square();
-    t[2] = c0.mul(c2);
-    t[1].subAssign(t[2]);
+    t[2] = c0.multiply(c2);
+    t[1].subtractAssign(t[2]);
     t[2] = c2.square();
     t[2] = t[2].mulByNonResidue();
-    t[3] = c0.mul(c1);
-    t[2].subAssign(t[3]);
-    t[3] = c2.mul(t[2]);
-    t[4] = c1.mul(t[1]);
+    t[3] = c0.multiply(c1);
+    t[2].subtractAssign(t[3]);
+    t[3] = c2.multiply(t[2]);
+    t[4] = c1.multiply(t[1]);
     t[3].addAssign(t[4]);
     t[3] = t[3].mulByNonResidue();
-    t[4] = c0.mul(t[0]);
+    t[4] = c0.multiply(t[0]);
     t[3].addAssign(t[4]);
     t[3] = t[3].inverse();
-    c.c0 = t[0].mul(t[3]);
-    c.c1 = t[2].mul(t[3]);
-    c.c2 = t[1].mul(t[3]);
+    c.c0 = t[0].multiply(t[3]);
+    c.c1 = t[2].multiply(t[3]);
+    c.c2 = t[1].multiply(t[3]);
     return c;
 }
 
@@ -1085,15 +1128,15 @@ fp6 fp6::frobeniusMap(const uint64_t& power) const
         }
         case 3:
         {
-            _neg(&c.c0.c0, &c1.c1);
+            _negate(&c.c0.c0, &c1.c1);
             c.c1.c1 = c1.c0;
-            c.c2 = c2.neg();
+            c.c2 = c2.negate();
             break;
         }
         default:
         {
-            c.c1 = c.c1.mul(frobeniusCoeffs61[power%6]);
-            c.c2 = c.c2.mul(frobeniusCoeffs62[power%6]);
+            c.c1 = c.c1.multiply(frobeniusCoeffs61[power%6]);
+            c.c2 = c.c2.multiply(frobeniusCoeffs62[power%6]);
             break;
         }
     }
@@ -1114,16 +1157,16 @@ void fp6::frobeniusMapAssign(const uint64_t& power)
         }
         case 3:
         {
-            _neg(&t.c0, &c1.c1);
+            _negate(&t.c0, &c1.c1);
             c1.c1 = c1.c0;
             c1.c0 = t.c0;
-            c2 = c2.neg();
+            c2 = c2.negate();
             break;
         }
         default:
         {
-            c1.mulAssign(frobeniusCoeffs61[power%6]);
-            c2.mulAssign(frobeniusCoeffs62[power%6]);
+            c1.multiplyAssign(frobeniusCoeffs61[power%6]);
+            c2.multiplyAssign(frobeniusCoeffs62[power%6]);
             break;
         }
     }
@@ -1199,16 +1242,16 @@ optional<fp12> fp12::fromBytesBE(const span<const uint8_t, 576> in, const bool c
 {
     optional<fp6> c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
     optional<fp6> c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
-    if(!c1.has_value() || !c0.has_value()) return {};
-    return fp12({c0.value(), c1.value()});
+    if(!c1 || !c0) return {};
+    return fp12({*c0, *c1});
 }
 
 optional<fp12> fp12::fromBytesLE(const span<const uint8_t, 576> in, const bool check, const bool raw)
 {
     optional<fp6> c0 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
     optional<fp6> c1 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
-    if(!c1.has_value() || !c0.has_value()) return {};
-    return fp12({c0.value(), c1.value()});
+    if(!c1 || !c0) return {};
+    return fp12({*c0, *c1});
 }
 
 void fp12::toBytesBE(const span<uint8_t, 576> out, const bool raw) const
@@ -1270,33 +1313,45 @@ bool fp12::equal(const fp12& e) const
 
 fp12 fp12::add(const fp12& e) const
 {
-    fp12 c;
-    c.c0 = c0.add(e.c0);
-    c.c1 = c1.add(e.c1);
+    fp12 c(*this);
+    c.addAssign(e);
     return c;
+}
+
+void fp12::addAssign(const fp12& e) {
+    c0.addAssign(e.c0);
+    c1.addAssign(e.c1);
 }
 
 fp12 fp12::dbl() const
 {
-    fp12 c;
-    c.c0 = c0.dbl();
-    c.c1 = c1.dbl();
+    fp12 c(*this);
+    c.doubleAssign();
     return c;
 }
 
-fp12 fp12::sub(const fp12& e) const
+void fp12::doubleAssign() {
+    c0.doubleAssign();
+    c1.doubleAssign();
+}
+
+fp12 fp12::subtract(const fp12& e) const
 {
-    fp12 c;
-    c.c0 = c0.sub(e.c0);
-    c.c1 = c1.sub(e.c1);
+    fp12 c(*this);
+    c.subtractAssign(e);
     return c;
 }
 
-fp12 fp12::neg() const
+void fp12::subtractAssign(const fp12& e) {
+    c0.subtractAssign(e.c0);
+    c1.subtractAssign(e.c1);
+}
+
+fp12 fp12::negate() const
 {
     fp12 c;
-    c.c0 = c0.neg();
-    c.c1 = c1.neg();
+    c.c0 = c0.negate();
+    c.c1 = c1.negate();
     return c;
 }
 
@@ -1304,85 +1359,84 @@ fp12 fp12::conjugate() const
 {
     fp12 c;
     c.c0 = c0;
-    c.c1 = c1.neg();
+    c.c1 = c1.negate();
     return c;
 }
 
 fp12 fp12::square() const
 {
+    fp12 c(*this);
+    c.squareAssign();
+    return c;
+}
+
+void fp12::squareAssign() {
     fp6 t[4];
-    fp12 c;
+
     t[0] = c0.add(c1);
-    t[2] = c0.mul(c1);
+    t[2] = c0.multiply(c1);
     t[1] = c1.mulByNonResidue();
     t[1].addAssign(c0);
     t[3] = t[2].mulByNonResidue();
-    t[0].mulAssign(t[1]);
-    t[0].subAssign(t[2]);
-    c.c0 = t[0].sub(t[3]);
-    c.c1 = t[2].dbl();
-    return c;
+    t[0].multiplyAssign(t[1]);
+    t[0].subtractAssign(t[2]);
+    c0 = t[0].subtract(t[3]);
+    c1 = t[2].dbl();
 }
 
 fp12 fp12::cyclotomicSquare() const
 {
+    fp12 c(*this);
+    c.cyclotomicSquareAssign();
+    return c;
+}
+
+void fp12::cyclotomicSquareAssign() {
     fp2 t[7];
-    fp12 c;
     tie(t[3], t[4]) = fp4Square(c0.c0, c1.c1);
-    t[2] = t[3].sub(c0.c0);
+    t[2] = t[3].subtract(c0.c0);
     t[2].doubleAssign();
-    c.c0.c0 = t[2].add(t[3]);
+    c0.c0 = t[2].add(t[3]);
     t[2] = t[4].add(c1.c1);
     t[2].doubleAssign();
-    c.c1.c1 = t[2].add(t[4]);
+    c1.c1 = t[2].add(t[4]);
     tie(t[3], t[4]) = fp4Square(c1.c0, c0.c2);
     tie(t[5], t[6]) = fp4Square(c0.c1, c1.c2);
-    t[2] = t[3].sub(c0.c1);
+    t[2] = t[3].subtract(c0.c1);
     t[2].doubleAssign();
-    c.c0.c1 = t[2].add(t[3]);
+    c0.c1 = t[2].add(t[3]);
     t[2] = t[4].add(c1.c2);
     t[2].doubleAssign();
-    c.c1.c2 = t[2].add(t[4]);
+    c1.c2 = t[2].add(t[4]);
     t[3] = t[6].mulByNonResidue();
     t[2] = t[3].add(c1.c0);
     t[2].doubleAssign();
-    c.c1.c0 = t[2].add(t[3]);
-    t[2] = t[5].sub(c0.c2);
+    c1.c0 = t[2].add(t[3]);
+    t[2] = t[5].subtract(c0.c2);
     t[2].doubleAssign();
-    c.c0.c2 = t[2].add(t[5]);
+    c0.c2 = t[2].add(t[5]);
+}
+
+fp12 fp12::multiply(const fp12& e) const
+{
+    fp12 c(*this);
+    c.multiplyAssign(e);
     return c;
 }
 
-fp12 fp12::mul(const fp12& e) const
+void fp12::multiplyAssign(const fp12& e)
 {
     fp6 t[4];
-    fp12 c;
-    t[1] = c0.mul(e.c0);
-    t[2] = c1.mul(e.c1);
+    t[1] = c0.multiply(e.c0);
+    t[2] = c1.multiply(e.c1);
     t[0] = t[1].add(t[2]);
     t[2] = t[2].mulByNonResidue();
     t[3] = t[1].add(t[2]);
     t[1] = c0.add(c1);
     t[2] = e.c0.add(e.c1);
-    t[1].mulAssign(t[2]);
-    c.c0 = t[3];
-    c.c1 = t[1].sub(t[0]);
-    return c;
-}
-
-void fp12::mulAssign(const fp12& e)
-{
-    fp6 t[4];
-    t[1] = c0.mul(e.c0);
-    t[2] = c1.mul(e.c1);
-    t[0] = t[1].add(t[2]);
-    t[2] = t[2].mulByNonResidue();
-    t[3] = t[1].add(t[2]);
-    t[1] = c0.add(c1);
-    t[2] = e.c0.add(e.c1);
-    t[1].mulAssign(t[2]);
+    t[1].multiplyAssign(t[2]);
     c0 = t[3];
-    c1 = t[1].sub(t[0]);
+    c1 = t[1].subtract(t[0]);
 }
 
 tuple<fp2, fp2> fp12::fp4Square(const fp2& e0, const fp2& e1)
@@ -1395,8 +1449,8 @@ tuple<fp2, fp2> fp12::fp4Square(const fp2& e0, const fp2& e1)
     c0 = t[2].add(t[0]);
     t[2] = e0.add(e1);
     t[2].squareAssign();
-    t[2].subAssign(t[0]);
-    c1 = t[2].sub(t[1]);
+    t[2].subtractAssign(t[0]);
+    c1 = t[2].subtract(t[1]);
     return {c0, c1};
 }
 
@@ -1407,11 +1461,11 @@ fp12 fp12::inverse() const
     t[0] = c0.square();
     t[1] = c1.square();
     t[1] = t[1].mulByNonResidue();
-    t[1] = t[0].sub(t[1]);
+    t[1] = t[0].subtract(t[1]);
     t[0] = t[1].inverse();
-    c.c0 = c0.mul(t[0]);
-    t[0].mulAssign(c1);
-    c.c1 = t[0].neg();
+    c.c0 = c0.multiply(t[0]);
+    t[0].multiplyAssign(c1);
+    c.c1 = t[0].negate();
     return c;
 }
 
@@ -1424,8 +1478,8 @@ void fp12::mulBy014Assign(const fp2& e0, const fp2& e1, const fp2& e4)
     t2 = e1.add(e4);
     t[2] = c1.add(c0);
     t[2].mulBy01Assign(e0, t2);
-    t[2].subAssign(t[0]);
-    c1 = t[2].sub(t[1]);
+    t[2].subtractAssign(t[0]);
+    c1 = t[2].subtract(t[1]);
     t[1] = t[1].mulByNonResidue();
     c0 = t[1].add(t[0]);
 }
@@ -1443,7 +1497,7 @@ fp12 fp12::frobeniusMap(const uint64_t& power) const
         }
         case 6:
         {
-            c.c1 = c.c1.neg();
+            c.c1 = c.c1.negate();
             break;
         }
         default:
@@ -1467,7 +1521,7 @@ void fp12::frobeniusMapAssign(const uint64_t& power)
         }
         case 6:
         {
-            c1 = c1.neg();
+            c1 = c1.negate();
             break;
         }
         default:

@@ -82,13 +82,13 @@ fp12 random_fe12()
 g1 random_g1()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g1::one().mulScalar(k);
+    return g1::one().scale(k);
 }
 
 g2 random_g2()
 {
     array<uint64_t, 4> k = random_scalar();
-    return g2::one().mulScalar(k);
+    return g2::one().scale(k);
 }
 
 void benchG1Add() {
@@ -113,7 +113,20 @@ void benchG1Mul() {
     auto start = startStopwatch();
 
     for (int i = 0; i < numIters; i++) {
-        p.mulScalar(s);
+        p.scale(s);
+    }
+    endStopwatch(testName, start, numIters);
+}
+
+void benchG1WeightedSum() {
+    string testName = "G1 WeightedSum";
+    const int numIters = 10000;
+    g1 p = random_g1();
+    vector<g1> bases{8, p};
+    vector<array<uint64_t, 4>> scalars{8, {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff}};
+    auto start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        g1::weightedSum(bases, scalars);
     }
     endStopwatch(testName, start, numIters);
 }
@@ -140,7 +153,29 @@ void benchG2Mul() {
     auto start = startStopwatch();
 
     for (int i = 0; i < numIters; i++) {
-        p.mulScalar(s);
+        p.scale(s);
+    }
+    endStopwatch(testName, start, numIters);
+}
+
+void benchG2WeightedSum() {
+    string testName = "G2 WeightedSum";
+    const int numIters = 10000;
+    g2 p = random_g2();
+    vector<g2> bases = {p,p,p,p,p,p,p,p};
+    vector<array<uint64_t, 4>> scalars = {
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff},
+        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff}
+    };
+    auto start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        g2::weightedSum(bases, scalars);
     }
     endStopwatch(testName, start, numIters);
 }
@@ -161,11 +196,100 @@ void benchPairing() {
     endStopwatch(testName, start, numIters);
 }
 
+void benchG1Add2() {
+    string testName = "G1 Addition With different settings";
+    cout << endl << testName << endl;
+
+    const int numIters = 10000;
+    g1 pbak = random_g1();
+    
+   
+
+    array<uint64_t, 4> s = {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff};
+
+
+    auto performTest = [numIters, s, pbak](bool check, bool raw) {
+        array<uint8_t, 144> pRaw = {};
+        g1 p = pbak;
+        p.toJacobianBytesLE(pRaw, raw);
+
+        auto start = startStopwatch();
+
+        for (int i = 0; i < numIters; i++) {
+            p = *g1::fromJacobianBytesLE(pRaw, check, raw);
+            p.add(p);
+            p.toJacobianBytesLE(pRaw, raw);
+        }
+        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+
+        start = startStopwatch();
+    };
+
+    performTest(true, true);
+    performTest(true, false);
+    performTest(false, true);
+    performTest(false, false);
+
+}
+
+void benchG2Add2() {
+    string testName = "G2 Addition With different settings";
+    cout << endl << testName << endl;
+
+    const int numIters = 10000;
+    g2 pbak = random_g2();
+    
+   
+
+    array<uint64_t, 4> s = {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff};
+
+
+    auto performTest = [numIters, s, pbak](bool check, bool raw) {
+        array<uint8_t, 288> pRaw = {};
+        g2 p = pbak;
+        p.toJacobianBytesLE(pRaw, raw);
+
+        auto start = startStopwatch();
+
+        for (int i = 0; i < numIters; i++) {
+            p = *g2::fromJacobianBytesLE(pRaw, check, raw);
+            p.add(p);
+            p.toJacobianBytesLE(pRaw, raw);
+        }
+        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+
+        start = startStopwatch();
+    };
+
+    performTest(true, true);
+    performTest(true, false);
+    performTest(false, true);
+    performTest(false, false);
+
+}
+
+void benchInverse() {
+    string testName = "Inverse";
+    const int numIters = 10000;
+    fp a = random_fe();
+    auto start = startStopwatch();
+
+    for (int i = 0; i < numIters; i++) {
+        a.inverse();
+    }
+    endStopwatch(testName, start, numIters);
+}
+
 int main(int argc, char* argv[])
 {
     benchG1Add();
     benchG1Mul();
+    benchG1WeightedSum();
     benchG2Add();
     benchG2Mul();
+    benchG2WeightedSum();
     benchPairing();
+    benchG1Add2();
+    benchG2Add2();
+    benchInverse();
 }

@@ -12,24 +12,27 @@ class fp;
 void init(bool cpu_features = true);
 
 void _add(fp* z, const fp* x, const fp* y);
-void _addAssign(fp* x, const fp* y);
-void _ladd(fp* z, const fp* x, const fp* y);
-void _laddAssign(fp* x, const fp* y);
 void _double(fp* z, const fp* x);
-void _doubleAssign(fp* z);
-void _ldouble(fp* z, const fp* x);
-void _sub(fp* z, const fp* x, const fp* y);
-void _subAssign(fp* z, const fp* x);
-void _lsubAssign(fp* z, const fp* x);
-void _neg(fp* z, const fp* x);
+void _subtract(fp* z, const fp* x, const fp* y);
+void _negate(fp* z, const fp* x);
 void _square(fp* z, const fp* x);
 
+// Those are low level calls that will not perform modular reduction after the operation 
+// Please use with caution. Overflow will happen.
+void _ladd(fp* z, const fp* x, const fp* y);
+void _ldouble(fp* z, const fp* x);
+void _lsubtract(fp* z, const fp* x, const fp* y);
+
+// Multiplication will work fine as long as both operands are smaller than around 4p. 
+// The "smaller than 4p" here means the montgomery form itself as number is less than 4p.
+// Therefore, at most ONE _ladd/_lsubstract/_ldouble is allowed before passing the result to _multiply,
+// unless the algorithm makes sure the number is small.
 #if defined(__x86_64__) && defined(__ELF__)
-extern void _mul(fp*, const fp*, const fp*);
+extern void _multiply(fp*, const fp*, const fp*);
 #elif defined(__x86_64__)
-extern void (*_mul)(fp*, const fp*, const fp*);
+extern void (*_multiply)(fp*, const fp*, const fp*);
 #else
-void _mul(fp*, const fp*, const fp*);
+void _multiply(fp*, const fp*, const fp*);
 #endif
 
 // Add64 returns the sum with carry of x, y and carry: sum = x + y + carry.

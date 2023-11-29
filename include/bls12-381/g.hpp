@@ -25,7 +25,7 @@ public:
     fp z;
 
     g1();
-    g1(const std::array<fp, 3>& e3);
+    explicit g1(const std::array<fp, 3>& e3);
     g1(const g1& e);
     static std::optional<g1> fromJacobianBytesBE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
     static std::optional<g1> fromJacobianBytesLE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
@@ -51,16 +51,22 @@ public:
     bool isAffine() const;
     g1 affine() const;
     g1 add(const g1& e) const;
+    void addAssign(const g1& e);
     g1 dbl() const;
-    g1 neg() const;
-    g1 sub(const g1& e) const;
-    template<size_t N> g1 mulScalar(const std::array<uint64_t, N>& s) const;
+    void doubleAssign();
+    g1 negate() const;
+    g1 subtract(const g1& e) const;
+    void subtractAssign(const g1& e);
+    template<size_t N> g1 scale(const std::array<uint64_t, N>& s) const;
     g1 clearCofactor() const;
     g1 glvEndomorphism() const;
-
+    
+    // Those operators are defined to support set and map.
+    // They are not mathematically correct.
+    // DO NOT use them to compare g1.
     auto operator<=>(const g1&) const = default;
    
-    static std::optional<g1> multiExp(std::span<const g1> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield = std::function<void()>());
+    static g1 weightedSum(std::span<const g1> points, std::span<const std::array<uint64_t, 4>> scalars, const std::function<void()>& yield = std::function<void()>());
     static g1 mapToCurve(const fp& e);
     static std::tuple<fp, fp> swuMapG1(const fp& e);
     static void isogenyMapG1(fp& x, fp& y);
@@ -81,7 +87,7 @@ public:
     fp2 z;
 
     g2();
-    g2(const std::array<fp2, 3>& e3);
+    explicit g2(const std::array<fp2, 3>& e3);
     g2(const g2& e);
     static std::optional<g2> fromJacobianBytesBE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
     static std::optional<g2> fromJacobianBytesLE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
@@ -107,17 +113,23 @@ public:
     bool isAffine() const;
     g2 affine() const;
     g2 add(const g2& e) const;
+    void addAssign(const g2& e);
     g2 dbl() const;
-    g2 neg() const;
-    g2 sub(const g2& e) const;
+    void doubleAssign();
+    g2 negate() const;
+    g2 subtract(const g2& e) const;
+    void subtractAssign(const g2& e);
     g2 psi() const;
-    template<size_t N> g2 mulScalar(const std::array<uint64_t, N>& s) const;
+    template<size_t N> g2 scale(const std::array<uint64_t, N>& s) const;
     g2 clearCofactor() const;
     g2 frobeniusMap(int64_t power) const;
 
+    // Those operators are defined to support set and map.
+    // They are not mathematically correct.
+    // DO NOT use them to compare g2.
     auto operator<=>(const g2&) const = default;
-   
-    static std::optional<g2> multiExp(std::span<const g2> points, std::span<const std::array<uint64_t, 4>> scalars, std::function<void()> yield = std::function<void()>());
+
+    static g2 weightedSum(std::span<const g2> points, std::span<const std::array<uint64_t, 4>> scalars, const std::function<void()>& yield = std::function<void()>());
     static g2 mapToCurve(const fp2& e);
     static std::tuple<fp2, fp2> swuMapG2(const fp2& e);
     //static void isogenyMapG2(fp2& x, fp2& y);

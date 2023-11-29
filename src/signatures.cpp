@@ -352,7 +352,7 @@ g1 derive_child_g1_unhardened(
 
     bn_divn_safe(quotient, remainder, nonce, fp::Q);
 
-    return pk.add(g1::one().mulScalar(remainder));
+    return pk.add(g1::one().scale(remainder));
 }
 
 g2 derive_child_g2_unhardened(
@@ -378,7 +378,7 @@ g2 derive_child_g2_unhardened(
 
     bn_divn_safe(quotient, remainder, nonce, fp::Q);
 
-    return pk.add(g2::one().mulScalar(remainder));
+    return pk.add(g2::one().scale(remainder));
 }
 
 array<uint64_t, 4> aggregate_secret_keys(std::span<const std::array<uint64_t, 4>> sks)
@@ -437,7 +437,7 @@ array<uint64_t, 4> sk_from_bytes(
 
 g1 public_key(const array<uint64_t, 4>& sk)
 {
-    return g1::one().mulScalar(sk).affine();
+    return g1::one().scale(sk).affine();
 }
 
 // Construct an extensible-output function based on SHA256
@@ -532,7 +532,7 @@ g2 sign(
 )
 {
     g2 p = fromMessage(msg, CIPHERSUITE_ID);
-    return p.mulScalar(sk);
+    return p.scale(sk);
 }
 
 bool verify(
@@ -542,7 +542,7 @@ bool verify(
 )
 {
     vector<tuple<g1, g2>> v;
-    pairing::add_pair(v, g1::one().neg(), signature);
+    pairing::add_pair(v, g1::one().negate(), signature);
     const g2 hashedPoint = fromMessage(message, CIPHERSUITE_ID);
     pairing::add_pair(v, pubkey, hashedPoint);
 
@@ -587,7 +587,7 @@ bool aggregate_verify(
 )
 {
     vector<tuple<g1, g2>> v;
-    pairing::add_pair(v, g1::one().neg(), signature);
+    pairing::add_pair(v, g1::one().negate(), signature);
 
     if(!signature.isOnCurve() || !signature.inCorrectSubgroup())
     {
@@ -632,7 +632,7 @@ g2 pop_prove(const array<uint64_t, 4>& sk)
     g1 pk = public_key(sk);
     array<uint8_t, 96> msg = pk.toAffineBytesLE(true);
     g2 hashed_key = fromMessage(vector<uint8_t>(msg.begin(), msg.end()), POP_CIPHERSUITE_ID);
-    return hashed_key.mulScalar(sk);
+    return hashed_key.scale(sk);
 }
 
 bool pop_verify(
@@ -653,7 +653,7 @@ bool pop_verify(
     }
 
     vector<tuple<g1, g2>> v;
-    pairing::add_pair(v, g1::one().neg(), signature_proof);
+    pairing::add_pair(v, g1::one().negate(), signature_proof);
     pairing::add_pair(v, pubkey, hashedPoint);
 
     // 1 =? prod e(pubkey[i], hash[i]) * e(-g1, aggSig)

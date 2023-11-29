@@ -125,7 +125,7 @@ std::array<uint64_t, NC> add(const std::array<uint64_t, NA>& a, const std::array
 
 // multiplies two std::arrays: calculates c = a * b
 template<size_t NC, size_t NA, size_t NB>
-std::array<uint64_t, NC> mul(const std::array<uint64_t, NA>& a, const std::array<uint64_t, NB>& b)
+std::array<uint64_t, NC> multiply(const std::array<uint64_t, NA>& a, const std::array<uint64_t, NB>& b)
 {
     std::array<uint64_t, NC> c;
     memset(c.data(), 0, NC * sizeof(uint64_t));
@@ -255,10 +255,10 @@ fp fp::exp(const std::array<uint64_t, N>& s) const
     uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
-        _mul(&z, &z, &z);
+        z.squareAssign();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            _mul(&z, &z, this);
+            z.multiplyAssign(*this);
         }
     }
     return z;
@@ -271,10 +271,10 @@ fp2 fp2::exp(const std::array<uint64_t, N>& s) const
     uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
-        z = z.square();
+        z.squareAssign();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z.multiplyAssign(*this);
         }
     }
     return z;
@@ -287,10 +287,10 @@ fp6 fp6::exp(const std::array<uint64_t, N>& s) const
     uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
-        z = z.square();
+        z.squareAssign();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z.multiplyAssign(*this);
         }
     }
     return z;
@@ -302,10 +302,10 @@ template<size_t N> fp12 fp12::exp(const std::array<uint64_t, N>& s) const
     uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
-        z = z.square();
+        z.squareAssign();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z.multiplyAssign(*this);
         }
     }
     return z;
@@ -318,17 +318,17 @@ fp12 fp12::cyclotomicExp(const std::array<uint64_t, N>& s) const
     uint64_t l = scalar::bitLength(s);
     for(int64_t i = l - 1; i >= 0; i--)
     {
-        z = z.cyclotomicSquare();
+        z.cyclotomicSquareAssign();
         if((s[i/64] >> (i%64) & 1) == 1)
         {
-            z = z.mul(*this);
+            z.multiplyAssign(*this);
         }
     }
     return z;
 }
 
 template<size_t N>
-g1 g1::mulScalar(const std::array<uint64_t, N>& s) const
+g1 g1::scale(const std::array<uint64_t, N>& s) const
 {
     g1 q = g1({fp::zero(), fp::zero(), fp::zero()});
     g1 n = *this;
@@ -345,7 +345,7 @@ g1 g1::mulScalar(const std::array<uint64_t, N>& s) const
 }
 
 template<size_t N>
-g2 g2::mulScalar(const std::array<uint64_t, N>& s) const
+g2 g2::scale(const std::array<uint64_t, N>& s) const
 {
     g2 q = g2({fp2::zero(), fp2::zero(), fp2::zero()});
     g2 n = *this;
