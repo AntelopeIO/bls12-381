@@ -219,6 +219,10 @@ fp fp::phi() const
     return c;
 }
 
+// Origin algorithm comes from:
+// [1] B.S.Kaliski Jr. The Montgomery inverse and its applications. IEEE Transactions on Computers, 44(8):1064–1065, August 1995.
+// Modified according to:
+// [2] Savas, Erkay, and Cetin Kaya Koç. "The Montgomery modular inverse-revisited." IEEE transactions on computers 49, no. 7 (2000): 763-766.
 fp fp::inverse() const
 {
     if(isZero())
@@ -230,9 +234,16 @@ fp fp::inverse() const
     fp s({1, 0, 0, 0, 0, 0});
     fp r({0, 0, 0, 0, 0, 0});
     int64_t k = 0;
-    uint64_t z = 0;
     bool found = false;
+
     // Phase 1
+    // Input: a*2^384 mod p < p, p.
+    // Output: a^{-1} * 2^{k-384} mod p, where 381 <= k <= 2 * 381.
+    // 1. Input is in Montgomery form, so the input is a*2^384 mod p.
+    // 2. All Phase 1 operations will treat fp as integer in Z instead of elements in GF(p).
+    // Therefore, NO modular reduction shall happen in Phase 1.
+    // 3. As proved in [1], s,r,u,v < 2p. 
+    // Therefore, there shall be NO overflow in the process as p has 381 bits and we can hold 384 bits in fp.
     for(uint64_t i = 0; i < 768; i++)
     {
         if(v.isZero())
@@ -248,7 +259,7 @@ fp fp::inverse() const
         else if(v.isEven())
         {
             v.div2(0);
-            z += r.mul2();
+            r.mul2();
         }
         else if(u.cmp(v) > 0)
         {
@@ -262,7 +273,7 @@ fp fp::inverse() const
             _lsubtract(&v, &v, &u);
             v.div2(0);
             _ladd(&s, &s, &r);
-            z += r.mul2();
+            r.mul2();
         }
         k += 1;
     }
@@ -272,12 +283,7 @@ fp fp::inverse() const
         return zero();
     }
 
-    if(k < 381 || k > 381+384)
-    {
-        return zero();
-    }
-
-    if(r.cmp(MODULUS) >= 0 || z > 0)
+    if(r.cmp(MODULUS) >= 0)
     {
         _lsubtract(&r, &r, &MODULUS);
     }
@@ -285,10 +291,39 @@ fp fp::inverse() const
     _lsubtract(&u, &u, &r);
 
     // Phase 2
-    for(uint64_t i = k; i < 384*2; i++)
-    {
-        _double(&u, &u);
+    // Input: u = a^{-1} * 2^{k-384} mod p, k where 381 <= k <= 2*381
+    // Output: a^{-1} * 2^384 mod p
+
+    // Process for 381 <= k <= 384
+    // Generate new u, k pair that
+    // k' = k + 384
+    // u' = u * 2^{2*384} * 2^{-384} mod p
+    // u' = a^{-1} * 2^{k'-384} mod p will still hold.
+    // Will hit this case if and only if input is fp::one() for the current p.
+    if (k <= 384) {
+        u.multiplyAssign(fp::R2);
+        k += 384;
     }
+
+    // u = u * 2^{2*384} * 2^{-384} mod p = a^{-1} * 2^k mod p
+    u.multiplyAssign(fp::R2);
+
+    // This case should not happen mathmatically.
+    // Leave it here as sanity check to guard against access vialotion later.
+    if(k > 2 * 384)
+    {
+        return zero();
+    }
+
+    // 384 < k <= 2 * 384
+    // 0 <= power < 384
+    uint64_t power = 2*384 - k;
+    fp fpPower;
+    fpPower.d[power/64] = ((uint64_t)1) << (power%64);
+   
+    // result = u * 2^(2*384-k) * 2^{-384} = a^{-1} * 2^k * 2^{384-k} mod p = a^{-1} * 2^384 mod p
+    u.multiplyAssign(fpPower);
+
     return u;
 }
 

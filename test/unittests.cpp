@@ -427,6 +427,54 @@ void TestSqrt() {
 
 }
 
+void TestInverse() {
+    if (!fp::one().inverse().equal(fp::one())) {
+        throw invalid_argument("1^-1 != 1");
+    }
+
+    auto two = fp::one().dbl();
+    if (!two.multiply(two.inverse()).equal(fp::one())) {
+        throw invalid_argument("2 * 2^-1 != 1");
+    }
+
+    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), false, true);
+    if (!pminus1.multiply(pminus1.inverse()).equal(fp::one())) {
+        throw invalid_argument("(p-1) * (p-1)^-1 != 1");
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp a = random_fe();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp::one())) {
+            throw invalid_argument("fp * fp^-1 != 1");
+        }
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp2 a = random_fe2();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp2::one())) {
+            throw invalid_argument("fp2 * fp2^-1 != 1");
+        }
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp6 a = random_fe6();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp6::one())) {
+            throw invalid_argument("fp * fp^-1 != 1");
+        }
+    }
+
+    for (int i = 0; i < 100; ++ i) {
+        fp12 a = random_fe12();
+        auto b = a.inverse();
+        if (!a.multiply(b).equal(fp12::one())) {
+            throw invalid_argument("fp * fp^-1 != 1");
+        }
+    }
+}
+
 void TestMod() {
 
     const char* testVectorInput[] = {
@@ -2167,6 +2215,8 @@ void TestOutOfRangeInputs() {
     // will not cause problems all the methods calling _ladd/_lsubstract/_ldouble.
     auto p = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB"), false, true);
     auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), false, true);
+    // 2^383, largest possible input to multiplication during the inverse().
+    auto two383 = *fp::fromBytesBE(hexToBytes<48>("400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), false, true);
     // 4(p-1) * 4(p-1) will work
     for (int i = 0 ; i < 3; ++ i) {
         auto a = pminus1;
@@ -2186,7 +2236,7 @@ void TestOutOfRangeInputs() {
 
         if (!c.equal(c2)) {
             cout << "multiplication 2^i(p-1) * 2^i(p-1) failed: i = "<< i;
-            break;
+            throw;
         }
         
     }
@@ -2210,9 +2260,26 @@ void TestOutOfRangeInputs() {
 
         if (!c.equal(c2)) {
             cout << "multiplication 2^i(p) * 2^i(p) failed: i = "<< i;
-            break;
+            throw;
         }
         
+    }
+
+    {
+        auto a = two383;
+        auto b = two383;
+        auto a2 = two383;
+        a2 = a2.fromMont().toMont();
+        auto b2 = two383;
+        b2 = b2.fromMont().toMont();
+        
+        auto c = a.multiply(b); 
+        auto c2 = a2.multiply(b2);
+
+        if (!c.equal(c2)) {
+            cout << "multiplication 2^383 * 2^383 failed";
+            throw;
+        }
     }
 }
 
@@ -2230,6 +2297,7 @@ int main()
     TestArithmeticOpraters();
 
     TestSqrt();
+    TestInverse();
     TestMod();
     TestExp();
 

@@ -268,6 +268,18 @@ void benchG2Add2() {
 
 }
 
+void benchInverse() {
+    string testName = "Inverse";
+    const int numIters = 10000;
+    fp a = random_fe();
+    auto start = startStopwatch();
+
+    for (int i = 0; i < numIters; i++) {
+        a.inverse();
+    }
+    endStopwatch(testName, start, numIters);
+}
+
 int main(int argc, char* argv[])
 {
     benchG1Add();
@@ -279,4 +291,5 @@ int main(int argc, char* argv[])
     benchPairing();
     benchG1Add2();
     benchG2Add2();
+    benchInverse();
 }
