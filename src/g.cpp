@@ -457,9 +457,10 @@ g1 g1::glvEndomorphism() const
     return t;
 }
 
-// WeightedSum calculates multi exponentiation. Given pairs of G1 point and scalar values
+// Given pairs of G1 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
-// Length of points and scalars are expected to be equal, otherwise NONE is returned.
+// If length of points and scalars are not the same, then missing points will be treated as the zero point 
+// and missing scalars will be treated as the zero scalar.
 g1 g1::weightedSum(std::span<const g1> points, std::span<const std::array<uint64_t, 4>> scalars, const std::function<void()>& yield)
 {
     const size_t effective_size = min(scalars.size(), points.size());
@@ -1212,9 +1213,10 @@ g2 g2::frobeniusMap(int64_t power) const
     return r;
 }
 
-// WeightedSum calculates multi exponentiation. Given pairs of G2 point and scalar values
+// Given pairs of G2 point and scalar values
 // (P_0, e_0), (P_1, e_1), ... (P_n, e_n) calculates r = e_0 * P_0 + e_1 * P_1 + ... + e_n * P_n
-// Length of points and scalars are expected to be equal, otherwise NONE is returned.
+// If length of points and scalars are not the same, then missing points will be treated as the zero point 
+// and missing scalars will be treated as the zero scalar.
 g2 g2::weightedSum(std::span<const g2> points, std::span<const std::array<uint64_t, 4>> scalars, const std::function<void()>& yield)
 {
     const size_t effective_size = min(scalars.size(), points.size());

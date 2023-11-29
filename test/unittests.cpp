@@ -400,7 +400,7 @@ void TestSqrt() {
             }
             if(!a.equal(asqrt) && !a.equal(asqrt.negate()))
             {
-                throw invalid_argument("fp2!= sqrt(fp.square)");
+                throw invalid_argument("fp!= sqrt(fp.square)");
             }
         } else {
             throw invalid_argument("failed to find sqrt for fp");
@@ -942,14 +942,13 @@ void TestG1WeightedSumBatch()
         g1 one = g1::one();
         vector<array<uint64_t, 4>> scalars;
         vector<g1> bases;
-        // scalars: [s0,s1 ... s(n-1)]
-        // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
+
         for(int64_t i = 0; i < n; i++)
         {
             scalars.push_back(random_scalar());
             bases.push_back(random_g1());
         }
-        // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
+
         g1 expected, tmp;
         for(int64_t i = 0; i < n; i++)
         {
@@ -959,7 +958,7 @@ void TestG1WeightedSumBatch()
         g1 result = g1::weightedSum(bases, scalars);
         if(!expected.equal(result))
         {
-            throw invalid_argument("bad multi-exponentiation");
+            throw invalid_argument("bad G1 weighted sum");
         }
     };
 
@@ -1268,14 +1267,13 @@ void TestG2WeightedSumBatch()
         g2 one = g2::one();
         vector<array<uint64_t, 4>> scalars;
         vector<g2> bases;
-        // scalars: [s0,s1 ... s(n-1)]
-        // bases: [P0,P1,..P(n-1)] = [s(n-1)*G, s(n-2)*G ... s0*G]
+
         for(int64_t i = 0; i < n; i++)
         {
             scalars.push_back(random_scalar());
             bases.push_back(random_g2());
         }
-        // expected: s(n-1)*P0 + s(n-2)*P1 + s0*P(n-1)
+
         g2 expected, tmp;
         for(int64_t i = 0; i < n; i++)
         {
@@ -1285,7 +1283,7 @@ void TestG2WeightedSumBatch()
         g2 result = g2::weightedSum(bases, scalars);
         if(!expected.equal(result))
         {
-            throw invalid_argument("bad multi-exponentiation");
+            throw invalid_argument("bad G2 weighted sum");
         }
     };
     
