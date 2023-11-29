@@ -61,6 +61,9 @@ public:
     g1 clearCofactor() const;
     g1 glvEndomorphism() const;
     
+    // Those operators are defined to support set and map.
+    // They are not mathematically correct.
+    // DO NOT use them to compare g1.
     auto operator<=>(const g1&) const = default;
    
     static g1 weightedSum(std::span<const g1> points, std::span<const std::array<uint64_t, 4>> scalars, const std::function<void()>& yield = std::function<void()>());
@@ -121,6 +124,9 @@ public:
     g2 clearCofactor() const;
     g2 frobeniusMap(int64_t power) const;
 
+    // Those operators are defined to support set and map.
+    // They are not mathematically correct.
+    // DO NOT use them to compare g2.
     auto operator<=>(const g2&) const = default;
 
     static g2 weightedSum(std::span<const g2> points, std::span<const std::array<uint64_t, 4>> scalars, const std::function<void()>& yield = std::function<void()>());
