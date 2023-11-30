@@ -987,7 +987,6 @@ void TestG1WeightedSumExpected()
 void TestG1WeightedSumBatch()
 {
     const auto doTest = [](int64_t n) {
-        g1 one = g1::one();
         vector<array<uint64_t, 4>> scalars;
         vector<g1> bases;
 
@@ -1312,7 +1311,6 @@ void TestG2WeightedSumExpected()
 void TestG2WeightedSumBatch()
 {
     const auto doTest = [](int64_t n) {
-        g2 one = g2::one();
         vector<array<uint64_t, 4>> scalars;
         vector<g2> bases;
 
