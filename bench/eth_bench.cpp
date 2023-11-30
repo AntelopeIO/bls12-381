@@ -212,7 +212,7 @@ void benchG1Add2() {
 
         for (int i = 0; i < numIters; i++) {
             p = *g1::fromJacobianBytesLE(pRaw, check, raw);
-            p = p.add(p);
+            p.addAssign(p);
             p.toJacobianBytesLE(pRaw, raw);
         }
         endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
@@ -241,7 +241,7 @@ void benchG2Add2() {
 
         for (int i = 0; i < numIters; i++) {
             p = *g2::fromJacobianBytesLE(pRaw, check, raw);
-            p = p.add(p);
+            p.addAssign(p);
             p.toJacobianBytesLE(pRaw, raw);
         }
         endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
