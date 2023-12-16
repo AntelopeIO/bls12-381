@@ -634,6 +634,14 @@ void TestFieldElementSerialization()
             {
                 throw invalid_argument("BE: bad serialization");
             }
+            if( a != b )
+            {
+               throw invalid_argument("BE: bad serialization");
+            }
+            if(!(a == b))
+            {
+               throw invalid_argument("BE: bad serialization");
+            }
         }
         for(size_t i = 0; i < fuz; i++)
         {
@@ -683,6 +691,14 @@ void TestG1Serialization()
         g1 a = random_g1();
         array<uint8_t, 144> buf = a.toJacobianBytesBE();
         g1 b = g1::fromJacobianBytesBE(buf).value();
+        if(a != b)
+        {
+            throw invalid_argument("g1, jacobian: bad serialization from/to");
+        }
+        if(!(a == b))
+        {
+            throw invalid_argument("g1, jacobian: bad serialization from/to");
+        }
         if(!a.equal(b))
         {
             throw invalid_argument("g1, jacobian: bad serialization from/to");
