@@ -76,10 +76,11 @@ public:
     template<size_t N> static fp modPrime(const std::array<uint64_t, N>& k);
 
     // Those operators are defined to support set and map.
-    // They are mathematically correctly in certain cases.
+    // They are mathematically correct in certain cases.
     // However, there are still ambiguity there as the fp can be in Montgomery form or not.
     // Please avoid using those operators.
     constexpr std::strong_ordering operator<=>(const fp& e) const { return cmp(e); }
+    constexpr bool operator==(const fp& e) const { return cmp(e) == std::strong_ordering::equal; }
 
     static const fp MODULUS;                            // base field modulus: p = 4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787 or 0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB
     static const uint64_t INP;                          // INP = -(p^{-1} mod 2^64) mod 2^64
