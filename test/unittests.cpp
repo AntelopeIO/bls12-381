@@ -297,7 +297,7 @@ void TestFieldElementArithmeticCornerCases() {
 
     };
 
-    for (int i = 0; i < sizeof(testVectorInput) / sizeof(const char*); ++i) {
+    for (size_t i = 0; i < sizeof(testVectorInput) / sizeof(const char*); ++i) {
         testSqureMul(testVectorInput[i], testVectorExpectedSquare[i], testVectorExpectedAdd[i]);
     }
 }
@@ -493,7 +493,7 @@ void TestMod() {
         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
     };
 
-    for (int i = 0; i < sizeof(testVectorInput)/sizeof(const char*); ++ i) {
+    for (size_t i = 0; i < sizeof(testVectorInput)/sizeof(const char*); ++ i) {
         auto s = hexToBytes<64>(testVectorInput[i]);
         auto k = scalar::fromBytesBE<8>(s);
         fp r = fp::modPrime<8>(k);
@@ -529,7 +529,7 @@ void TestExp() {
         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
     };
 
-    for (int i = 0; i < sizeof(testVectorInput)/sizeof(const char*); ++ i) {
+    for (size_t i = 0; i < sizeof(testVectorInput)/sizeof(const char*); ++ i) {
         auto s = hexToBytes<64>(testVectorInput[i]);
         auto b = fp::fromBytesBE(hexToBytes<48>(testVectorInput2[i]), false, false);
         auto k = scalar::fromBytesBE<8>(s);
