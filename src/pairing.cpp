@@ -11,7 +11,7 @@ void doubling_step(array<fp2, 3>& coeff, g2& r)
 {
     // Adaptation of Formula 3 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
-    t[0] = r.x.mul(r.y);
+    t[0] = r.x.multiply(r.y);
     t[0] = t[0].mulByFq(fp::twoInv);
     t[1] = r.y.square();
     t[2] = r.z.square();
@@ -25,50 +25,50 @@ void doubling_step(array<fp2, 3>& coeff, g2& r)
     t[6] = r.y.add(r.z);
     t[6] = t[6].square();
     t[7] = t[2].add(t[1]);
-    t[6] = t[6].sub(t[7]);
-    coeff[0] = t[3].sub(t[1]);
+    t[6] = t[6].subtract(t[7]);
+    coeff[0] = t[3].subtract(t[1]);
     t[7] = r.x.square();
-    t[4] = t[1].sub(t[4]);
-    r.x = t[4].mul(t[0]);
+    t[4] = t[1].subtract(t[4]);
+    r.x = t[4].multiply(t[0]);
     t[2] = t[3].square();
     t[3] = t[2].dbl();
     t[3] = t[3].add(t[2]);
     t[5] = t[5].square();
-    r.y = t[5].sub(t[3]);
-    r.z = t[1].mul(t[6]);
+    r.y = t[5].subtract(t[3]);
+    r.z = t[1].multiply(t[6]);
     t[0] = t[7].dbl();
     coeff[1] = t[0].add(t[7]);
-    coeff[2] = t[6].neg();
+    coeff[2] = t[6].negate();
 }
 
 void addition_step(array<fp2, 3>& coeff, g2& r, const g2& tp)
 {
     // Algorithm 12 in https://eprint.iacr.org/2010/526.pdf
     fp2 t[10];
-    t[0] = tp.y.mul(r.z);
-    t[0] = t[0].neg();
+    t[0] = tp.y.multiply(r.z);
+    t[0] = t[0].negate();
     t[0] = t[0].add(r.y);
-    t[1] = tp.x.mul(r.z);
-    t[1] = t[1].neg();
+    t[1] = tp.x.multiply(r.z);
+    t[1] = t[1].negate();
     t[1] = t[1].add(r.x);
     t[2] = t[0].square();
     t[3] = t[1].square();
-    t[4] = t[1].mul(t[3]);
-    t[2] = r.z.mul(t[2]);
-    t[3] = r.x.mul(t[3]);
+    t[4] = t[1].multiply(t[3]);
+    t[2] = r.z.multiply(t[2]);
+    t[3] = r.x.multiply(t[3]);
     t[5] = t[3].dbl();
-    t[5] = t[4].sub(t[5]);
+    t[5] = t[4].subtract(t[5]);
     t[5] = t[5].add(t[2]);
-    r.x = t[1].mul(t[5]);
-    t[2] = t[3].sub(t[5]);
-    t[2] = t[2].mul(t[0]);
-    t[3] = r.y.mul(t[4]);
-    r.y = t[2].sub(t[3]);
-    r.z = r.z.mul(t[4]);
-    t[2] = t[1].mul(tp.y);
-    t[3] = t[0].mul(tp.x);
-    coeff[0] = t[3].sub(t[2]);
-    coeff[1] = t[0].neg();
+    r.x = t[1].multiply(t[5]);
+    t[2] = t[3].subtract(t[5]);
+    t[2] = t[2].multiply(t[0]);
+    t[3] = r.y.multiply(t[4]);
+    r.y = t[2].subtract(t[3]);
+    r.z = r.z.multiply(t[4]);
+    t[2] = t[1].multiply(tp.y);
+    t[3] = t[0].multiply(tp.x);
+    coeff[0] = t[3].subtract(t[2]);
+    coeff[1] = t[0].negate();
     coeff[2] = t[1];
 }
 
@@ -142,39 +142,39 @@ void final_exponentiation(fp12& f)
     // easy part
     t[0] = f.frobeniusMap(6);
     t[1] = f.inverse();
-    t[2] = t[0].mul(t[1]);
+    t[2] = t[0].multiply(t[1]);
     t[1] = t[2];
     t[2].frobeniusMapAssign(2);
-    t[2].mulAssign(t[1]);
+    t[2].multiplyAssign(t[1]);
     t[1] = t[2].cyclotomicSquare();
     t[1] = t[1].conjugate();
     // hard part
     t[3] = t[2].cyclotomicExp(g2::cofactorEFF);
     t[3] = t[3].conjugate();
     t[4] = t[3].cyclotomicSquare();
-    t[5] = t[1].mul(t[3]);
+    t[5] = t[1].multiply(t[3]);
     t[1] = t[5].cyclotomicExp(g2::cofactorEFF);
     t[1] = t[1].conjugate();
     t[0] = t[1].cyclotomicExp(g2::cofactorEFF);
     t[0] = t[0].conjugate();
     t[6] = t[0].cyclotomicExp(g2::cofactorEFF);
     t[6] = t[6].conjugate();
-    t[6].mulAssign(t[4]);
+    t[6].multiplyAssign(t[4]);
     t[4] = t[6].cyclotomicExp(g2::cofactorEFF);
     t[4] = t[4].conjugate();
     t[5] = t[5].conjugate();
-    t[4].mulAssign(t[5]);
-    t[4].mulAssign(t[2]);
+    t[4].multiplyAssign(t[5]);
+    t[4].multiplyAssign(t[2]);
     t[5] = t[2].conjugate();
-    t[1].mulAssign(t[2]);
+    t[1].multiplyAssign(t[2]);
     t[1].frobeniusMapAssign(3);
-    t[6].mulAssign(t[5]);
+    t[6].multiplyAssign(t[5]);
     t[6].frobeniusMapAssign(1);
-    t[3].mulAssign(t[0]);
+    t[3].multiplyAssign(t[0]);
     t[3].frobeniusMapAssign(2);
-    t[3].mulAssign(t[1]);
-    t[3].mulAssign(t[6]);
-    f = t[3].mul(t[4]);
+    t[3].multiplyAssign(t[1]);
+    t[3].multiplyAssign(t[6]);
+    f = t[3].multiply(t[4]);
 }
 
 fp12 calculate(std::span<const std::tuple<g1, g2>> pairs, std::function<void()> yield)

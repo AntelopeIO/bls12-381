@@ -19,10 +19,10 @@ public:
     std::array<uint64_t, 6> d;
 
     fp();
-    fp(const std::array<uint64_t, 6>& d);
+    explicit fp(const std::array<uint64_t, 6>& d);
     fp(const fp& e);
-    static std::optional<fp> fromBytesBE(const std::span<const uint8_t, 48> in, const bool check = false, const bool raw = false);
-    static std::optional<fp> fromBytesLE(const std::span<const uint8_t, 48> in, const bool check = false, const bool raw = false);
+    static std::optional<fp> fromBytesBE(const std::span<const uint8_t, 48> in, const bool check = true, const bool raw = false);
+    static std::optional<fp> fromBytesLE(const std::span<const uint8_t, 48> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 48> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 48> out, const bool raw = false) const;
     std::array<uint8_t, 48> toBytesBE(const bool raw = false) const;
@@ -34,9 +34,35 @@ public:
     bool isEven() const;
     bool isZero() const;
     bool isOne() const;
-    std::strong_ordering cmp(const fp& e) const;
+    constexpr std::strong_ordering cmp(const fp& e) const {
+        for(int64_t i = 5; i >= 0; i--)
+        {
+            if(d[i] < e.d[i])
+            {
+                return std::strong_ordering::less;
+            }
+            if(d[i] > e.d[i])
+            {
+                return std::strong_ordering::greater;
+            }
+        }
+        return std::strong_ordering::equal;
+    };
     bool equal(const fp& e) const;
     bool sign() const;
+    
+    fp add(const fp& e) const;
+    void addAssign(const fp& e);
+    fp dbl() const;
+    void doubleAssign();
+    fp subtract(const fp& e) const;
+    void subtractAssign(const fp& e);
+    fp negate() const;
+    fp multiply(const fp& e) const;
+    void multiplyAssign(const fp& e);
+    fp square() const;
+    void squareAssign();
+
     void div2(const uint64_t& e);
     uint64_t mul2();
     fp toMont() const;
@@ -49,7 +75,12 @@ public:
     bool isLexicographicallyLargest() const;
     template<size_t N> static fp modPrime(const std::array<uint64_t, N>& k);
 
-    std::strong_ordering operator<=>(const fp& e) const { return cmp(e); }
+    // Those operators are defined to support set and map.
+    // They are mathematically correct in certain cases.
+    // However, there are still ambiguity there as the fp can be in Montgomery form or not.
+    // Please avoid using those operators.
+    constexpr std::strong_ordering operator<=>(const fp& e) const { return cmp(e); }
+    constexpr bool operator==(const fp& e) const { return cmp(e) == std::strong_ordering::equal; }
 
     static const fp MODULUS;                            // base field modulus: p = 4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787 or 0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB
     static const uint64_t INP;                          // INP = -(p^{-1} mod 2^64) mod 2^64
@@ -74,10 +105,10 @@ public:
     fp c1;
 
     fp2();
-    fp2(const std::array<fp, 2>& e2);
+    explicit fp2(const std::array<fp, 2>& e2);
     fp2(const fp2& e);
-    static std::optional<fp2> fromBytesBE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
-    static std::optional<fp2> fromBytesLE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
+    static std::optional<fp2> fromBytesBE(const std::span<const uint8_t, 96> in, const bool check = true, const bool raw = false);
+    static std::optional<fp2> fromBytesLE(const std::span<const uint8_t, 96> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 96> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 96> out, const bool raw = false) const;
     std::array<uint8_t, 96> toBytesBE(const bool raw = false) const;
@@ -90,16 +121,14 @@ public:
     bool sign() const;
     fp2 add(const fp2& e) const;
     void addAssign(const fp2& e);
-    fp2 ladd(const fp2& e) const;
     fp2 dbl() const;
     void doubleAssign();
-    fp2 ldouble() const;
-    fp2 sub(const fp2& e) const;
-    void subAssign(const fp2& e);
-    fp2 neg() const;
-    fp2 conj() const;
-    fp2 mul(const fp2& e) const;
-    void mulAssign(const fp2& e);
+    fp2 subtract(const fp2& e) const;
+    void subtractAssign(const fp2& e);
+    fp2 negate() const;
+    fp2 conjugate() const;
+    fp2 multiply(const fp2& e) const;
+    void multiplyAssign(const fp2& e);
     fp2 square() const;
     void squareAssign();
     fp2 mulByNonResidue() const;
@@ -113,6 +142,9 @@ public:
     bool isQuadraticNonResidue() const;
     bool isLexicographicallyLargest() const;
 
+    // Those operators are defined to support set and map.
+    // They are not mathematically correct.
+    // DO NOT use them to compare fp2.
     auto operator<=>(const fp2&) const = default;
 
     static const fp2 negativeOne2;
@@ -132,10 +164,10 @@ public:
     fp2 c2;
 
     fp6();
-    fp6(const std::array<fp2, 3>& e3);
+    explicit fp6(const std::array<fp2, 3>& e3);
     fp6(const fp6& e);
-    static std::optional<fp6> fromBytesBE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
-    static std::optional<fp6> fromBytesLE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
+    static std::optional<fp6> fromBytesBE(const std::span<const uint8_t, 288> in, const bool check = true, const bool raw = false);
+    static std::optional<fp6> fromBytesLE(const std::span<const uint8_t, 288> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 288> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 288> out, const bool raw = false) const;
     std::array<uint8_t, 288> toBytesBE(const bool raw = false) const;
@@ -149,12 +181,13 @@ public:
     void addAssign(const fp6& e);
     fp6 dbl() const;
     void doubleAssign();
-    fp6 sub(const fp6& e) const;
-    void subAssign(const fp6& e);
-    fp6 neg() const;
-    fp6 mul(const fp6& e) const;
-    void mulAssign(const fp6& e);
+    fp6 subtract(const fp6& e) const;
+    void subtractAssign(const fp6& e);
+    fp6 negate() const;
+    fp6 multiply(const fp6& e) const;
+    void multiplyAssign(const fp6& e);
     fp6 square() const;
+    void squareAssign();
     void mulBy01Assign(const fp2& e0, const fp2& e1);
     fp6 mulBy01(const fp2& e0, const fp2& e1) const;
     fp6 mulBy1(const fp2& e1) const;
@@ -179,10 +212,10 @@ public:
     fp6 c1;
 
     fp12();
-    fp12(const std::array<fp6, 2>& e2);
+    explicit fp12(const std::array<fp6, 2>& e2);
     fp12(const fp12& e);
-    static std::optional<fp12> fromBytesBE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
-    static std::optional<fp12> fromBytesLE(const std::span<const uint8_t, 576> in, const bool check = false, const bool raw = false);
+    static std::optional<fp12> fromBytesBE(const std::span<const uint8_t, 576> in, const bool check = true, const bool raw = false);
+    static std::optional<fp12> fromBytesLE(const std::span<const uint8_t, 576> in, const bool check = true, const bool raw = false);
     void toBytesBE(const std::span<uint8_t, 576> out, const bool raw = false) const;
     void toBytesLE(const std::span<uint8_t, 576> out, const bool raw = false) const;
     std::array<uint8_t, 576> toBytesBE(const bool raw = false) const;
@@ -194,14 +227,19 @@ public:
     bool isGtValid() const;
     bool equal(const fp12& e) const;
     fp12 add(const fp12& e) const;
+    void addAssign(const fp12& e);
     fp12 dbl() const;
-    fp12 sub(const fp12& e) const;
-    fp12 neg() const;
+    void doubleAssign();
+    fp12 subtract(const fp12& e) const;
+    void subtractAssign(const fp12& e);
+    fp12 negate() const;
     fp12 conjugate() const;
     fp12 square() const;
+    void squareAssign();
     fp12 cyclotomicSquare() const;
-    fp12 mul(const fp12& e) const;
-    void mulAssign(const fp12& e);
+    void cyclotomicSquareAssign();
+    fp12 multiply(const fp12& e) const;
+    void multiplyAssign(const fp12& e);
     static std::tuple<fp2, fp2> fp4Square(const fp2& e0, const fp2& e1);
     fp12 inverse() const;
     void mulBy014Assign(const fp2& e0, const fp2& e1, const fp2& e4);
