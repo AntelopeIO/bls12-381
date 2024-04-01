@@ -215,7 +215,7 @@ void benchG1Add2() {
             p.addAssign(p);
             p.toJacobianBytesLE(pRaw, opt.to_mont ? from_mont::yes : from_mont::no);
         }
-        endStopwatch(string("check=") + std::to_string(opt.check_valid) + string(", raw=") + std::to_string(opt.to_mont), start, numIters);
+        endStopwatch(string("check_valid=") + std::to_string(opt.check_valid) + string(", to_mont=") + std::to_string(opt.to_mont), start, numIters);
     };
 
     performTest({ .check_valid = true,  .to_mont = true });
@@ -244,7 +244,7 @@ void benchG2Add2() {
             p.addAssign(p);
             p.toJacobianBytesLE(pRaw, opt.to_mont ? from_mont::yes : from_mont::no);
         }
-        endStopwatch(string("check=") + std::to_string(opt.check_valid) + string(", raw=") + std::to_string(opt.to_mont), start, numIters);
+        endStopwatch(string("check_valid=") + std::to_string(opt.check_valid) + string(", to_mont=") + std::to_string(opt.to_mont), start, numIters);
     };
 
     performTest({ .check_valid = true,  .to_mont = true });

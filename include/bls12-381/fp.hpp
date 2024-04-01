@@ -225,7 +225,7 @@ public:
     fp6 c1;
 
     fp12();
-    explicit fp12(const std::array<fp6, 2>& eG2);
+    explicit fp12(const std::array<fp6, 2>& e2);
     fp12(const fp12& e);
     static std::optional<fp12> fromBytesBE(const std::span<const uint8_t, 576> in,
                                            const conv_opt opt = { .check_valid = true, .to_mont = true });
