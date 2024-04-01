@@ -11,14 +11,19 @@
 namespace bls12_381
 {
 
+// config when converting from bytes
+// ---------------------------------
 struct conv_opt {
    bool check_valid;  // check bytes hold a valid encoding
    bool to_mont;      // convert to montgomery form
 };
 
+// config when converting to bytes
+// -------------------------------
 enum class from_mont : uint8_t { no = 0, yes };
 
 // element representation of 'fp' field which is the base field
+// ------------------------------------------------------------
 class fp
 {
 
