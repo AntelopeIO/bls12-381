@@ -37,26 +37,26 @@ optional<fp> fp::fromBytesLE(const span<const uint8_t, 48> in, const conv_opt op
 
 void fp::toBytesBE(const span<uint8_t, 48> out, const from_mont fm /* = from_mont::yes */) const
 {
-    if(fm == from_mont::no) scalar::toBytesBE<6>(d, out);
-    else                    scalar::toBytesBE<6>(fromMont().d, out);
+    if(fm == from_mont::yes) scalar::toBytesBE<6>(fromMont().d, out);
+    else                     scalar::toBytesBE<6>(d, out);
 }
 
 void fp::toBytesLE(const span<uint8_t, 48> out, const from_mont fm /* = from_mont::yes */) const
 {
-    if(fm == from_mont::no) scalar::toBytesLE<6>(d, out);
-    else                    scalar::toBytesLE<6>(fromMont().d, out);
+    if(fm == from_mont::yes) scalar::toBytesLE<6>(fromMont().d, out);
+    else                     scalar::toBytesLE<6>(d, out);
 }
 
 array<uint8_t, 48> fp::toBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
-    if(fm == from_mont::no) return scalar::toBytesBE<6>(d);
-    else                    return scalar::toBytesBE<6>(fromMont().d);
+    if(fm == from_mont::yes) return scalar::toBytesBE<6>(fromMont().d);
+    else                     return scalar::toBytesBE<6>(d);
 }
 
 array<uint8_t, 48> fp::toBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
-    if(fm == from_mont::no) return scalar::toBytesLE<6>(d);
-    else                    return scalar::toBytesLE<6>(fromMont().d);
+    if(fm == from_mont::yes) return scalar::toBytesLE<6>(fromMont().d);
+    else                     return scalar::toBytesLE<6>(d);
 }
 
 fp fp::zero()
