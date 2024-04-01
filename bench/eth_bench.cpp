@@ -203,25 +203,25 @@ void benchG1Add2() {
     constexpr int numIters = 10000;
     g1 pbak = random_g1();
     
-    auto performTest = [pbak](bool check, bool raw) {
+    auto performTest = [pbak](conv_opt opt) {
         array<uint8_t, 144> pRaw = {};
         g1 p = pbak;
-        p.toJacobianBytesLE(pRaw, raw);
+        p.toJacobianBytesLE(pRaw, opt.raw);
 
         auto start = startStopwatch();
 
         for (int i = 0; i < numIters; i++) {
-            p = *g1::fromJacobianBytesLE(pRaw, check, raw);
+            p = *g1::fromJacobianBytesLE(pRaw, opt);
             p.addAssign(p);
-            p.toJacobianBytesLE(pRaw, raw);
+            p.toJacobianBytesLE(pRaw, opt.raw);
         }
-        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+        endStopwatch(string("check=") + std::to_string(opt.check) + string(", raw=") + std::to_string(opt.raw), start, numIters);
     };
 
-    performTest(true, true);
-    performTest(true, false);
-    performTest(false, true);
-    performTest(false, false);
+    performTest({ .check = true,  .raw = true });
+    performTest({ .check = true,  .raw = false });
+    performTest({ .check = false, .raw = true });
+    performTest({ .check = false, .raw = false });
 
 }
 
@@ -232,25 +232,25 @@ void benchG2Add2() {
     constexpr int numIters = 10000;
     g2 pbak = random_g2();
 
-    auto performTest = [pbak](bool check, bool raw) {
+    auto performTest = [pbak](conv_opt opt) {
         array<uint8_t, 288> pRaw = {};
         g2 p = pbak;
-        p.toJacobianBytesLE(pRaw, raw);
+        p.toJacobianBytesLE(pRaw, opt.raw);
 
         auto start = startStopwatch();
 
         for (int i = 0; i < numIters; i++) {
-            p = *g2::fromJacobianBytesLE(pRaw, check, raw);
+            p = *g2::fromJacobianBytesLE(pRaw, opt);
             p.addAssign(p);
-            p.toJacobianBytesLE(pRaw, raw);
+            p.toJacobianBytesLE(pRaw, opt.raw);
         }
-        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+        endStopwatch(string("check=") + std::to_string(opt.check) + string(", raw=") + std::to_string(opt.raw), start, numIters);
     };
 
-    performTest(true, true);
-    performTest(true, false);
-    performTest(false, true);
-    performTest(false, false);
+    performTest({ .check = true,  .raw = true });
+    performTest({ .check = true,  .raw = false });
+    performTest({ .check = false, .raw = true });
+    performTest({ .check = false, .raw = false });
 
 }
 

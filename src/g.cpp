@@ -17,41 +17,44 @@ g1::g1(const g1& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-optional<g1> g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check, const bool raw)
+optional<g1> g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
-    optional<fp> z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]), true, raw);
+    opt.check = true;
+    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
+    optional<fp> z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]), opt);
     if(!x || !y || !z) return {};
     g1 p = g1({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g1> g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check, const bool raw)
+optional<g1> g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
-    optional<fp> z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]), true, raw);
+    opt.check = true;
+    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
+    optional<fp> z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]), opt);
     if(!x || !y || !z) return {};
     g1 p = g1({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g1> g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<g1> g1::fromAffineBytesBE(const span<const uint8_t, 96> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
+    opt.check = true;
+    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -60,18 +63,19 @@ optional<g1> g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool 
     }
     fp z = fp::one();
     g1 p = g1({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
+    opt.check = true;
+    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -80,7 +84,7 @@ optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool 
     }
     fp z = fp::one();
     g1 p = g1({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }
@@ -722,41 +726,44 @@ g2::g2(const g2& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-optional<g2> g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<g2> g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
-    optional<fp2> z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), true, raw);
+    opt.check = true;
+    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
+    optional<fp2> z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), opt);
     if(!x || !y || !z) return {};
     g2 p = g2({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g2> g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<g2> g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
-    optional<fp2> z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), true, raw);
+    opt.check = true;
+    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
+    optional<fp2> z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), opt);
     if(!x || !y || !z) return {};
     g2 p = g2({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g2> g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check, const bool raw)
+optional<g2> g2::fromAffineBytesBE(const span<const uint8_t, 192> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
+    opt.check = true;
+    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -765,18 +772,19 @@ optional<g2> g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool
     }
     fp2 z = fp2::one();
     g2 p = g2({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g2> g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool check, const bool raw)
+optional<g2> g2::fromAffineBytesLE(const span<const uint8_t, 192> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
+    opt.check = true;
+    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -785,7 +793,7 @@ optional<g2> g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool
     }
     fp2 z = fp2::one();
     g2 p = g2({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(opt.check && !p.isOnCurve())
     {
         return {};
     }

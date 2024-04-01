@@ -4,14 +4,10 @@
 #include <functional>
 #include <optional>
 #include <span>
+#include "fp.hpp"
 
 namespace bls12_381
 {
-
-class fp;
-class fp2;
-class fp6;
-class fp12;
 
 // g1 is type for point in G1.
 // g1 is both used for Affine and Jacobian point representation.
@@ -27,10 +23,14 @@ public:
     g1();
     explicit g1(const std::array<fp, 3>& e3);
     g1(const g1& e);
-    static std::optional<g1> fromJacobianBytesBE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
-    static std::optional<g1> fromJacobianBytesLE(const std::span<const uint8_t, 144> in, const bool check = false, const bool raw = false);
-    static std::optional<g1> fromAffineBytesBE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
-    static std::optional<g1> fromAffineBytesLE(const std::span<const uint8_t, 96> in, const bool check = false, const bool raw = false);
+    static std::optional<g1> fromJacobianBytesBE(const std::span<const uint8_t, 144> in,
+                                                 conv_opt opt = { .check = false, .raw = false });
+    static std::optional<g1> fromJacobianBytesLE(const std::span<const uint8_t, 144> in,
+                                                 conv_opt opt = { .check = false, .raw = false });
+    static std::optional<g1> fromAffineBytesBE(const std::span<const uint8_t, 96> in,
+                                               conv_opt opt = { .check = false, .raw = false });
+    static std::optional<g1> fromAffineBytesLE(const std::span<const uint8_t, 96> in,
+                                               conv_opt opt = { .check = false, .raw = false });
     static std::optional<g1> fromCompressedBytesBE(const std::span<const uint8_t, 48> in);
     void toJacobianBytesBE(const std::span<uint8_t, 144> out, const bool raw = false) const;
     void toJacobianBytesLE(const std::span<uint8_t, 144> out, const bool raw = false) const;
@@ -89,10 +89,14 @@ public:
     g2();
     explicit g2(const std::array<fp2, 3>& e3);
     g2(const g2& e);
-    static std::optional<g2> fromJacobianBytesBE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
-    static std::optional<g2> fromJacobianBytesLE(const std::span<const uint8_t, 288> in, const bool check = false, const bool raw = false);
-    static std::optional<g2> fromAffineBytesBE(const std::span<const uint8_t, 192> in, const bool check = false, const bool raw = false);
-    static std::optional<g2> fromAffineBytesLE(const std::span<const uint8_t, 192> in, const bool check = false, const bool raw = false);
+    static std::optional<g2> fromJacobianBytesBE(const std::span<const uint8_t, 288> in,
+                                                 conv_opt opt = { .check = false, .raw = false });
+    static std::optional<g2> fromJacobianBytesLE(const std::span<const uint8_t, 288> in,
+                                                 conv_opt opt = { .check = false, .raw = false });
+    static std::optional<g2> fromAffineBytesBE(const std::span<const uint8_t, 192> in,
+                                               conv_opt opt = { .check = false, .raw = false });
+    static std::optional<g2> fromAffineBytesLE(const std::span<const uint8_t, 192> in,
+                                               conv_opt opt = { .check = false, .raw = false });
     static std::optional<g2> fromCompressedBytesBE(const std::span<const uint8_t, 96> in);
     void toJacobianBytesBE(const std::span<uint8_t, 288> out, const bool raw = false) const;
     void toJacobianBytesLE(const std::span<uint8_t, 288> out, const bool raw = false) const;
