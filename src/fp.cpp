@@ -17,46 +17,46 @@ fp::fp(const fp& e) : d{e.d[0], e.d[1], e.d[2], e.d[3], e.d[4], e.d[5]}
 {
 }
 
-optional<fp> fp::fromBytesBE(const span<const uint8_t, 48> in, const bool check, const bool raw)
+optional<fp> fp::fromBytesBE(const span<const uint8_t, 48> in, const conv_opt opt)
 {
     // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesBE<6>(in));
-    if(check && !e.isValid()) return {};
-    if(raw) return e;
-    else    return e.toMont();
+    if(opt.check_valid && !e.isValid()) return {};
+    if(opt.to_mont) return e.toMont();
+    else            return e;
 }
 
-optional<fp> fp::fromBytesLE(const span<const uint8_t, 48> in, const bool check, const bool raw)
+optional<fp> fp::fromBytesLE(const span<const uint8_t, 48> in, const conv_opt opt)
 {
     // We decided to always validate the input here. But we reserve the flag.
     fp e = fp(scalar::fromBytesLE<6>(in));
-    if(check && !e.isValid()) return {};
-    if(raw) return e;
-    else    return e.toMont();
+    if(opt.check_valid && !e.isValid()) return {};
+    if(opt.to_mont) return e.toMont();
+    else            return e;
 }
 
-void fp::toBytesBE(const span<uint8_t, 48> out, const bool raw) const
+void fp::toBytesBE(const span<uint8_t, 48> out, const from_mont fm /* = from_mont::yes */) const
 {
-    if(raw) scalar::toBytesBE<6>(d, out);
-    else    scalar::toBytesBE<6>(fromMont().d, out);
+    if(fm == from_mont::yes) scalar::toBytesBE<6>(fromMont().d, out);
+    else                     scalar::toBytesBE<6>(d, out);
 }
 
-void fp::toBytesLE(const span<uint8_t, 48> out, const bool raw) const
+void fp::toBytesLE(const span<uint8_t, 48> out, const from_mont fm /* = from_mont::yes */) const
 {
-    if(raw) scalar::toBytesLE<6>(d, out);
-    else    scalar::toBytesLE<6>(fromMont().d, out);
+    if(fm == from_mont::yes) scalar::toBytesLE<6>(fromMont().d, out);
+    else                     scalar::toBytesLE<6>(d, out);
 }
 
-array<uint8_t, 48> fp::toBytesBE(const bool raw) const
+array<uint8_t, 48> fp::toBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
-    if(raw) return scalar::toBytesBE<6>(d);
-    else    return scalar::toBytesBE<6>(fromMont().d);
+    if(fm == from_mont::yes) return scalar::toBytesBE<6>(fromMont().d);
+    else                     return scalar::toBytesBE<6>(d);
 }
 
-array<uint8_t, 48> fp::toBytesLE(const bool raw) const
+array<uint8_t, 48> fp::toBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
-    if(raw) return scalar::toBytesLE<6>(d);
-    else    return scalar::toBytesLE<6>(fromMont().d);
+    if(fm == from_mont::yes) return scalar::toBytesLE<6>(fromMont().d);
+    else                     return scalar::toBytesLE<6>(d);
 }
 
 fp fp::zero()
@@ -465,45 +465,45 @@ fp2::fp2(const fp2& e) : c0(e.c0), c1(e.c1)
 {
 }
 
-optional<fp2> fp2::fromBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<fp2> fp2::fromBytesBE(const span<const uint8_t, 96> in, const conv_opt opt)
 {
-    optional<fp> c1 = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
-    optional<fp> c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
+    optional<fp> c1 = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[48]), opt);
+    optional<fp> c0 = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[96]), opt);
     if(!c1 || !c0) return {};
     return fp2({*c0, *c1});
 }
 
-optional<fp2> fp2::fromBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<fp2> fp2::fromBytesLE(const span<const uint8_t, 96> in, const conv_opt opt)
 {
-    optional<fp> c0 = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[48]), check, raw);
-    optional<fp> c1 = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[96]), check, raw);
+    optional<fp> c0 = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[48]), opt);
+    optional<fp> c1 = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[96]), opt);
     if(!c1 || !c0) return {};
     return fp2({*c0, *c1});
 }
 
-void fp2::toBytesBE(const span<uint8_t, 96> out, const bool raw) const
+void fp2::toBytesBE(const span<uint8_t, 96> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[ 0], &c1.toBytesBE(raw)[0], 48);
-    memcpy(&out[48], &c0.toBytesBE(raw)[0], 48);
+    memcpy(&out[ 0], &c1.toBytesBE(fm)[0], 48);
+    memcpy(&out[48], &c0.toBytesBE(fm)[0], 48);
 }
 
-void fp2::toBytesLE(const span<uint8_t, 96> out, const bool raw) const
+void fp2::toBytesLE(const span<uint8_t, 96> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[ 0], &c0.toBytesLE(raw)[0], 48);
-    memcpy(&out[48], &c1.toBytesLE(raw)[0], 48);
+    memcpy(&out[ 0], &c0.toBytesLE(fm)[0], 48);
+    memcpy(&out[48], &c1.toBytesLE(fm)[0], 48);
 }
 
-array<uint8_t, 96> fp2::toBytesBE(const bool raw) const
+array<uint8_t, 96> fp2::toBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 96> out;
-    toBytesBE(out, raw);
+    toBytesBE(out, fm);
     return out;
 }
 
-array<uint8_t, 96> fp2::toBytesLE(const bool raw) const
+array<uint8_t, 96> fp2::toBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 96> out;
-    toBytesLE(out, raw);
+    toBytesLE(out, fm);
     return out;
 }
 
@@ -825,49 +825,49 @@ fp6::fp6(const fp6& e) : c0(e.c0), c1(e.c1), c2(e.c2)
 {
 }
 
-optional<fp6> fp6::fromBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<fp6> fp6::fromBytesBE(const span<const uint8_t, 288> in, const conv_opt opt)
 {
-    optional<fp2> c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    optional<fp2> c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
-    optional<fp2> c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
+    optional<fp2> c2 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> c1 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
+    optional<fp2> c0 = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), opt);
     if(!c2 || !c1 || !c0) return {};
     return fp6({*c0, *c1, *c2});
 }
 
-optional<fp6> fp6::fromBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<fp6> fp6::fromBytesLE(const span<const uint8_t, 288> in, const conv_opt opt)
 {
-    optional<fp2> c0 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), check, raw);
-    optional<fp2> c1 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), check, raw);
-    optional<fp2> c2 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), check, raw);
+    optional<fp2> c0 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> c1 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
+    optional<fp2> c2 = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), opt);
     if(!c2 || !c1 || !c0) return {};
     return fp6({*c0, *c1, *c2});
 }
 
-void fp6::toBytesBE(const span<uint8_t, 288> out, const bool raw) const
+void fp6::toBytesBE(const span<uint8_t, 288> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[  0], &c2.toBytesBE(raw)[0], 96);
-    memcpy(&out[ 96], &c1.toBytesBE(raw)[0], 96);
-    memcpy(&out[192], &c0.toBytesBE(raw)[0], 96);
+    memcpy(&out[  0], &c2.toBytesBE(fm)[0], 96);
+    memcpy(&out[ 96], &c1.toBytesBE(fm)[0], 96);
+    memcpy(&out[192], &c0.toBytesBE(fm)[0], 96);
 }
 
-void fp6::toBytesLE(const span<uint8_t, 288> out, const bool raw) const
+void fp6::toBytesLE(const span<uint8_t, 288> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 96);
-    memcpy(&out[ 96], &c1.toBytesLE(raw)[0], 96);
-    memcpy(&out[192], &c2.toBytesLE(raw)[0], 96);
+    memcpy(&out[  0], &c0.toBytesLE(fm)[0], 96);
+    memcpy(&out[ 96], &c1.toBytesLE(fm)[0], 96);
+    memcpy(&out[192], &c2.toBytesLE(fm)[0], 96);
 }
 
-array<uint8_t, 288> fp6::toBytesBE(const bool raw) const
+array<uint8_t, 288> fp6::toBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 288> out;
-    toBytesBE(out, raw);
+    toBytesBE(out, fm);
     return out;
 }
 
-array<uint8_t, 288> fp6::toBytesLE(const bool raw) const
+array<uint8_t, 288> fp6::toBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 288> out;
-    toBytesLE(out, raw);
+    toBytesLE(out, fm);
     return out;
 }
 
@@ -1238,45 +1238,45 @@ fp12::fp12(const fp12& e) : c0(e.c0), c1(e.c1)
 {
 }
 
-optional<fp12> fp12::fromBytesBE(const span<const uint8_t, 576> in, const bool check, const bool raw)
+optional<fp12> fp12::fromBytesBE(const span<const uint8_t, 576> in, const conv_opt opt)
 {
-    optional<fp6> c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
-    optional<fp6> c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
+    optional<fp6> c1 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[  0], &in[288]), opt);
+    optional<fp6> c0 = fp6::fromBytesBE(span<const uint8_t, 288>(&in[288], &in[576]), opt);
     if(!c1 || !c0) return {};
     return fp12({*c0, *c1});
 }
 
-optional<fp12> fp12::fromBytesLE(const span<const uint8_t, 576> in, const bool check, const bool raw)
+optional<fp12> fp12::fromBytesLE(const span<const uint8_t, 576> in, const conv_opt opt)
 {
-    optional<fp6> c0 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[  0], &in[288]), check, raw);
-    optional<fp6> c1 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[288], &in[576]), check, raw);
+    optional<fp6> c0 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[  0], &in[288]), opt);
+    optional<fp6> c1 = fp6::fromBytesLE(span<const uint8_t, 288>(&in[288], &in[576]), opt);
     if(!c1 || !c0) return {};
     return fp12({*c0, *c1});
 }
 
-void fp12::toBytesBE(const span<uint8_t, 576> out, const bool raw) const
+void fp12::toBytesBE(const span<uint8_t, 576> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[  0], &c1.toBytesBE(raw)[0], 288);
-    memcpy(&out[288], &c0.toBytesBE(raw)[0], 288);
+    memcpy(&out[  0], &c1.toBytesBE(fm)[0], 288);
+    memcpy(&out[288], &c0.toBytesBE(fm)[0], 288);
 }
 
-void fp12::toBytesLE(const span<uint8_t, 576> out, const bool raw) const
+void fp12::toBytesLE(const span<uint8_t, 576> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[  0], &c0.toBytesLE(raw)[0], 288);
-    memcpy(&out[288], &c1.toBytesLE(raw)[0], 288);
+    memcpy(&out[  0], &c0.toBytesLE(fm)[0], 288);
+    memcpy(&out[288], &c1.toBytesLE(fm)[0], 288);
 }
 
-array<uint8_t, 576> fp12::toBytesBE(const bool raw) const
+array<uint8_t, 576> fp12::toBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 576> out;
-    toBytesBE(out, raw);
+    toBytesBE(out, fm);
     return out;
 }
 
-array<uint8_t, 576> fp12::toBytesLE(const bool raw) const
+array<uint8_t, 576> fp12::toBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 576> out;
-    toBytesLE(out, raw);
+    toBytesLE(out, fm);
     return out;
 }
 

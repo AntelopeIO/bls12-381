@@ -11,7 +11,19 @@
 namespace bls12_381
 {
 
+// config when converting from bytes
+// ---------------------------------
+struct conv_opt {
+   bool check_valid;  // check bytes hold a valid encoding
+   bool to_mont;      // convert to montgomery form
+};
+
+// config when converting to bytes
+// -------------------------------
+enum class from_mont : uint8_t { no = 0, yes };
+
 // element representation of 'fp' field which is the base field
+// ------------------------------------------------------------
 class fp
 {
 
@@ -21,12 +33,14 @@ public:
     fp();
     explicit fp(const std::array<uint64_t, 6>& d);
     fp(const fp& e);
-    static std::optional<fp> fromBytesBE(const std::span<const uint8_t, 48> in, const bool check = true, const bool raw = false);
-    static std::optional<fp> fromBytesLE(const std::span<const uint8_t, 48> in, const bool check = true, const bool raw = false);
-    void toBytesBE(const std::span<uint8_t, 48> out, const bool raw = false) const;
-    void toBytesLE(const std::span<uint8_t, 48> out, const bool raw = false) const;
-    std::array<uint8_t, 48> toBytesBE(const bool raw = false) const;
-    std::array<uint8_t, 48> toBytesLE(const bool raw = false) const;
+    static std::optional<fp> fromBytesBE(const std::span<const uint8_t, 48> in,
+                                         const conv_opt opt = { .check_valid = true, .to_mont = true });
+    static std::optional<fp> fromBytesLE(const std::span<const uint8_t, 48> in,
+                                         const conv_opt opt = { .check_valid = true, .to_mont = true });
+    void toBytesBE(const std::span<uint8_t, 48> out, const from_mont fm = from_mont::yes) const;
+    void toBytesLE(const std::span<uint8_t, 48> out, const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 48> toBytesBE(const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 48> toBytesLE(const from_mont fm = from_mont::yes) const;
     static fp zero();
     static fp one();
     bool isValid() const;
@@ -107,12 +121,14 @@ public:
     fp2();
     explicit fp2(const std::array<fp, 2>& e2);
     fp2(const fp2& e);
-    static std::optional<fp2> fromBytesBE(const std::span<const uint8_t, 96> in, const bool check = true, const bool raw = false);
-    static std::optional<fp2> fromBytesLE(const std::span<const uint8_t, 96> in, const bool check = true, const bool raw = false);
-    void toBytesBE(const std::span<uint8_t, 96> out, const bool raw = false) const;
-    void toBytesLE(const std::span<uint8_t, 96> out, const bool raw = false) const;
-    std::array<uint8_t, 96> toBytesBE(const bool raw = false) const;
-    std::array<uint8_t, 96> toBytesLE(const bool raw = false) const;
+    static std::optional<fp2> fromBytesBE(const std::span<const uint8_t, 96> in,
+                                          const conv_opt opt = { .check_valid = true, .to_mont = true });
+    static std::optional<fp2> fromBytesLE(const std::span<const uint8_t, 96> in,
+                                          const conv_opt opt = { .check_valid = true, .to_mont = true });
+    void toBytesBE(const std::span<uint8_t, 96> out, const from_mont fm = from_mont::yes) const;
+    void toBytesLE(const std::span<uint8_t, 96> out, const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 96> toBytesBE(const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 96> toBytesLE(const from_mont fm = from_mont::yes) const;
     static fp2 zero();
     static fp2 one();
     bool isZero() const;
@@ -166,12 +182,14 @@ public:
     fp6();
     explicit fp6(const std::array<fp2, 3>& e3);
     fp6(const fp6& e);
-    static std::optional<fp6> fromBytesBE(const std::span<const uint8_t, 288> in, const bool check = true, const bool raw = false);
-    static std::optional<fp6> fromBytesLE(const std::span<const uint8_t, 288> in, const bool check = true, const bool raw = false);
-    void toBytesBE(const std::span<uint8_t, 288> out, const bool raw = false) const;
-    void toBytesLE(const std::span<uint8_t, 288> out, const bool raw = false) const;
-    std::array<uint8_t, 288> toBytesBE(const bool raw = false) const;
-    std::array<uint8_t, 288> toBytesLE(const bool raw = false) const;
+    static std::optional<fp6> fromBytesBE(const std::span<const uint8_t, 288> in,
+                                          const conv_opt opt = { .check_valid = true, .to_mont = true });
+    static std::optional<fp6> fromBytesLE(const std::span<const uint8_t, 288> in,
+                                          const conv_opt opt = { .check_valid = true, .to_mont = true });
+    void toBytesBE(const std::span<uint8_t, 288> out, const from_mont fm = from_mont::yes) const;
+    void toBytesLE(const std::span<uint8_t, 288> out, const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 288> toBytesBE(const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 288> toBytesLE(const from_mont fm = from_mont::yes) const;
     static fp6 zero();
     static fp6 one();
     bool isZero() const;
@@ -214,12 +232,14 @@ public:
     fp12();
     explicit fp12(const std::array<fp6, 2>& e2);
     fp12(const fp12& e);
-    static std::optional<fp12> fromBytesBE(const std::span<const uint8_t, 576> in, const bool check = true, const bool raw = false);
-    static std::optional<fp12> fromBytesLE(const std::span<const uint8_t, 576> in, const bool check = true, const bool raw = false);
-    void toBytesBE(const std::span<uint8_t, 576> out, const bool raw = false) const;
-    void toBytesLE(const std::span<uint8_t, 576> out, const bool raw = false) const;
-    std::array<uint8_t, 576> toBytesBE(const bool raw = false) const;
-    std::array<uint8_t, 576> toBytesLE(const bool raw = false) const;
+    static std::optional<fp12> fromBytesBE(const std::span<const uint8_t, 576> in,
+                                           const conv_opt opt = { .check_valid = true, .to_mont = true });
+    static std::optional<fp12> fromBytesLE(const std::span<const uint8_t, 576> in,
+                                           const conv_opt opt = { .check_valid = true, .to_mont = true });
+    void toBytesBE(const std::span<uint8_t, 576> out, const from_mont fm = from_mont::yes) const;
+    void toBytesLE(const std::span<uint8_t, 576> out, const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 576> toBytesBE(const from_mont fm = from_mont::yes) const;
+    std::array<uint8_t, 576> toBytesLE(const from_mont fm = from_mont::yes) const;
     static fp12 zero();
     static fp12 one();
     bool isZero() const;

@@ -231,7 +231,7 @@ void TestFieldElementArithmeticCornerCases() {
 
     auto testSqureMul = [](const char* in, const char* expectedSquare, const char* expectedAdd) {
         // Input should be convert to Montgomery form, so "raw" = false
-        auto input = fp::fromBytesBE(hexToBytes<48>(in), true, false);
+       auto input = fp::fromBytesBE(hexToBytes<48>(in), { .check_valid = true, .to_mont = true });
 
         if (0 == strcmp("NA", expectedSquare)) {
             if (input) {
@@ -241,8 +241,8 @@ void TestFieldElementArithmeticCornerCases() {
         }
 
         // Expected result will be compared against numbers converted back from Montgomery form, so "raw" = true
-        auto fpExpectedSquare = fp::fromBytesBE(hexToBytes<48>(expectedSquare), false, true);
-        auto fpExpectedAdd = fp::fromBytesBE(hexToBytes<48>(expectedAdd), false, true);
+        auto fpExpectedSquare = fp::fromBytesBE(hexToBytes<48>(expectedSquare), { .check_valid=false, .to_mont=false });
+        auto fpExpectedAdd = fp::fromBytesBE(hexToBytes<48>(expectedAdd), { .check_valid = false, .to_mont = false });
 
         fp s,m,a,d;
         fp s1,m1,a1,d1;
@@ -437,7 +437,7 @@ void TestInverse() {
         throw invalid_argument("2 * 2^-1 != 1");
     }
 
-    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), false, true);
+    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), { .check_valid = false, .to_mont = false });
     if (!pminus1.multiply(pminus1.inverse()).equal(fp::one())) {
         throw invalid_argument("(p-1) * (p-1)^-1 != 1");
     }
@@ -497,7 +497,7 @@ void TestMod() {
         auto s = hexToBytes<64>(testVectorInput[i]);
         auto k = scalar::fromBytesBE<8>(s);
         fp r = fp::modPrime<8>(k);
-        auto fpExpected = fp::fromBytesBE(hexToBytes<48>(testVectorExpected[i]), false, false);
+        auto fpExpected = fp::fromBytesBE(hexToBytes<48>(testVectorExpected[i]), { .check_valid = false, .to_mont = true });
         if(!fpExpected->equal(r))
         {
             throw invalid_argument("r != expected for Mod");
@@ -531,10 +531,10 @@ void TestExp() {
 
     for (size_t i = 0; i < sizeof(testVectorInput)/sizeof(const char*); ++ i) {
         auto s = hexToBytes<64>(testVectorInput[i]);
-        auto b = fp::fromBytesBE(hexToBytes<48>(testVectorInput2[i]), false, false);
+        auto b = fp::fromBytesBE(hexToBytes<48>(testVectorInput2[i]), { .check_valid = false, .to_mont = true });
         auto k = scalar::fromBytesBE<8>(s);
         fp r = b->exp(k);
-        auto fpExpected = fp::fromBytesBE(hexToBytes<48>(testVectorExpected[i]), false, false);
+        auto fpExpected = fp::fromBytesBE(hexToBytes<48>(testVectorExpected[i]), { .check_valid = false, .to_mont = true });
         if(!fpExpected->equal(r))
         {
             throw invalid_argument("r != expected for Exp");
@@ -750,12 +750,12 @@ void TestG1SerializationGarbage() {
     array<uint8_t, 144> buf;
     buf.fill(0xff);
     for (int i = 0 ; i < 4; ++i ) {
-        auto a = g1::fromJacobianBytesBE(buf, i < 2, i%2);
+        auto a = g1::fromJacobianBytesBE(buf, { .check_valid = i<2, .to_mont = !(i%2) });
         if(a)
         {
             throw invalid_argument("g1, jacobianBE: serialization not catching invalid input");
         }
-        auto b = g1::fromJacobianBytesLE(buf, i < 2, i%2);
+        auto b = g1::fromJacobianBytesLE(buf, { .check_valid = i<2, .to_mont = !(i%2) });
         if(b)
         {
             throw invalid_argument("g1, jacobianLE: serialization not catching invalid input");
@@ -763,12 +763,12 @@ void TestG1SerializationGarbage() {
     }
        
     for (int i = 0 ; i < 4; ++i ) {
-        auto a = g1::fromAffineBytesBE(std::span<const uint8_t, 96>{buf.begin(),96}, i < 2, i%2);
+        auto a = g1::fromAffineBytesBE(std::span<const uint8_t, 96>{buf.begin(),96}, { .check_valid = i<2, .to_mont = !(i%2) });
         if(a)
         {
             throw invalid_argument("g1, affineBE: serialization not catching invalid input");
         }
-        auto b = g1::fromAffineBytesLE(std::span<const uint8_t, 96>{buf.begin(),96}, i < 2, i%2);
+        auto b = g1::fromAffineBytesLE(std::span<const uint8_t, 96>{buf.begin(),96}, { .check_valid = i<2, .to_mont = !(i%2) });
         if(b)
         {
             throw invalid_argument("g1, affineLE: serialization not catching invalid input");
@@ -1138,24 +1138,24 @@ void TestG2SerializationGarbage() {
     array<uint8_t, 288> buf;
     buf.fill(0xff);
     for (int i = 0 ; i < 4; ++i ) {
-        auto a = g2::fromJacobianBytesBE(buf, i < 2, i%2);
+        auto a = g2::fromJacobianBytesBE(buf, { .check_valid = i<2, .to_mont = !(i%2) });
         if(a)
         {
             throw invalid_argument("g2, jacobianBE: serialization not catching invalid input");
         }
-        auto b = g2::fromJacobianBytesLE(buf, i < 2, i%2);
+        auto b = g2::fromJacobianBytesLE(buf, { .check_valid = i<2, .to_mont = !(i%2) });
         if(b)
         {
             throw invalid_argument("g2, jacobianLE: serialization not catching invalid input");
         }
     }
     for (int i = 0 ; i < 4; ++i ) {
-        auto a = g2::fromAffineBytesBE(std::span<const uint8_t, 192>{buf.begin(),192}, i < 2, i%2);
+        auto a = g2::fromAffineBytesBE(std::span<const uint8_t, 192>{buf.begin(),192}, { .check_valid = i<2, .to_mont = !(i%2) });
         if(a)
         {
             throw invalid_argument("g2, affineBE: serialization not catching invalid input");
         }
-        auto b = g2::fromAffineBytesLE(std::span<const uint8_t, 192>{buf.begin(),192}, i < 2, i%2);
+        auto b = g2::fromAffineBytesLE(std::span<const uint8_t, 192>{buf.begin(),192}, { .check_valid = i<2, .to_mont = !(i%2) });
         if(b)
         {
             throw invalid_argument("g2, affineLE: serialization not catching invalid input");
@@ -2227,10 +2227,10 @@ void TestOutOfRangeInputs() {
     // This test is to make sure multiplication wiil not fail if the inputs is just slightly larger than p
     // The 4(p-1) limit may be not that strict. But we should only relax this limit if we are absolutely sure this 
     // will not cause problems all the methods calling _ladd/_lsubstract/_ldouble.
-    auto p = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB"), false, true);
-    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), false, true);
+    auto p = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB"), { .check_valid = false, .to_mont = false });
+    auto pminus1 = *fp::fromBytesBE(hexToBytes<48>("1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA"), { .check_valid = false, .to_mont = false });
     // 2^383, largest possible input to multiplication during the inverse().
-    auto two383 = *fp::fromBytesBE(hexToBytes<48>("400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), false, true);
+    auto two383 = *fp::fromBytesBE(hexToBytes<48>("400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), { .check_valid = false, .to_mont = false });
     // 4(p-1) * 4(p-1) will work
     for (int i = 0 ; i < 3; ++ i) {
         auto a = pminus1;

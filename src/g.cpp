@@ -17,41 +17,47 @@ g1::g1(const g1& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-optional<g1> g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, const bool check, const bool raw)
+optional<g1> g1::fromJacobianBytesBE(const span<const uint8_t, 144> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
-    optional<fp> z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
+    optional<fp> z = fp::fromBytesBE(span<const uint8_t, 48>(&in[96], &in[144]), opt);
     if(!x || !y || !z) return {};
     g1 p = g1({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g1> g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, const bool check, const bool raw)
+optional<g1> g1::fromJacobianBytesLE(const span<const uint8_t, 144> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
-    optional<fp> z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
+    optional<fp> z = fp::fromBytesLE(span<const uint8_t, 48>(&in[96], &in[144]), opt);
     if(!x || !y || !z) return {};
     g1 p = g1({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g1> g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<g1> g1::fromAffineBytesBE(const span<const uint8_t, 96> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp> x = fp::fromBytesBE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesBE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -60,18 +66,20 @@ optional<g1> g1::fromAffineBytesBE(const span<const uint8_t, 96> in, const bool 
     }
     fp z = fp::one();
     g1 p = g1({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool check, const bool raw)
+optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), true, raw);
-    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp> x = fp::fromBytesLE(span<const uint8_t, 48>(&in[ 0], &in[ 48]), opt);
+    optional<fp> y = fp::fromBytesLE(span<const uint8_t, 48>(&in[48], &in[ 96]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -80,7 +88,7 @@ optional<g1> g1::fromAffineBytesLE(const span<const uint8_t, 96> in, const bool 
     }
     fp z = fp::one();
     g1 p = g1({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
@@ -129,21 +137,21 @@ optional<g1> g1::fromCompressedBytesBE(const span<const uint8_t, 48> in)
     return p;
 }
 
-void g1::toJacobianBytesBE(const span<uint8_t, 144> out, const bool raw) const
+void g1::toJacobianBytesBE(const span<uint8_t, 144> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[ 0], &x.toBytesBE(raw)[0], 48);
-    memcpy(&out[48], &y.toBytesBE(raw)[0], 48);
-    memcpy(&out[96], &z.toBytesBE(raw)[0], 48);
+    memcpy(&out[ 0], &x.toBytesBE(fm)[0], 48);
+    memcpy(&out[48], &y.toBytesBE(fm)[0], 48);
+    memcpy(&out[96], &z.toBytesBE(fm)[0], 48);
 }
 
-void g1::toJacobianBytesLE(const span<uint8_t, 144> out, const bool raw) const
+void g1::toJacobianBytesLE(const span<uint8_t, 144> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[ 0], &x.toBytesLE(raw)[0], 48);
-    memcpy(&out[48], &y.toBytesLE(raw)[0], 48);
-    memcpy(&out[96], &z.toBytesLE(raw)[0], 48);
+    memcpy(&out[ 0], &x.toBytesLE(fm)[0], 48);
+    memcpy(&out[48], &y.toBytesLE(fm)[0], 48);
+    memcpy(&out[96], &z.toBytesLE(fm)[0], 48);
 }
 
-void g1::toAffineBytesBE(const span<uint8_t, 96> out, const bool raw) const
+void g1::toAffineBytesBE(const span<uint8_t, 96> out, const from_mont fm /* = from_mont::yes */) const
 {
     if(isZero())
     {
@@ -151,11 +159,11 @@ void g1::toAffineBytesBE(const span<uint8_t, 96> out, const bool raw) const
         return;
     }
     g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 48);
-    memcpy(&out[48], &r.y.toBytesBE(raw)[0], 48);
+    memcpy(&out[ 0], &r.x.toBytesBE(fm)[0], 48);
+    memcpy(&out[48], &r.y.toBytesBE(fm)[0], 48);
 }
 
-void g1::toAffineBytesLE(const span<uint8_t, 96> out, const bool raw) const
+void g1::toAffineBytesLE(const span<uint8_t, 96> out, const from_mont fm /* = from_mont::yes */) const
 {
     if(isZero())
     {
@@ -163,8 +171,8 @@ void g1::toAffineBytesLE(const span<uint8_t, 96> out, const bool raw) const
         return;
     }
     g1 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 48);
-    memcpy(&out[48], &r.y.toBytesLE(raw)[0], 48);
+    memcpy(&out[ 0], &r.x.toBytesLE(fm)[0], 48);
+    memcpy(&out[48], &r.y.toBytesLE(fm)[0], 48);
 }
 
 void g1::toCompressedBytesBE(const span<uint8_t, 48> out) const
@@ -188,31 +196,31 @@ void g1::toCompressedBytesBE(const span<uint8_t, 48> out) const
     out[0] |= 0x80;
 }
 
-array<uint8_t, 144> g1::toJacobianBytesBE(const bool raw) const
+array<uint8_t, 144> g1::toJacobianBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 144> out;
-    toJacobianBytesBE(out, raw);
+    toJacobianBytesBE(out, fm);
     return out;
 }
 
-array<uint8_t, 144> g1::toJacobianBytesLE(const bool raw) const
+array<uint8_t, 144> g1::toJacobianBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 144> out;
-    toJacobianBytesLE(out, raw);
+    toJacobianBytesLE(out, fm);
     return out;
 }
 
-array<uint8_t, 96> g1::toAffineBytesBE(const bool raw) const
+array<uint8_t, 96> g1::toAffineBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 96> out;
-    toAffineBytesBE(out, raw);
+    toAffineBytesBE(out, fm);
     return out;
 }
 
-array<uint8_t, 96> g1::toAffineBytesLE(const bool raw) const
+array<uint8_t, 96> g1::toAffineBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 96> out;
-    toAffineBytesLE(out, raw);
+    toAffineBytesLE(out, fm);
     return out;
 }
 
@@ -722,41 +730,47 @@ g2::g2(const g2& e) : x(e.x), y(e.y), z(e.z)
 {
 }
 
-optional<g2> g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<g2> g2::fromJacobianBytesBE(const span<const uint8_t, 288> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
-    optional<fp2> z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
+    optional<fp2> z = fp2::fromBytesBE(span<const uint8_t, 96>(&in[192], &in[288]), opt);
     if(!x || !y || !z) return {};
     g2 p = g2({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g2> g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, const bool check, const bool raw)
+optional<g2> g2::fromJacobianBytesLE(const span<const uint8_t, 288> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
-    optional<fp2> z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
+    optional<fp2> z = fp2::fromBytesLE(span<const uint8_t, 96>(&in[192], &in[288]), opt);
     if(!x || !y || !z) return {};
     g2 p = g2({*x, *y, *z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g2> g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool check, const bool raw)
+optional<g2> g2::fromAffineBytesBE(const span<const uint8_t, 192> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp2> x = fp2::fromBytesBE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesBE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -765,18 +779,20 @@ optional<g2> g2::fromAffineBytesBE(const span<const uint8_t, 192> in, const bool
     }
     fp2 z = fp2::one();
     g2 p = g2({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
     return p;
 }
 
-optional<g2> g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool check, const bool raw)
+optional<g2> g2::fromAffineBytesLE(const span<const uint8_t, 192> in, conv_opt opt)
 {
     // We decided to always validate the input here. Check flag will only affect on-curve checks.
-    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), true, raw);
-    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), true, raw);
+    bool curve_check = opt.check_valid;
+    opt.check_valid = true;
+    optional<fp2> x = fp2::fromBytesLE(span<const uint8_t, 96>(&in[  0], &in[ 96]), opt);
+    optional<fp2> y = fp2::fromBytesLE(span<const uint8_t, 96>(&in[ 96], &in[192]), opt);
     if(!x || !y) return {};
     // check if given input points to infinity
     if(x->isZero() && y->isZero())
@@ -785,7 +801,7 @@ optional<g2> g2::fromAffineBytesLE(const span<const uint8_t, 192> in, const bool
     }
     fp2 z = fp2::one();
     g2 p = g2({*x, *y, z});
-    if(check && !p.isOnCurve())
+    if(curve_check && !p.isOnCurve())
     {
         return {};
     }
@@ -839,21 +855,21 @@ optional<g2> g2::fromCompressedBytesBE(const span<const uint8_t, 96> in)
     return p;
 }
 
-void g2::toJacobianBytesBE(const span<uint8_t, 288> out, const bool raw) const
+void g2::toJacobianBytesBE(const span<uint8_t, 288> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[  0], &x.toBytesBE(raw)[0], 96);
-    memcpy(&out[ 96], &y.toBytesBE(raw)[0], 96);
-    memcpy(&out[192], &z.toBytesBE(raw)[0], 96);
+    memcpy(&out[  0], &x.toBytesBE(fm)[0], 96);
+    memcpy(&out[ 96], &y.toBytesBE(fm)[0], 96);
+    memcpy(&out[192], &z.toBytesBE(fm)[0], 96);
 }
 
-void g2::toJacobianBytesLE(const span<uint8_t, 288> out, const bool raw) const
+void g2::toJacobianBytesLE(const span<uint8_t, 288> out, const from_mont fm /* = from_mont::yes */) const
 {
-    memcpy(&out[  0], &x.toBytesLE(raw)[0], 96);
-    memcpy(&out[ 96], &y.toBytesLE(raw)[0], 96);
-    memcpy(&out[192], &z.toBytesLE(raw)[0], 96);
+    memcpy(&out[  0], &x.toBytesLE(fm)[0], 96);
+    memcpy(&out[ 96], &y.toBytesLE(fm)[0], 96);
+    memcpy(&out[192], &z.toBytesLE(fm)[0], 96);
 }
 
-void g2::toAffineBytesBE(const span<uint8_t, 192> out, const bool raw) const
+void g2::toAffineBytesBE(const span<uint8_t, 192> out, const from_mont fm /* = from_mont::yes */) const
 {
     if(isZero())
     {
@@ -861,11 +877,11 @@ void g2::toAffineBytesBE(const span<uint8_t, 192> out, const bool raw) const
         return;
     }
     g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesBE(raw)[0], 96);
-    memcpy(&out[96], &r.y.toBytesBE(raw)[0], 96);
+    memcpy(&out[ 0], &r.x.toBytesBE(fm)[0], 96);
+    memcpy(&out[96], &r.y.toBytesBE(fm)[0], 96);
 }
 
-void g2::toAffineBytesLE(const span<uint8_t, 192> out, const bool raw) const
+void g2::toAffineBytesLE(const span<uint8_t, 192> out, const from_mont fm /* = from_mont::yes */) const
 {
     if(isZero())
     {
@@ -873,8 +889,8 @@ void g2::toAffineBytesLE(const span<uint8_t, 192> out, const bool raw) const
         return;
     }
     g2 r = affine();
-    memcpy(&out[ 0], &r.x.toBytesLE(raw)[0], 96);
-    memcpy(&out[96], &r.y.toBytesLE(raw)[0], 96);
+    memcpy(&out[ 0], &r.x.toBytesLE(fm)[0], 96);
+    memcpy(&out[96], &r.y.toBytesLE(fm)[0], 96);
 }
 
 void g2::toCompressedBytesBE(const span<uint8_t, 96> out) const
@@ -899,31 +915,31 @@ void g2::toCompressedBytesBE(const span<uint8_t, 96> out) const
     out[0] |= 0x80;
 }
 
-array<uint8_t, 288> g2::toJacobianBytesBE(const bool raw) const
+array<uint8_t, 288> g2::toJacobianBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 288> out;
-    toJacobianBytesBE(out, raw);
+    toJacobianBytesBE(out, fm);
     return out;
 }
 
-array<uint8_t, 288> g2::toJacobianBytesLE(const bool raw) const
+array<uint8_t, 288> g2::toJacobianBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 288> out;
-    toJacobianBytesLE(out, raw);
+    toJacobianBytesLE(out, fm);
     return out;
 }
 
-array<uint8_t, 192> g2::toAffineBytesBE(const bool raw) const
+array<uint8_t, 192> g2::toAffineBytesBE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 192> out;
-    toAffineBytesBE(out, raw);
+    toAffineBytesBE(out, fm);
     return out;
 }
 
-array<uint8_t, 192> g2::toAffineBytesLE(const bool raw) const
+array<uint8_t, 192> g2::toAffineBytesLE(const from_mont fm /* = from_mont::yes */) const
 {
     array<uint8_t, 192> out;
-    toAffineBytesLE(out, raw);
+    toAffineBytesLE(out, fm);
     return out;
 }
 

@@ -203,25 +203,25 @@ void benchG1Add2() {
     constexpr int numIters = 10000;
     g1 pbak = random_g1();
     
-    auto performTest = [pbak](bool check, bool raw) {
+    auto performTest = [pbak](conv_opt opt) {
         array<uint8_t, 144> pRaw = {};
         g1 p = pbak;
-        p.toJacobianBytesLE(pRaw, raw);
+        p.toJacobianBytesLE(pRaw, opt.to_mont ? from_mont::yes : from_mont::no);
 
         auto start = startStopwatch();
 
         for (int i = 0; i < numIters; i++) {
-            p = *g1::fromJacobianBytesLE(pRaw, check, raw);
+            p = *g1::fromJacobianBytesLE(pRaw, opt);
             p.addAssign(p);
-            p.toJacobianBytesLE(pRaw, raw);
+            p.toJacobianBytesLE(pRaw, opt.to_mont ? from_mont::yes : from_mont::no);
         }
-        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+        endStopwatch(string("check_valid=") + std::to_string(opt.check_valid) + string(", to_mont=") + std::to_string(opt.to_mont), start, numIters);
     };
 
-    performTest(true, true);
-    performTest(true, false);
-    performTest(false, true);
-    performTest(false, false);
+    performTest({ .check_valid = true,  .to_mont = true });
+    performTest({ .check_valid = true,  .to_mont = false });
+    performTest({ .check_valid = false, .to_mont = true });
+    performTest({ .check_valid = false, .to_mont = false });
 
 }
 
@@ -232,25 +232,25 @@ void benchG2Add2() {
     constexpr int numIters = 10000;
     g2 pbak = random_g2();
 
-    auto performTest = [pbak](bool check, bool raw) {
+    auto performTest = [pbak](conv_opt opt) {
         array<uint8_t, 288> pRaw = {};
         g2 p = pbak;
-        p.toJacobianBytesLE(pRaw, raw);
+        p.toJacobianBytesLE(pRaw, opt.to_mont ? from_mont::yes : from_mont::no);
 
         auto start = startStopwatch();
 
         for (int i = 0; i < numIters; i++) {
-            p = *g2::fromJacobianBytesLE(pRaw, check, raw);
+            p = *g2::fromJacobianBytesLE(pRaw, opt);
             p.addAssign(p);
-            p.toJacobianBytesLE(pRaw, raw);
+            p.toJacobianBytesLE(pRaw, opt.to_mont ? from_mont::yes : from_mont::no);
         }
-        endStopwatch(string("check=") + std::to_string(check) + string(", raw=") + std::to_string(raw), start, numIters);
+        endStopwatch(string("check_valid=") + std::to_string(opt.check_valid) + string(", to_mont=") + std::to_string(opt.to_mont), start, numIters);
     };
 
-    performTest(true, true);
-    performTest(true, false);
-    performTest(false, true);
-    performTest(false, false);
+    performTest({ .check_valid = true,  .to_mont = true });
+    performTest({ .check_valid = true,  .to_mont = false });
+    performTest({ .check_valid = false, .to_mont = true });
+    performTest({ .check_valid = false, .to_mont = false });
 
 }
 
