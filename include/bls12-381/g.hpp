@@ -4,7 +4,7 @@
 #include <functional>
 #include <optional>
 #include <span>
-#include "fp.hpp"
+#include <bls12-381/fp.hpp>
 
 namespace bls12_381
 {
