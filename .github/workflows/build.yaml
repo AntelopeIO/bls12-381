@@ -18,9 +18,12 @@ jobs:
           - cfg: {name: 'gcc10',             runson: 'ubuntu-latest', container: 'debian:bullseye'}
           - cfg: {name: 'gcc11',             runson: 'ubuntu-latest', container: 'ubuntu:jammy'}
           - cfg: {name: 'gcc12',             runson: 'ubuntu-latest', container: 'debian:bookworm'}
+          - cfg: {name: 'gcc13',             runson: 'ubuntu-latest', container: 'ubuntu:noble'}
           - cfg: {name: 'gcc-arch',          runson: 'ubuntu-latest', container: 'archlinux'}
           - cfg: {name: 'clang-arch',        runson: 'ubuntu-latest', container: 'archlinux',
                   cmake: '-DCMAKE_CXX_COMPILER=clang++'}
+          - cfg: {name: 'clang-lto-arch',    runson: 'ubuntu-latest', container: 'archlinux',
+                  cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On'}
           - cfg: {name: 'clang-libc++-arch', runson: 'ubuntu-latest', container: 'archlinux',
                   cmake: '-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-stdlib=libc++'}
           - cfg: {name: 'clang-UBSAN-arch',  runson: 'ubuntu-latest', container: 'archlinux',
